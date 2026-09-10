@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Profil en long</title>
+<meta name="theme-color" content="#0b1014">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Profil en long">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="./icon.svg">
+<style>
+:root{
+  --bg:#0b1014; --surf:#141c24; --surf2:#1b2530; --border:#232f3a; --border2:#34454f;
+  --txt:#e6e8ea; --dim:#8a96a3; --mute:#5e6b78;
+  --accent:#d98e3c; --accent-dim:#a86a26; --accent-soft:rgba(217,142,60,.14);
+  --ok:#6cc26c; --warn:#d9a566; --err:#d96666;
+  --r:10px; --r-sm:7px; --tap:44px;
+  font-size:16px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{background:var(--bg);color:var(--txt)}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:14px;line-height:1.45;
+  min-height:100vh;min-height:100dvh;overscroll-behavior-y:contain;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+.mono{font-family:ui-monospace,"SFMono-Regular","JetBrains Mono",monospace}
+
+/* Header */
+header{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:10px;
+  padding:12px 16px;padding-top:max(12px,env(safe-area-inset-top));
+  background:var(--surf);border-bottom:1px solid var(--border)}
+header .ico{width:30px;height:30px;border-radius:8px;flex-shrink:0}
+header h1{font-size:1rem;font-weight:700;flex:1;letter-spacing:.2px}
+#save{font-family:ui-monospace,monospace;font-size:.68rem;color:var(--mute);
+  padding:3px 8px;border-radius:20px;border:1px solid var(--border);min-width:64px;text-align:center;transition:.2s}
+#save.saved{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 40%,transparent)}
+#save.saving{color:var(--warn)}
+
+main{max-width:820px;margin:0 auto;padding:16px 14px 40px}
+
+/* Sections */
+.section{background:var(--surf);border:1px solid var(--border);border-radius:var(--r);margin-bottom:14px;overflow:hidden}
+.section>h2{font-size:.82rem;text-transform:uppercase;letter-spacing:.8px;color:var(--dim);
+  padding:11px 14px;border-bottom:1px solid var(--border);font-weight:600}
+.section .body{padding:14px}
+
+.banner{background:var(--accent-soft);border:1px solid color-mix(in srgb,var(--accent) 35%,transparent);
+  border-radius:var(--r-sm);padding:10px 12px;font-size:.82rem;color:var(--txt);margin-bottom:12px}
+.banner strong{color:var(--accent)}
+
+/* Grilles & champs */
+.grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:.74rem;color:var(--dim);font-weight:500}
+.field input,.field select,.field textarea{
+  background:var(--surf2);border:1px solid var(--border2);border-radius:var(--r-sm);
+  color:var(--txt);font:inherit;font-size:15px;padding:9px 10px;min-height:var(--tap);width:100%}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--accent)}
+.field input.err{border-color:var(--err)}
+.field .note{font-size:.68rem;color:var(--mute)}
+.field .note.err{color:var(--err)}
+.field.full{grid-column:1/-1}
+select{appearance:none;-webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%238a96a3' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 10px center;padding-right:28px}
+
+/* Tronçon */
+.troncon{background:var(--surf2);border:1px solid var(--border);border-radius:var(--r);padding:12px;margin-bottom:12px}
+.troncon>.th{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.troncon>.th .n{font-weight:700;font-size:.95rem;flex:1}
+.troncon>.th .n b{color:var(--accent)}
+.visee-h{font-size:.72rem;text-transform:uppercase;letter-spacing:.5px;color:var(--dim);
+  margin:10px 0 6px;display:flex;align-items:center;gap:8px}
+.dh{margin-top:8px;font-family:ui-monospace,monospace;font-size:.8rem;color:var(--txt);
+  background:var(--surf);border:1px solid var(--border);border-radius:var(--r-sm);padding:7px 10px}
+
+/* Boutons */
+button{font:inherit;cursor:pointer;border-radius:var(--r-sm);border:1px solid transparent;
+  min-height:var(--tap);padding:0 14px;font-weight:600}
+.btn{background:var(--accent);color:#1a1206;border-color:var(--accent-dim)}
+.btn:active{background:var(--accent-dim)}
+.btn-2{background:var(--surf2);color:var(--txt);border-color:var(--border2)}
+.btn-2:active{background:var(--surf)}
+.btn-danger{background:transparent;color:var(--err);border-color:color-mix(in srgb,var(--err) 45%,transparent);
+  min-height:32px;min-width:36px;padding:0 9px;font-size:1rem}
+.btn-mini{min-height:30px;padding:0 9px;font-size:.72rem;background:var(--surf);color:var(--accent);
+  border-color:color-mix(in srgb,var(--accent) 40%,transparent);font-weight:600}
+.row-btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.row-btns .btn,.row-btns .btn-2{flex:1;min-width:130px}
+
+/* Synthèse */
+.stats{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(130px,1fr))}
+.stat{background:var(--surf2);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px}
+.stat .l{font-size:.68rem;color:var(--dim);text-transform:uppercase;letter-spacing:.4px}
+.stat .v{font-family:ui-monospace,monospace;font-size:1.05rem;font-weight:600;margin-top:3px}
+.stat.hl .v{color:var(--accent)}
+.stat .sub{font-size:.6rem;color:var(--mute);margin-top:2px}
+
+/* Profil */
+#profil{width:100%;height:auto;background:var(--surf2);border:1px solid var(--border);border-radius:var(--r-sm);margin-top:10px}
+.empty{color:var(--mute);font-size:.85rem;text-align:center;padding:16px}
+
+/* Export */
+pre.json{background:#0d1319;border:1px solid var(--border);border-radius:var(--r-sm);
+  padding:10px;font-family:ui-monospace,monospace;font-size:.68rem;color:var(--dim);
+  max-height:260px;overflow:auto;white-space:pre-wrap;word-break:break-word;margin-top:10px}
+
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:50;
+  background:var(--surf2);border:1px solid var(--border2);border-radius:var(--r);
+  padding:11px 18px;font-size:.85rem;box-shadow:0 8px 24px rgba(0,0,0,.4);opacity:0;pointer-events:none;transition:opacity .25s}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<header>
+  <img class="ico" src="./icon.svg" alt="">
+  <h1>Profil en long</h1>
+  <span id="save">—</span>
+</header>
+
+<main>
+
+  <div class="banner">
+    Pour chaque tronçon : le <strong>faciès</strong>, la <strong>distance</strong>, puis les
+    <strong>trois fils stadimétriques</strong> (haut Fh, médian Fm, bas Fb) de la visée aval puis
+    de la visée amont. La pente est calculée à partir des <strong>Fm</strong> ; Fh/Fb servent au
+    contrôle de cohérence de la lecture.
+  </div>
+
+  <!-- Informations -->
+  <div class="section">
+    <h2>Informations</h2>
+    <div class="body">
+      <div class="grid">
+        <div class="field"><label>Date</label><input type="date" id="m_date"></div>
+        <div class="field"><label>Cours d'eau</label><input id="m_cours" placeholder="ex. Le Lez"></div>
+        <div class="field"><label>Station</label><input id="m_station" placeholder="ex. STAT_001"></div>
+        <div class="field"><label>Opérateur</label><input id="m_operateur"></div>
+        <div class="field"><label>Niveau / matériel</label><input id="m_materiel" placeholder="ex. niveau de chantier + mire"></div>
+      </div>
+      <div class="field full" style="margin-top:10px"><label>Remarques</label><textarea id="m_notes" rows="2"></textarea></div>
+    </div>
+  </div>
+
+  <!-- Tronçons -->
+  <div class="section">
+    <h2>Tronçons</h2>
+    <div class="body">
+      <div id="troncons"></div>
+      <button class="btn" id="add" style="width:100%;margin-top:4px">＋ Ajouter un tronçon</button>
+    </div>
+  </div>
+
+  <!-- Calcul -->
+  <div class="section">
+    <h2>Calcul de la pente</h2>
+    <div class="body">
+      <div class="stats" id="stats"></div>
+      <svg id="profil" viewBox="0 0 700 200" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+  </div>
+
+  <!-- Export -->
+  <div class="section">
+    <h2>Export</h2>
+    <div class="body">
+      <div class="row-btns">
+        <button class="btn" id="exp">⬇ Exporter le JSON</button>
+        <button class="btn-2" id="imp">⤓ Importer un JSON</button>
+        <input type="file" id="file" accept=".json" hidden>
+      </div>
+      <div class="row-btns">
+        <button class="btn-2" id="copy">⧉ Copier le JSON</button>
+        <button class="btn-2" id="reset" style="color:var(--err);border-color:color-mix(in srgb,var(--err) 45%,transparent)">🗑 Réinitialiser</button>
+      </div>
+      <pre class="json" id="preview"></pre>
+    </div>
+  </div>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   Profil en long — saisie de la pente de la ligne d'eau
+   Modèle et calculs repris de l'onglet CARHYCE « Pente ».
+   ============================================================ */
+
+const STORAGE_KEY = 'profil_long_v1';
+const STADI_TOL_CM = 0.1;           // tolérance cohérence : |Fm − (Fh+Fb)/2| ≤ 0.1 cm
+
+// Faciès d'écoulement (profil en long) — liste de la typologie fournie
+const FACIES = [
+  'Chenal lentique',
+  'Fosse de dissipation',
+  'Mouille de concavité',
+  "Fosse d'affouillement",
+  'Chenal lotique',
+  'Plat lentique',
+  'Plat courant',
+  'Radier',
+  'Rapide',
+  'Cascade',
+  'Chute'
+];
+
+// Parseur numérique acceptant la virgule
+function parseNum(v){
+  if(v==null||v==='') return null;
+  const s=String(v).replace(',','.').trim();
+  if(s===''||s==='-'||s==='.') return null;
+  const n=parseFloat(s); return isNaN(n)?null:n;
+}
+const nn = v => v==null?'—':v;
+
+// ---- État ----
+let state = load();
+function nouveauTroncon(){ return { facies:'', distance_m:null, aval:{fh:null,fm:null,fb:null}, amont:{fh:null,fm:null,fb:null} }; }
+function etatVierge(){ return { meta:{date:'',cours:'',station:'',operateur:'',materiel:'',notes:''}, troncons:[ nouveauTroncon() ] }; }
+
+function load(){
+  try{ const raw=localStorage.getItem(STORAGE_KEY); if(raw){ const o=JSON.parse(raw); if(o&&o.troncons) return o; } }catch(e){}
+  return etatVierge();
+}
+let saveTimer=null;
+function scheduleSave(){
+  setSave('saving');
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(()=>{ try{ localStorage.setItem(STORAGE_KEY,JSON.stringify(state)); setSave('saved'); }catch(e){ setSave('err'); } },400);
+  refreshPreview();
+}
+function setSave(s){
+  const el=document.getElementById('save'); el.className=s;
+  el.textContent = s==='saving'?'…':s==='saved'?'enregistré':s==='err'?'erreur':'—';
+}
+
+// ---- Bindings métadonnées ----
+function bindMeta(){
+  const map={m_date:'date',m_cours:'cours',m_station:'station',m_operateur:'operateur',m_materiel:'materiel',m_notes:'notes'};
+  Object.entries(map).forEach(([id,key])=>{
+    const el=document.getElementById(id);
+    el.value = state.meta[key]||'';
+    el.addEventListener('input',()=>{ state.meta[key]=el.value; scheduleSave(); });
+  });
+}
+
+// ---- Rendu des tronçons ----
+function renderTroncons(){
+  const root=document.getElementById('troncons');
+  root.innerHTML='';
+  state.troncons.forEach((tr,idx)=>{
+    const card=document.createElement('div'); card.className='troncon';
+
+    // En-tête + suppression
+    const th=document.createElement('div'); th.className='th';
+    const n=document.createElement('div'); n.className='n'; n.innerHTML=`Tronçon <b>${idx+1}</b>`;
+    const rm=document.createElement('button'); rm.className='btn-danger'; rm.textContent='×'; rm.title='Supprimer ce tronçon';
+    rm.onclick=()=>{ if(!confirm('Supprimer ce tronçon ?'))return; state.troncons.splice(idx,1); if(!state.troncons.length) state.troncons.push(nouveauTroncon()); renderAll(); scheduleSave(); };
+    th.appendChild(n); th.appendChild(rm); card.appendChild(th);
+
+    // Faciès + distance
+    const g=document.createElement('div'); g.className='grid';
+    g.appendChild(champSelect('Faciès', FACIES, tr.facies, v=>{ tr.facies=v; scheduleSave(); }));
+    g.appendChild(champNum('Distance (m)', tr.distance_m, v=>{ tr.distance_m=v; renderCalc(); scheduleSave(); }));
+    card.appendChild(g);
+
+    // Visée aval (+ bouton de report depuis le tronçon précédent)
+    const avalH=document.createElement('div'); avalH.className='visee-h';
+    avalH.appendChild(Object.assign(document.createElement('span'),{textContent:'Visée aval'}));
+    if(idx>0){
+      const b=document.createElement('button'); b.className='btn-mini'; b.type='button';
+      b.textContent='⤒ = visée amont du tronçon précédent';
+      b.title='Recopier les Fh/Fm/Fb de la visée amont du tronçon '+idx+' (niveau non déplacé)';
+      b.onclick=()=>{
+        const src=state.troncons[idx-1].amont;
+        if(src.fh==null&&src.fm==null&&src.fb==null){ toast('Visée amont du tronçon précédent vide.'); return; }
+        const dst=tr.aval;
+        if((dst.fh!=null||dst.fm!=null||dst.fb!=null) && !confirm('Écraser la visée aval actuelle ?')) return;
+        dst.fh=src.fh; dst.fm=src.fm; dst.fb=src.fb;
+        renderAll(); scheduleSave(); toast('Visée aval reprise du tronçon '+idx+'.');
+      };
+      avalH.appendChild(b);
+    }
+    card.appendChild(avalH);
+    card.appendChild(ligneVisee(tr.aval));
+
+    // Visée amont
+    const amontH=document.createElement('div'); amontH.className='visee-h';
+    amontH.appendChild(Object.assign(document.createElement('span'),{textContent:'Visée amont'}));
+    card.appendChild(amontH);
+    card.appendChild(ligneVisee(tr.amont));
+
+    // Δh du tronçon
+    const dh=(tr.aval.fm!=null&&tr.amont.fm!=null)?(tr.aval.fm-tr.amont.fm)/100:null;
+    const dhEl=document.createElement('div'); dhEl.className='dh';
+    dhEl.textContent='Δh tronçon = '+(dh==null?'—':dh.toFixed(3)+' m');
+    card.appendChild(dhEl);
+
+    root.appendChild(card);
+  });
+}
+
+// Ligne de saisie d'une visée : Fh / Fm / Fb (cm) + contrôle stadimétrique sur Fm
+function ligneVisee(vis){
+  const row=document.createElement('div'); row.className='grid';
+  const refs={};
+  ['fh','fm','fb'].forEach(k=>{
+    const f=document.createElement('div'); f.className='field';
+    const lbl=document.createElement('label'); lbl.textContent=k.toUpperCase()+' (cm)'; f.appendChild(lbl);
+    const inp=document.createElement('input'); inp.type='text'; inp.inputMode='decimal'; inp.autocomplete='off';
+    inp.value = vis[k]==null?'':vis[k];
+    inp.addEventListener('input',()=>{ vis[k]=parseNum(inp.value); checkStadi(refs,vis); renderCalc(); scheduleSave(); });
+    f.appendChild(inp);
+    const note=document.createElement('div'); note.className='note'; f.appendChild(note);
+    refs[k]={inp,note}; row.appendChild(f);
+  });
+  checkStadi(refs,vis);
+  return row;
+}
+function checkStadi(refs,vis){
+  refs.fm.inp.classList.remove('err'); refs.fm.note.classList.remove('err'); refs.fm.note.textContent='';
+  if(vis.fh!=null&&vis.fm!=null&&vis.fb!=null){
+    const ecart=Math.abs(vis.fm-(vis.fh+vis.fb)/2);
+    if(ecart>STADI_TOL_CM){
+      refs.fm.inp.classList.add('err'); refs.fm.note.classList.add('err');
+      refs.fm.note.textContent='écart à (Fh+Fb)/2 = '+ecart.toFixed(2)+' cm';
+    }
+  }
+}
+
+// Fabriques de champs
+function champNum(label,val,onChange){
+  const f=document.createElement('div'); f.className='field';
+  const l=document.createElement('label'); l.textContent=label; f.appendChild(l);
+  const i=document.createElement('input'); i.type='text'; i.inputMode='decimal'; i.autocomplete='off'; i.value=val==null?'':val;
+  i.addEventListener('input',()=>onChange(parseNum(i.value)));
+  f.appendChild(i); return f;
+}
+function champSelect(label,options,val,onChange){
+  const f=document.createElement('div'); f.className='field';
+  const l=document.createElement('label'); l.textContent=label; f.appendChild(l);
+  const s=document.createElement('select');
+  const o0=document.createElement('option'); o0.value=''; o0.textContent='—'; s.appendChild(o0);
+  options.forEach(opt=>{ const o=document.createElement('option'); o.value=opt; o.textContent=opt; s.appendChild(o); });
+  s.value=val||'';
+  s.addEventListener('change',()=>onChange(s.value));
+  f.appendChild(s); return f;
+}
+
+// ---- Calcul de synthèse (identique à CARHYCE) ----
+function computeSynthese(){
+  let sFmAval=0,sFmAmont=0,sDist=0,nValid=0;
+  const pts=[{x:0,y:0}]; let xCum=0,yCum=0;
+  state.troncons.forEach(tr=>{
+    if(tr.aval.fm!=null&&tr.amont.fm!=null&&tr.distance_m!=null){
+      sFmAval+=tr.aval.fm/100; sFmAmont+=tr.amont.fm/100; sDist+=tr.distance_m; nValid++;
+      xCum+=tr.distance_m; yCum+=(tr.aval.fm-tr.amont.fm)/100; pts.push({x:xCum,y:yCum});
+    }
+  });
+  const dH=sFmAval-sFmAmont;
+  const penteEstimee = sDist>0 ? 1000*dH/sDist : null;
+  let penteReg=null;
+  if(pts.length>=2){
+    const m=pts.length;
+    const sx=pts.reduce((s,p)=>s+p.x,0), sy=pts.reduce((s,p)=>s+p.y,0);
+    const sxx=pts.reduce((s,p)=>s+p.x*p.x,0), sxy=pts.reduce((s,p)=>s+p.x*p.y,0);
+    const den=m*sxx-sx*sx;
+    if(den!==0) penteReg=1000*(m*sxy-sx*sy)/den;
+  }
+  return {sFmAval,sFmAmont,dH,sDist,nValid,penteEstimee,penteReg,pts};
+}
+
+function renderCalc(){ renderStats(); renderProfil(); }
+
+function renderStats(){
+  const c=computeSynthese();
+  const el=document.getElementById('stats');
+  const m=v=>v==null?'—':v.toFixed(3);
+  const p=v=>v==null?'—':v.toFixed(2);
+  const cells=[
+    {l:'Σ Fm aval',v:m(c.sFmAval)+' m'},
+    {l:'Σ Fm amont',v:m(c.sFmAmont)+' m'},
+    {l:'ΔH',v:m(c.dH)+' m'},
+    {l:'Σ distances',v:m(c.sDist)+' m'},
+    {l:'Pente estimée',v:p(c.penteEstimee)+' ‰',hl:true},
+    {l:'Pente régression',v:p(c.penteReg)+' ‰',hl:true,sub:'sur dist./Δh cumulés'},
+  ];
+  el.innerHTML='';
+  cells.forEach(c2=>{
+    const d=document.createElement('div'); d.className='stat'+(c2.hl?' hl':'');
+    d.innerHTML=`<div class="l">${c2.l}</div><div class="v">${c2.v}</div>`+(c2.sub?`<div class="sub">${c2.sub}</div>`:'');
+    el.appendChild(d);
+  });
+}
+
+// Profil en long : altitude relative cumulée (descendante) en fonction de la distance cumulée
+function renderProfil(){
+  const svg=document.getElementById('profil');
+  const {pts}=computeSynthese();
+  svg.innerHTML='';
+  if(pts.length<2){
+    svg.innerHTML='<text x="350" y="100" text-anchor="middle" fill="#5e6b78" font-size="13" font-family="system-ui">Saisir au moins un tronçon complet</text>';
+    return;
+  }
+  const W=700,H=200,pad={l:52,r:18,t:16,b:30};
+  const iW=W-pad.l-pad.r, iH=H-pad.t-pad.b;
+  const xs=pts.map(p=>p.x), alts=pts.map(p=>-p.y);        // altitude = −Δh cumulée (descend vers l'amont… ici vers la droite)
+  const xMax=Math.max(...xs)||1;
+  let aMin=Math.min(...alts), aMax=Math.max(...alts);
+  if(aMin===aMax){ aMin-=0.1; aMax+=0.1; }
+  const aPad=(aMax-aMin)*0.12;
+  const y0=aMin-aPad, y1=aMax+aPad;
+  const X=x=>pad.l + x/(xMax||1)*iW;
+  const Y=a=>pad.t + (y1-a)/(y1-y0)*iH;
+  const ns='http://www.w3.org/2000/svg';
+  const mk=(t,at)=>{const e=document.createElementNS(ns,t);for(const k in at)e.setAttribute(k,at[k]);return e;};
+  // grille + axe Y
+  for(let i=0;i<=3;i++){
+    const a=y0+(y1-y0)*i/3;
+    svg.appendChild(mk('line',{x1:pad.l,x2:W-pad.r,y1:Y(a),y2:Y(a),stroke:'#232f3a','stroke-width':1}));
+    const t=mk('text',{x:pad.l-6,y:Y(a)+3,'text-anchor':'end',fill:'#5e6b78','font-size':10,'font-family':'ui-monospace,monospace'});
+    t.textContent=a.toFixed(2); svg.appendChild(t);
+  }
+  // axe X (distance)
+  const tx=mk('text',{x:(pad.l+W-pad.r)/2,y:H-6,'text-anchor':'middle',fill:'#5e6b78','font-size':10,'font-family':'system-ui'});
+  tx.textContent='distance cumulée (m) — 0 = aval'; svg.appendChild(tx);
+  // ligne d'eau
+  const d=pts.map((p,i)=>(i?'L':'M')+X(p.x).toFixed(1)+' '+Y(-p.y).toFixed(1)).join(' ');
+  svg.appendChild(mk('path',{d,fill:'none',stroke:'#d98e3c','stroke-width':2.5,'stroke-linejoin':'round','stroke-linecap':'round'}));
+  pts.forEach(p=>svg.appendChild(mk('circle',{cx:X(p.x),cy:Y(-p.y),r:3.2,fill:'#f0b878'})));
+}
+
+// ---- Export / import ----
+function buildExport(){
+  const c=computeSynthese();
+  return {
+    type:'profil_en_long', version:'v1', exporte_le:new Date().toISOString(),
+    meta:{...state.meta},
+    troncons: state.troncons.map((tr,i)=>({
+      n:i+1, facies:tr.facies||null, distance_m:tr.distance_m,
+      aval:{...tr.aval}, amont:{...tr.amont},
+      dh_m:(tr.aval.fm!=null&&tr.amont.fm!=null)?+((tr.aval.fm-tr.amont.fm)/100).toFixed(4):null
+    })),
+    synthese:{
+      sigma_fm_aval_m:+c.sFmAval.toFixed(4), sigma_fm_amont_m:+c.sFmAmont.toFixed(4),
+      delta_h_m:+c.dH.toFixed(4), sigma_distance_m:+c.sDist.toFixed(3),
+      pente_estimee_pourmille: c.penteEstimee==null?null:+c.penteEstimee.toFixed(3),
+      pente_regression_pourmille: c.penteReg==null?null:+c.penteReg.toFixed(3),
+      nb_troncons_valides:c.nValid
+    }
+  };
+}
+function refreshPreview(){ document.getElementById('preview').textContent=JSON.stringify(buildExport(),null,2); }
+
+function nomFichier(){
+  const s=(state.meta.station||'profil').replace(/[^A-Za-z0-9_-]+/g,'_');
+  const d=state.meta.date||new Date().toISOString().slice(0,10);
+  return `profil_long_${s}_${d}.json`;
+}
+function exporter(){
+  const blob=new Blob([JSON.stringify(buildExport(),null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob); const a=document.createElement('a');
+  a.href=url; a.download=nomFichier(); document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000); toast('JSON exporté.');
+}
+function importer(file){
+  const r=new FileReader();
+  r.onload=()=>{ try{
+    const o=JSON.parse(r.result);
+    if(!o||!Array.isArray(o.troncons)) throw new Error('format');
+    state={ meta:Object.assign(etatVierge().meta,o.meta||{}),
+      troncons:o.troncons.map(t=>({ facies:t.facies||'', distance_m:t.distance_m??null,
+        aval:{fh:t.aval?.fh??null,fm:t.aval?.fm??null,fb:t.aval?.fb??null},
+        amont:{fh:t.amont?.fh??null,fm:t.amont?.fm??null,fb:t.amont?.fb??null} })) };
+    if(!state.troncons.length) state.troncons.push(nouveauTroncon());
+    bindMeta(); renderAll(); scheduleSave(); toast('JSON importé.');
+  }catch(e){ toast('Fichier illisible.'); } };
+  r.readAsText(file);
+}
+
+function toast(msg){
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+// ---- Rendu global ----
+function renderAll(){ renderTroncons(); renderCalc(); refreshPreview(); }
+
+// ---- Init ----
+bindMeta(); renderAll(); setSave('saved');
+
+document.getElementById('add').onclick=()=>{ state.troncons.push(nouveauTroncon()); renderAll(); scheduleSave(); };
+document.getElementById('exp').onclick=exporter;
+document.getElementById('imp').onclick=()=>document.getElementById('file').click();
+document.getElementById('file').onchange=e=>{ if(e.target.files[0]) importer(e.target.files[0]); e.target.value=''; };
+document.getElementById('copy').onclick=async()=>{ try{ await navigator.clipboard.writeText(JSON.stringify(buildExport(),null,2)); toast('JSON copié.'); }catch(e){ toast('Copie impossible.'); } };
+document.getElementById('reset').onclick=()=>{ if(!confirm('Effacer toute la saisie en cours ?'))return; state=etatVierge(); bindMeta(); renderAll(); scheduleSave(); toast('Saisie réinitialisée.'); };
+</script>
+</body>
+</html>
