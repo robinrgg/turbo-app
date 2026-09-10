@@ -1,0 +1,16 @@
+{
+  "name": "Matériel Terrain – Aquascop",
+  "short_name": "Matériel Terrain",
+  "description": "Checklist du matériel à emporter sur le terrain selon le type d'intervention.",
+  "start_url": "/matos_app/",
+  "scope": "/matos_app/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0e1a12",
+  "theme_color": "#0e1a12",
+  "icons": [
+    { "src": "/matos_app/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/matos_app/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/matos_app/icon-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

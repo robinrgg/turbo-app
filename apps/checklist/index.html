@@ -1,0 +1,1351 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Checklist Terrain – Aquascop</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0e1a12">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Matériel Terrain">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0e1a12;
+  --surf: #152019;
+  --surf2: #1c2b21;
+  --border: #263d2c;
+  --border2: #1e3024;
+  --accent: #62b857;
+  --accent2: #45923b;
+  --accent-soft: rgba(98,184,87,0.13);
+  --text: #e2eed e;
+  --text: #e0ecdc;
+  --text-m: #7a9e73;
+  --text-d: #445e3e;
+  --checked: rgba(98,184,87,0.08);
+  --radius: 12px;
+  --radius-s: 8px;
+
+  /* tag colors */
+  --t-org: #3a5c8a; --tc-org: #82b8f0;
+  --t-naut: #5a3a8a; --tc-naut: #b882f0;
+  --t-eau: #3a6e8a; --tc-eau: #82cef0;
+  --t-sed: #8a623a; --tc-sed: #f0b882;
+  --t-inv: #6a3a8a; --tc-inv: #c082f0;
+  --t-mes: #3a8a6a; --tc-mes: #82f0c0;
+  --t-saisie: #8a7a3a; --tc-saisie: #f0e082;
+  --t-secu: #8a3a3a; --tc-secu: #f08282;
+  --t-hyg: #3a8a5a; --tc-hyg: #82f090;
+  --t-equip: #5a6a3a; --tc-equip: #c0f082;
+  --t-ech: #6a5a3a; --tc-ech: #f0c882;
+  --t-pois: #6a3a5a; --tc-pois: #f082c0;
+  --t-bio: #3a5a6a; --tc-bio: #82d0f0;
+  --t-out: #5a5a3a; --tc-out: #e0f082;
+  --t-phyto: #3a7a6a; --tc-phyto: #82f0d0;
+  --t-zoo: #4a6a3a; --tc-zoo: #a8f082;
+  --t-marc: #6a6a3a; --tc-marc: #f0f082;
+  --t-prel: #3a5a8a; --tc-prel: #82a8f0;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding-bottom: 90px;
+  font-size: 15px;
+}
+
+/* ====== HEADER ====== */
+.hdr {
+  position: sticky; top: 0; z-index: 200;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+.hdr-top {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 9px 14px 6px;
+}
+.hdr-title {
+  font-size: 16px; font-weight: 700; letter-spacing: -0.3px;
+  color: var(--accent); display: flex; align-items: center; gap: 7px;
+}
+.hdr-title span { font-size: 19px; }
+.hdr-title .logo { display: inline-flex; align-items: center; }
+.hdr-title .logo svg { display: block; }
+.hdr-prog {
+  font-family: 'DM Mono', monospace; font-size: 13px; color: var(--text-m);
+}
+.hdr-prog strong { color: var(--accent); font-size: 15px; }
+
+.pbar-wrap { height: 3px; background: var(--border); }
+.pbar-fill { height: 100%; background: linear-gradient(90deg, var(--accent2), var(--accent)); transition: width .3s; }
+
+/* ====== MAIN TABS ====== */
+.tabs-main {
+  display: flex; overflow-x: auto; gap: 0;
+  background: var(--surf); border-bottom: 1px solid var(--border2);
+  scrollbar-width: none;
+}
+.tabs-main::-webkit-scrollbar { display: none; }
+
+.tab-main {
+  flex-shrink: 0;
+  padding: 10px 15px;
+  font-size: 13px; font-weight: 600;
+  color: var(--text-m);
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: all .15s;
+  white-space: nowrap;
+  user-select: none;
+}
+.tab-main:hover { color: var(--text); background: var(--surf2); }
+.tab-main.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  background: var(--bg);
+}
+
+/* ====== SUB TABS ====== */
+.tabs-sub {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  padding: 8px 12px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border2);
+}
+.tab-sub {
+  font-size: 12px; font-weight: 600;
+  padding: 5px 12px; border-radius: 20px;
+  border: 1px solid var(--border);
+  color: var(--text-m); cursor: pointer;
+  transition: all .15s; user-select: none;
+  white-space: nowrap;
+}
+.tab-sub:hover { background: var(--surf2); color: var(--text); }
+.tab-sub.active {
+  background: var(--accent-soft);
+  border-color: var(--accent); color: var(--accent);
+}
+
+/* ====== CONTROLS ====== */
+.controls {
+  display: flex; gap: 8px; padding: 9px 12px; flex-wrap: wrap;
+  border-bottom: 1px solid var(--border2);
+  background: var(--surf);
+}
+.btn {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px; font-weight: 600;
+  padding: 7px 13px; border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--surf2);
+  color: var(--text);
+  cursor: pointer; transition: all .15s; letter-spacing: .2px;
+  box-shadow: 0 1px 0 rgba(0,0,0,.35);
+  display: inline-flex; align-items: center; gap: 5px;
+}
+.btn:active { transform: translateY(1px); box-shadow: none; }
+
+/* Couleurs propres à chaque bouton */
+.btn-reset { background: rgba(232,122,122,.14); border-color: #7a3636; color: #f0a8a8; }
+.btn-reset:hover { background: rgba(232,122,122,.26); color: #ffc4c4; }
+
+.btn-expand { background: rgba(122,170,240,.14); border-color: #3a5575; color: #a8cdf0; }
+.btn-expand:hover { background: rgba(122,170,240,.26); color: #c4ddff; }
+
+.btn-filter { background: rgba(232,200,122,.14); border-color: #75663a; color: #f0d8a8; }
+.btn-filter:hover { background: rgba(232,200,122,.26); color: #ffe9c4; }
+.btn-filter.active { background: var(--accent); border-color: var(--accent); color: var(--bg); box-shadow: 0 1px 6px rgba(98,184,87,.4); }
+
+/* ====== SECTIONS ====== */
+.sections-wrap { padding: 10px 10px 0; display: flex; flex-direction: column; gap: 8px; }
+
+.section {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.sec-hdr {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 14px;
+  background: var(--surf); cursor: pointer; user-select: none;
+  transition: background .15s;
+}
+.sec-hdr:hover { background: var(--surf2); }
+.sec-hdr:active { background: var(--border); }
+.sec-title { flex: 1; font-size: 13px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; }
+.sec-cnt { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text-m); white-space: nowrap; }
+.sec-cnt.done { color: var(--accent); }
+.chevron { font-size: 11px; color: var(--text-d); transition: transform .2s; }
+.section.collapsed .chevron { transform: rotate(-90deg); }
+
+.sec-minibar { height: 3px; background: var(--border); }
+.sec-minibar-fill { height: 100%; background: var(--accent2); transition: width .3s; }
+
+.items-list { display: block; }
+.section.collapsed .items-list { display: none; }
+
+/* ====== ITEMS ====== */
+.item {
+  display: flex; align-items: flex-start; gap: 11px;
+  padding: 11px 13px;
+  border-top: 1px solid var(--border2);
+  cursor: pointer; transition: background .12s;
+}
+.item:hover { background: var(--surf2); }
+.item:active { background: var(--border); }
+.item.checked { background: var(--checked); }
+
+.chk {
+  width: 21px; height: 21px; min-width: 21px;
+  border-radius: 6px; border: 2px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  margin-top: 1px; background: var(--surf); transition: all .15s;
+}
+.item.checked .chk { background: var(--accent); border-color: var(--accent); }
+.chk-tick { display: none; color: var(--bg); font-size: 12px; font-weight: 800; line-height: 1; }
+.item.checked .chk-tick { display: block; }
+
+.item-body { flex: 1; min-width: 0; }
+.item-name {
+  font-size: 14px; font-weight: 500; color: var(--text); line-height: 1.35;
+  transition: color .15s;
+}
+.item.checked .item-name { color: var(--text-d); text-decoration: line-through; text-decoration-color: var(--text-d); }
+.item-meta { margin-top: 3px; display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
+.tag {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px; font-weight: 500;
+  padding: 2px 7px; border-radius: 20px;
+  letter-spacing: .3px; text-transform: uppercase;
+}
+.item-note { font-size: 11px; color: var(--text-m); font-style: italic; line-height: 1.4; margin-top: 3px; }
+
+/* Tag classes */
+.tc-org { background: rgba(58,92,138,.22); color: var(--tc-org); }
+.tc-naut { background: rgba(90,58,138,.22); color: var(--tc-naut); }
+.tc-eau { background: rgba(58,110,138,.22); color: var(--tc-eau); }
+.tc-mes { background: rgba(58,138,106,.22); color: var(--tc-mes); }
+.tc-saisie { background: rgba(138,122,58,.22); color: var(--tc-saisie); }
+.tc-secu { background: rgba(138,58,58,.22); color: var(--tc-secu); }
+.tc-hyg { background: rgba(58,138,90,.22); color: var(--tc-hyg); }
+.tc-equip { background: rgba(90,106,58,.22); color: var(--tc-equip); }
+.tc-ech { background: rgba(106,90,58,.22); color: var(--tc-ech); }
+.tc-pois { background: rgba(106,58,90,.22); color: var(--tc-pois); }
+.tc-bio { background: rgba(58,90,106,.22); color: var(--tc-bio); }
+.tc-out { background: rgba(90,90,58,.22); color: var(--tc-out); }
+.tc-phyto { background: rgba(58,122,106,.22); color: var(--tc-phyto); }
+.tc-zoo { background: rgba(74,106,58,.22); color: var(--tc-zoo); }
+.tc-marc { background: rgba(106,106,58,.22); color: var(--tc-marc); }
+.tc-prel { background: rgba(58,90,138,.22); color: var(--tc-prel); }
+.tc-sed { background: rgba(138,98,58,.22); color: var(--tc-sed); }
+.tc-inv { background: rgba(106,58,138,.22); color: var(--tc-inv); }
+
+/* Filter missing */
+body.filter-missing .item.checked { display: none; }
+body.filter-missing .section.all-done { opacity: .4; pointer-events: none; }
+
+/* ====== FLOAT ====== */
+.float {
+  position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%);
+  background: var(--surf); border: 1px solid var(--border);
+  border-radius: 30px; padding: 9px 18px;
+  display: flex; gap: 14px; align-items: center;
+  box-shadow: 0 8px 32px rgba(0,0,0,.55);
+  z-index: 300; white-space: nowrap;
+}
+.fstat .num { font-family: 'DM Mono', monospace; font-size: 18px; font-weight: 500; line-height: 1; }
+.fstat .lbl { font-size: 10px; color: var(--text-d); text-transform: uppercase; letter-spacing: .5px; }
+.fstat.ok .num { color: var(--accent); }
+.fstat.miss .num { color: #e87a7a; }
+.fstat.pct .num { color: var(--text-m); }
+.fdiv { width: 1px; height: 26px; background: var(--border); }
+
+/* empty state */
+.empty { padding: 20px; text-align: center; font-size: 13px; color: var(--text-d); font-style: italic; }
+
+/* ====== MOBILE COMPACT ====== */
+@media (max-width: 560px) {
+  .hdr-top { padding: 7px 12px 5px; }
+  .hdr-title { font-size: 14px; gap: 5px; }
+  .hdr-title span { font-size: 16px; }
+  .hdr-prog { font-size: 12px; }
+  .hdr-prog strong { font-size: 14px; }
+
+  .tab-main { padding: 7px 11px; font-size: 12px; }
+  .tabs-sub { padding: 6px 10px; gap: 5px; }
+  .tab-sub { padding: 4px 10px; font-size: 11px; }
+  .controls { padding: 6px 10px; gap: 6px; }
+  .btn { padding: 5px 11px; font-size: 11px; }
+
+  .sections-wrap { padding: 8px 8px 0; }
+  .item { padding: 10px 12px; }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-top">
+    <div class="hdr-title"><span class="logo" aria-label="Matériel Terrain"><svg viewBox="0 0 512 512" width="22" height="22"><g transform="translate(248,262) rotate(-38)" fill="#62b857" stroke="#62b857" stroke-linejoin="round" stroke-linecap="round"><rect x="-21" y="-118" width="42" height="290" rx="20"/><rect x="-98" y="-150" width="196" height="80" rx="22"/></g></svg></span> Matériel Terrain</div>
+    <div class="hdr-prog"><strong id="pg-done">0</strong>/<span id="pg-total">0</span></div>
+  </div>
+  <div class="pbar-wrap"><div class="pbar-fill" id="global-bar" style="width:0%"></div></div>
+
+  <!-- Main tabs -->
+  <div class="tabs-main" id="tabs-main"></div>
+
+  <!-- Sub tabs (conditionally shown) -->
+  <div class="tabs-sub" id="tabs-sub" style="display:none"></div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <button class="btn btn-reset" onclick="resetCurrent()">↺ Réinitialiser</button>
+    <button class="btn btn-expand" id="btn-expand" onclick="toggleAll()">⊟ Tout fermer</button>
+    <button class="btn btn-filter" id="btn-filter" onclick="toggleFilter()">👁 Manquants seuls</button>
+  </div>
+</div>
+
+<div class="sections-wrap" id="sections-wrap"></div>
+
+<div class="float">
+  <div class="fstat ok"><div class="num" id="fl-ok">0</div><div class="lbl">Prêt</div></div>
+  <div class="fdiv"></div>
+  <div class="fstat miss"><div class="num" id="fl-miss">0</div><div class="lbl">Manquant</div></div>
+  <div class="fdiv"></div>
+  <div class="fstat pct"><div class="num" id="fl-pct">0%</div><div class="lbl">Complété</div></div>
+</div>
+
+<script>
+// ============================================================
+// DATA
+// ============================================================
+const CAT_CLASS = {
+  "Organisation": "tc-org",
+  "Nautisme": "tc-naut",
+  "Mesures Eau": "tc-eau",
+  "Mesures Terrain": "tc-mes",
+  "Mesures Biométrie": "tc-bio",
+  "Prél. Poissons": "tc-pois",
+  "Prél. Eau": "tc-prel",
+  "Prél. Phytoplancton": "tc-phyto",
+  "Prél. Zooplancton": "tc-zoo",
+  "Prél. Sédiments": "tc-sed",
+  "Prél. Invertébrés": "tc-inv",
+  "Prél. Marcophytes": "tc-marc",
+  "Saisie": "tc-saisie",
+  "Sécurité": "tc-secu",
+  "Hygiène": "tc-hyg",
+  "Equipement personnel": "tc-equip",
+  "Echantillons": "tc-ech",
+  "Outillage": "tc-out",
+};
+
+// Groupes de navigation principaux
+const GROUPS = [
+  { id: "peche", label: "⚡ Pêches électriques" },
+  { id: "eau",   label: "💧 Prélèvements eau" },
+  { id: "debits",   label: "🌊 Débits" },
+  { id: "reco",  label: "🐟 Reco frayère-habitat" },
+  { id: "charli",label: "⛵ Charli Alber" },
+  { id: "verne", label: '<svg viewBox="0 0 24 24" width="15" height="15" style="vertical-align:-2px;margin-right:5px" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h7v13H3z"/><path d="M5 6.5h3M5 9h3M5 11.5h3M5 14h3"/><path d="M10 11c2 0 2 1.5 4 1.5S16.5 11 18.5 11M10 14c2 0 2 1.5 4 1.5S16.5 14 18.5 14M10 17c2 0 2 1.5 4 1.5S16.5 17 18.5 17"/></svg>Verne Vanadal' },
+];
+
+// Modes (feuilles de liste)
+const MODES = {
+  // ---- PECHES ----
+  peche_2a_fixe: {
+    group: "peche", label: "Complète 2 anodes – Fixe",
+    sections: [
+      { title: "Biométrie", items: [
+        {c:"Mesures Biométrie", n:"Balance pêche"},
+        {c:"Mesures Biométrie", n:"Balance pêche de précision"},
+        {c:"Mesures Biométrie", n:"Epuissettes Biométrie", note:"× 5"},
+        {c:"Mesures Biométrie", n:"Grandes poubelles de tri"},
+        {c:"Mesures Biométrie", n:"Guides d'identifications"},
+        {c:"Mesures Biométrie", n:"Ichtyomètres", note:"× 5"},
+        {c:"Mesures Biométrie", n:"Parasol / barnum / toile solaire", note:"soleil / pluie"},
+        {c:"Mesures Biométrie", n:"Sceaux biométrie"},
+        {c:"Mesures Biométrie", n:"Table"},
+      ]},
+      { title: "Prél. Poissons", items: [
+        {c:"Prél. Poissons", n:"Barquette pêche"},
+        {c:"Prél. Poissons", n:"Bobines anode", note:"2–3"},
+        {c:"Prél. Poissons", n:"Caisse prélèvement biotes", note:"si biotes"},
+        {c:"Prél. Poissons", n:"Cathodes", note:"× 2"},
+        {c:"Prél. Poissons", n:"Cercle anode", note:"× 2"},
+        {c:"Prél. Poissons", n:"Epuisettes pêches", note:"4 mini"},
+        {c:"Prél. Poissons", n:"Groupe de pêche Fixe"},
+        {c:"Prél. Poissons", n:"Perche Anode", note:"× 2"},
+        {c:"Prél. Poissons", n:"Viviers"},
+        {c:"Prél. Poissons", n:"Y et câbles anode"},
+      ]},
+      { title: "Mesures", items: [
+        {c:"Mesures Eau", n:"Sonde Conductivité"},
+        {c:"Mesures Eau", n:"Sonde oxygène"},
+        {c:"Mesures Terrain", n:"Appareil Photo"},
+        {c:"Mesures Terrain", n:"Décamètre"},
+        {c:"Mesures Terrain", n:"GPS"},
+        {c:"Mesures Terrain", n:"Mire graduée"},
+        {c:"Mesures Terrain", n:"Sonde Penny (perche + multimètre)"},
+        {c:"Mesures Terrain", n:"Télémètre"},
+      ]},
+      { title: "Organisation & Saisie", items: [
+        {c:"Organisation", n:"Classeur étude"},
+        {c:"Saisie", n:"Fiches de prélèvements Poissons"},
+        {c:"Saisie", n:"Planchette de saisie"},
+        {c:"Saisie", n:"Tablette de saisie informatique"},
+        {c:"Saisie", n:"Trousse"},
+      ]},
+      { title: "Sécurité & Hygiène", items: [
+        {c:"Sécurité", n:"Extincteur"},
+        {c:"Sécurité", n:"Gants électriques"},
+        {c:"Sécurité", n:"Signalisation danger électrique"},
+        {c:"Sécurité", n:"Talkie-walkie"},
+        {c:"Sécurité", n:"Trousse de secours"},
+        {c:"Hygiène", n:"Pastilles de Désinfection"},
+        {c:"Hygiène", n:"Pulvérisateur Désinfection"},
+      ]},
+      { title: "Outillage & Echantillons", items: [
+        {c:"Outillage", n:"Entonnoire essence"},
+        {c:"Outillage", n:"Jerrican essence"},
+        {c:"Outillage", n:"Trousse à outils"},
+        {c:"Echantillons", n:"Congélateur", note:"si biotes"},
+      ]},
+    ]
+  },
+  peche_partiel_pieds_fixe: {
+    group: "peche", label: "Partiel à pieds – Fixe",
+    sections: [
+      { title: "Biométrie", items: [
+        {c:"Mesures Biométrie", n:"Balance pêche"},
+        {c:"Mesures Biométrie", n:"Balance pêche de précision"},
+        {c:"Mesures Biométrie", n:"Epuissettes Biométrie", note:"× 5"},
+        {c:"Mesures Biométrie", n:"Grandes poubelles de tri"},
+        {c:"Mesures Biométrie", n:"Guides d'identifications"},
+        {c:"Mesures Biométrie", n:"Ichtyomètres", note:"× 5"},
+        {c:"Mesures Biométrie", n:"Parasol / barnum / toile solaire", note:"soleil / pluie"},
+        {c:"Mesures Biométrie", n:"Sceaux biométrie"},
+        {c:"Mesures Biométrie", n:"Table"},
+      ]},
+      { title: "Prél. Poissons", items: [
+        {c:"Prél. Poissons", n:"Barquette pêche"},
+        {c:"Prél. Poissons", n:"Bobines anode", note:"2–3"},
+        {c:"Prél. Poissons", n:"Caisse prélèvement biotes", note:"si biotes"},
+        {c:"Prél. Poissons", n:"Cathodes", note:"× 2"},
+        {c:"Prél. Poissons", n:"Cercle anode", note:"× 1"},
+        {c:"Prél. Poissons", n:"Epuisettes pêches", note:"2 mini"},
+        {c:"Prél. Poissons", n:"Groupe de pêche Fixe"},
+        {c:"Prél. Poissons", n:"Perche Anode", note:"× 1"},
+        {c:"Prél. Poissons", n:"Viviers"},
+      ]},
+      { title: "Mesures", items: [
+        {c:"Mesures Eau", n:"Sonde Conductivité"},
+        {c:"Mesures Eau", n:"Sonde oxygène"},
+        {c:"Mesures Terrain", n:"Appareil Photo"},
+        {c:"Mesures Terrain", n:"Décamètre"},
+        {c:"Mesures Terrain", n:"GPS"},
+        {c:"Mesures Terrain", n:"Mire graduée"},
+        {c:"Mesures Terrain", n:"Sonde Penny (perche + multimètre)"},
+        {c:"Mesures Terrain", n:"Télémètre"},
+      ]},
+      { title: "Organisation & Saisie", items: [
+        {c:"Organisation", n:"Classeur étude"},
+        {c:"Saisie", n:"Fiches de prélèvements Poissons"},
+        {c:"Saisie", n:"Planchette de saisie"},
+        {c:"Saisie", n:"Tablette de saisie informatique"},
+        {c:"Saisie", n:"Trousse"},
+      ]},
+      { title: "Sécurité & Hygiène", items: [
+        {c:"Sécurité", n:"Extincteur"},
+        {c:"Sécurité", n:"Gants électriques"},
+        {c:"Sécurité", n:"Signalisation danger électrique"},
+        {c:"Sécurité", n:"Talkie-walkie"},
+        {c:"Sécurité", n:"Trousse de secours"},
+        {c:"Hygiène", n:"Pastilles de Désinfection"},
+        {c:"Hygiène", n:"Pulvérisateur Désinfection"},
+      ]},
+      { title: "Outillage & Echantillons", items: [
+        {c:"Outillage", n:"Entonnoire essence"},
+        {c:"Outillage", n:"Jerrican essence"},
+        {c:"Outillage", n:"Trousse à outils"},
+        {c:"Echantillons", n:"Congélateur", note:"si biotes"},
+      ]},
+    ]
+  },
+  peche_partiel_embarquee: {
+    group: "peche", label: "Partiel Embarquée",
+    sections: [
+      { title: "Nautisme", items: [
+        {c:"Nautisme", n:"Ancre"},
+        {c:"Nautisme", n:"Armement Bateau"},
+        {c:"Nautisme", n:"Bateau sur remorque"},
+        {c:"Nautisme", n:"Bidon étanche"},
+        {c:"Nautisme", n:"Code (Ancre)"},
+        {c:"Nautisme", n:"Moteur thermique Bateau"},
+        {c:"Nautisme", n:"Nourisse Bateau"},
+      ]},
+      { title: "Biométrie", items: [
+        {c:"Mesures Biométrie", n:"Balance pêche"},
+        {c:"Mesures Biométrie", n:"Balance pêche de précision"},
+        {c:"Mesures Biométrie", n:"Epuissettes Biométrie", note:"× 5"},
+        {c:"Mesures Biométrie", n:"Grandes poubelles de tri"},
+        {c:"Mesures Biométrie", n:"Guides d'identifications"},
+        {c:"Mesures Biométrie", n:"Ichtyomètres", note:"× 5"},
+        {c:"Mesures Biométrie", n:"Parasol / barnum / toile solaire", note:"soleil / pluie"},
+        {c:"Mesures Biométrie", n:"Sceaux biométrie"},
+        {c:"Mesures Biométrie", n:"Table"},
+      ]},
+      { title: "Prél. Poissons", items: [
+        {c:"Prél. Poissons", n:"Bobines anode", note:"1–2"},
+        {c:"Prél. Poissons", n:"Caisse prélèvement biotes", note:"si biotes"},
+        {c:"Prél. Poissons", n:"Cathodes", note:"× 2"},
+        {c:"Prél. Poissons", n:"Cercle anode", note:"× 1"},
+        {c:"Prél. Poissons", n:"Epuisettes pêches", note:"2 mini"},
+        {c:"Prél. Poissons", n:"Groupe de pêche Fixe"},
+        {c:"Prél. Poissons", n:"Perche Anode", note:"× 1"},
+        {c:"Prél. Poissons", n:"Viviers"},
+      ]},
+      { title: "Mesures", items: [
+        {c:"Mesures Eau", n:"Sonde Conductivité"},
+        {c:"Mesures Eau", n:"Sonde oxygène"},
+        {c:"Mesures Terrain", n:"Appareil Photo"},
+        {c:"Mesures Terrain", n:"Décamètre"},
+        {c:"Mesures Terrain", n:"Echosondeur"},
+        {c:"Mesures Terrain", n:"GPS"},
+        {c:"Mesures Terrain", n:"Mire graduée"},
+        {c:"Mesures Terrain", n:"Profondimètre (Sondeur à main)"},
+        {c:"Mesures Terrain", n:"Télémètre"},
+      ]},
+      { title: "Organisation & Saisie", items: [
+        {c:"Organisation", n:"Classeur étude"},
+        {c:"Saisie", n:"Fiches de prélèvements Poissons"},
+        {c:"Saisie", n:"Planchette de saisie"},
+        {c:"Saisie", n:"Tablette de saisie informatique"},
+        {c:"Saisie", n:"Trousse"},
+      ]},
+      { title: "Sécurité & Hygiène", items: [
+        {c:"Sécurité", n:"Extincteur"},
+        {c:"Sécurité", n:"Gants électriques"},
+        {c:"Sécurité", n:"Gilet de sauvetage"},
+        {c:"Sécurité", n:"Talkie-walkie"},
+        {c:"Sécurité", n:"Trousse de secours"},
+        {c:"Sécurité", n:"VHF"},
+        {c:"Hygiène", n:"Pastilles de Désinfection"},
+        {c:"Hygiène", n:"Pulvérisateur Désinfection"},
+      ]},
+      { title: "Outillage & Echantillons", items: [
+        {c:"Outillage", n:"Corde (traction)"},
+        {c:"Outillage", n:"Entonnoire essence"},
+        {c:"Outillage", n:"Jerrican essence"},
+        {c:"Outillage", n:"Trousse à outils"},
+        {c:"Echantillons", n:"Congélateur", note:"si biotes"},
+      ]},
+    ]
+  },
+  peche_1a_portatif: {
+    group: "peche", label: "Complète 1 anode – Portatif",
+    sections: [
+      { title: "Biométrie", items: [
+        {c:"Mesures Biométrie", n:"Balance pêche"},
+        {c:"Mesures Biométrie", n:"Balance pêche de précision"},
+        {c:"Mesures Biométrie", n:"Epuissettes Biométrie", note:"× 5"},
+        {c:"Mesures Biométrie", n:"Grandes poubelles de tri"},
+        {c:"Mesures Biométrie", n:"Guides d'identifications"},
+        {c:"Mesures Biométrie", n:"Ichtyomètres", note:"× 5"},
+        {c:"Mesures Biométrie", n:"Parasol / barnum / toile solaire"},
+        {c:"Mesures Biométrie", n:"Sceaux biométrie"},
+        {c:"Mesures Biométrie", n:"Table"},
+      ]},
+      { title: "Prél. Poissons", items: [
+        {c:"Prél. Poissons", n:"Barquette pêche"},
+        {c:"Prél. Poissons", n:"Cathodes", note:"× 2"},
+        {c:"Prél. Poissons", n:"Cercle anode", note:"× 1"},
+        {c:"Prél. Poissons", n:"Epuisettes pêches", note:"2 mini"},
+        {c:"Prél. Poissons", n:"Groupe de pêche Portatif"},
+        {c:"Prél. Poissons", n:"Perche Anode", note:"× 1"},
+        {c:"Prél. Poissons", n:"Viviers"},
+      ]},
+      { title: "Mesures", items: [
+        {c:"Mesures Eau", n:"Sonde Conductivité"},
+        {c:"Mesures Eau", n:"Sonde plan d'eau"},
+        {c:"Mesures Terrain", n:"Mire graduée"},
+        {c:"Mesures Terrain", n:"Sonde Penny (perche + multimètre)"},
+        {c:"Mesures Terrain", n:"Télémètre"},
+      ]},
+      { title: "Saisie", items: [
+        {c:"Saisie", n:"Fiches de prélèvements Poissons"},
+      ]},
+      { title: "Sécurité", items: [
+        {c:"Sécurité", n:"Extincteur"},
+        {c:"Sécurité", n:"Gants électriques"},
+        {c:"Sécurité", n:"Signalisation danger électrique"},
+        {c:"Sécurité", n:"Talkie-walkie"},
+      ]},
+      { title: "Outillage & Echantillons", items: [
+        {c:"Outillage", n:"Entonnoire essence"},
+        {c:"Outillage", n:"Jerrican essence"},
+        {c:"Outillage", n:"Trousse à outils"},
+        {c:"Echantillons", n:"Congélateur", note:"si biotes"},
+      ]},
+    ]
+  },
+  peche_1a_fixe: {
+    group: "peche", label: "Complète 1 anode – Fixe",
+    sections: [
+      { title: "Biométrie", items: [
+        {c:"Mesures Biométrie", n:"Balance pêche"},
+        {c:"Mesures Biométrie", n:"Balance pêche de précision"},
+        {c:"Mesures Biométrie", n:"Epuissettes Biométrie", note:"× 5"},
+        {c:"Mesures Biométrie", n:"Grandes poubelles de tri"},
+        {c:"Mesures Biométrie", n:"Guides d'identifications"},
+        {c:"Mesures Biométrie", n:"Ichtyomètres", note:"× 5"},
+        {c:"Mesures Biométrie", n:"Parasol / barnum / toile solaire"},
+        {c:"Mesures Biométrie", n:"Sceaux biométrie"},
+        {c:"Mesures Biométrie", n:"Table"},
+      ]},
+      { title: "Prél. Poissons", items: [
+        {c:"Prél. Poissons", n:"Barquette pêche"},
+        {c:"Prél. Poissons", n:"Bobines anode", note:"1–2"},
+        {c:"Prél. Poissons", n:"Cathodes", note:"× 2"},
+        {c:"Prél. Poissons", n:"Cercle anode", note:"× 1"},
+        {c:"Prél. Poissons", n:"Epuisettes pêches", note:"2 mini"},
+        {c:"Prél. Poissons", n:"Groupe de pêche Fixe"},
+        {c:"Prél. Poissons", n:"Perche Anode", note:"× 1"},
+        {c:"Prél. Poissons", n:"Viviers"},
+      ]},
+      { title: "Mesures", items: [
+        {c:"Mesures Eau", n:"Sonde Conductivité"},
+        {c:"Mesures Eau", n:"Sonde plan d'eau"},
+        {c:"Mesures Terrain", n:"Mire graduée"},
+        {c:"Mesures Terrain", n:"Sonde Penny (perche + multimètre)"},
+        {c:"Mesures Terrain", n:"Télémètre"},
+      ]},
+      { title: "Saisie", items: [
+        {c:"Saisie", n:"Fiches de prélèvements Poissons"},
+      ]},
+      { title: "Sécurité", items: [
+        {c:"Sécurité", n:"Extincteur"},
+        {c:"Sécurité", n:"Gants électriques"},
+        {c:"Sécurité", n:"Signalisation danger électrique"},
+        {c:"Sécurité", n:"Talkie-walkie"},
+      ]},
+      { title: "Outillage & Echantillons", items: [
+        {c:"Outillage", n:"Entonnoire essence"},
+        {c:"Outillage", n:"Jerrican essence"},
+        {c:"Outillage", n:"Trousse à outils"},
+        {c:"Echantillons", n:"Congélateur", note:"si biotes"},
+      ]},
+    ]
+  },
+  peche_sauvetage: {
+    group: "peche", label: "Sauvetage – Fixe et/ou Portatif",
+    sections: [
+      { title: "Biométrie", items: [
+        {c:"Mesures Biométrie", n:"Balance pêche"},
+        {c:"Mesures Biométrie", n:"Balance pêche de précision"},
+        {c:"Mesures Biométrie", n:"Epuissettes Biométrie", note:"× 5"},
+        {c:"Mesures Biométrie", n:"Grandes poubelles de tri"},
+        {c:"Mesures Biométrie", n:"Guides d'identifications"},
+        {c:"Mesures Biométrie", n:"Ichtyomètres", note:"× 5"},
+        {c:"Mesures Biométrie", n:"Parasol / barnum / toile solaire", note:"soleil / pluie"},
+        {c:"Mesures Biométrie", n:"Sceaux biométrie"},
+        {c:"Mesures Biométrie", n:"Table"},
+      ]},
+      { title: "Prél. Poissons", items: [
+        {c:"Prél. Poissons", n:"Barquette pêche"},
+        {c:"Prél. Poissons", n:"Bobines anode", note:"2–3"},
+        {c:"Prél. Poissons", n:"Caisse prélèvement biotes", note:"si biotes"},
+        {c:"Prél. Poissons", n:"Cathodes", note:"× 2"},
+        {c:"Prél. Poissons", n:"Cercle anode", note:"2–3"},
+        {c:"Prél. Poissons", n:"Epuisettes pêches", note:"4 mini"},
+        {c:"Prél. Poissons", n:"Filet Barrage", note:"2–3"},
+        {c:"Prél. Poissons", n:"Groupe de pêche Fixe"},
+        {c:"Prél. Poissons", n:"Groupe de pêche Portatif"},
+        {c:"Prél. Poissons", n:"Perche Anode", note:"2–3"},
+        {c:"Prél. Poissons", n:"Viviers"},
+        {c:"Prél. Poissons", n:"Y et câbles anode"},
+      ]},
+      { title: "Mesures", items: [
+        {c:"Mesures Eau", n:"Sonde Conductivité"},
+        {c:"Mesures Eau", n:"Sonde oxygène"},
+        {c:"Mesures Eau", n:"Sonde plan d'eau"},
+        {c:"Mesures Terrain", n:"Appareil Photo"},
+        {c:"Mesures Terrain", n:"Décamètre"},
+        {c:"Mesures Terrain", n:"GPS"},
+        {c:"Mesures Terrain", n:"Mire graduée"},
+        {c:"Mesures Terrain", n:"Profondimètre (Sondeur à main)"},
+        {c:"Mesures Terrain", n:"Sonde Penny (perche + multimètre)"},
+        {c:"Mesures Terrain", n:"Télémètre"},
+      ]},
+      { title: "Organisation & Saisie", items: [
+        {c:"Organisation", n:"Classeur étude"},
+        {c:"Saisie", n:"Fiches de prélèvements Poissons"},
+        {c:"Saisie", n:"Planchette de saisie"},
+        {c:"Saisie", n:"Tablette de saisie informatique"},
+        {c:"Saisie", n:"Trousse"},
+      ]},
+      { title: "Sécurité", items: [
+        {c:"Sécurité", n:"Extincteur"},
+        {c:"Sécurité", n:"Gants électriques"},
+        {c:"Sécurité", n:"Signalisation danger électrique"},
+        {c:"Sécurité", n:"Talkie-walkie"},
+        {c:"Sécurité", n:"Trousse de secours"},
+      ]},
+      { title: "Outillage", items: [
+        {c:"Outillage", n:"Entonnoire essence"},
+        {c:"Outillage", n:"Jerrican essence"},
+        {c:"Outillage", n:"Trousse à outils"},
+      ]},
+    ]
+  },
+  peche_partiel_pieds_port: {
+    group: "peche", label: "Partiel à pieds – Portatif",
+    sections: [
+      { title: "Biométrie", items: [
+        {c:"Mesures Biométrie", n:"Balance pêche"},
+        {c:"Mesures Biométrie", n:"Balance pêche de précision"},
+        {c:"Mesures Biométrie", n:"Epuissettes Biométrie", note:"× 5"},
+        {c:"Mesures Biométrie", n:"Grandes poubelles de tri"},
+        {c:"Mesures Biométrie", n:"Guides d'identifications"},
+        {c:"Mesures Biométrie", n:"Ichtyomètres", note:"× 5"},
+        {c:"Mesures Biométrie", n:"Parasol / barnum / toile solaire", note:"soleil / pluie"},
+        {c:"Mesures Biométrie", n:"Sceaux biométrie"},
+        {c:"Mesures Biométrie", n:"Table"},
+      ]},
+      { title: "Prél. Poissons", items: [
+        {c:"Prél. Poissons", n:"Barquette pêche"},
+        {c:"Prél. Poissons", n:"Caisse prélèvement biotes", note:"si biotes"},
+        {c:"Prél. Poissons", n:"Cathodes", note:"× 2"},
+        {c:"Prél. Poissons", n:"Cercle anode", note:"× 1"},
+        {c:"Prél. Poissons", n:"Epuisettes pêches", note:"2 mini"},
+        {c:"Prél. Poissons", n:"Groupe de pêche Portatif"},
+        {c:"Prél. Poissons", n:"Perche Anode", note:"× 1"},
+        {c:"Prél. Poissons", n:"Viviers"},
+      ]},
+      { title: "Mesures", items: [
+        {c:"Mesures Eau", n:"Sonde Conductivité"},
+        {c:"Mesures Eau", n:"Sonde oxygène"},
+        {c:"Mesures Eau", n:"Sonde plan d'eau"},
+        {c:"Mesures Terrain", n:"Appareil Photo"},
+        {c:"Mesures Terrain", n:"Décamètre"},
+        {c:"Mesures Terrain", n:"GPS"},
+        {c:"Mesures Terrain", n:"Mire graduée"},
+        {c:"Mesures Terrain", n:"Profondimètre (Sondeur à main)"},
+        {c:"Mesures Terrain", n:"Sonde Penny (perche + multimètre)"},
+        {c:"Mesures Terrain", n:"Télémètre"},
+      ]},
+      { title: "Organisation & Saisie", items: [
+        {c:"Organisation", n:"Classeur étude"},
+        {c:"Saisie", n:"Fiches de prélèvements Poissons"},
+        {c:"Saisie", n:"Planchette de saisie"},
+        {c:"Saisie", n:"Tablette de saisie informatique"},
+        {c:"Saisie", n:"Trousse"},
+      ]},
+      { title: "Sécurité & Hygiène", items: [
+        {c:"Sécurité", n:"Extincteur"},
+        {c:"Sécurité", n:"Gants électriques"},
+        {c:"Sécurité", n:"Signalisation danger électrique"},
+        {c:"Sécurité", n:"Talkie-walkie"},
+        {c:"Sécurité", n:"Trousse de secours"},
+        {c:"Hygiène", n:"Pastilles de Désinfection"},
+        {c:"Hygiène", n:"Pulvérisateur Désinfection"},
+      ]},
+      { title: "Outillage & Echantillons", items: [
+        {c:"Outillage", n:"Entonnoire essence"},
+        {c:"Outillage", n:"Jerrican essence"},
+        {c:"Outillage", n:"Trousse à outils"},
+        {c:"Echantillons", n:"Congélateur", note:"si biotes"},
+      ]},
+    ]
+  },
+
+  // ---- EAU ----
+  eau_riviere: {
+    group: "eau", label: "Eau rivière",
+    sections: [
+      { title: "Prél. Eau", items: [
+        {c:"Prél. Eau", n:"Corde (Sceaux)"},
+        {c:"Prél. Eau", n:"Cuve inox / PEHD de mélange"},
+        {c:"Prél. Eau", n:"Perche de prélèvement d'eau"},
+        {c:"Prél. Eau", n:"Sceau inox / PEHD de prélèvement"},
+        {c:"Prél. Eau", n:"Sceau plastique pour mesure PC"},
+      ]},
+      { title: "Echantillons", items: [
+        {c:"Echantillons", n:"Blocs eutectique (N × glacières)"},
+        {c:"Echantillons", n:"Bons de transport (1/glacière)"},
+        {c:"Echantillons", n:"Congélateur"},
+        {c:"Echantillons", n:"Etiquettes flacons"},
+        {c:"Echantillons", n:"Flacons Prélèvements Eau"},
+        {c:"Echantillons", n:"Glacière prélèvements"},
+        {c:"Echantillons", n:"Scotch"},
+      ]},
+      { title: "Mesures", items: [
+        {c:"Mesures Eau", n:"Etalonner sonde"},
+        {c:"Mesures Eau", n:"Matériel d'étalonnage des sondes"},
+        {c:"Mesures Eau", n:"Sonde Conductivité"},
+        {c:"Mesures Eau", n:"Sonde oxygène"},
+        {c:"Mesures Eau", n:"Sonde pH"},
+        {c:"Mesures Eau", n:"Sonde plan d'eau"},
+        {c:"Mesures Terrain", n:"Appareil Photo"},
+        {c:"Mesures Terrain", n:"GPS"},
+      ]},
+      { title: "Organisation & Saisie", items: [
+        {c:"Organisation", n:"Classeur étude"},
+        {c:"Organisation", n:"Fiches stations"},
+        {c:"Organisation", n:"Protocoles"},
+        {c:"Saisie", n:"Fiches de prélèvements d'eau rivière"},
+        {c:"Saisie", n:"Planchette de saisie"},
+        {c:"Saisie", n:"Tablette de saisie informatique"},
+        {c:"Saisie", n:"Trousse"},
+      ]},
+      { title: "Equipement personnel", items: [
+        {c:"Equipement personnel", n:"Bottes"},
+        {c:"Equipement personnel", n:"Casquette"},
+        {c:"Equipement personnel", n:"Crème solaire"},
+        {c:"Equipement personnel", n:"Cuissardes"},
+        {c:"Equipement personnel", n:"Gants pour le froid"},
+        {c:"Equipement personnel", n:"Gourde"},
+        {c:"Equipement personnel", n:"Lunettes de soleil"},
+        {c:"Equipement personnel", n:"Pantalon de pluie"},
+        {c:"Equipement personnel", n:"Rechange"},
+        {c:"Equipement personnel", n:"Téléphone de terrain"},
+        {c:"Equipement personnel", n:"Veste de pluie"},
+        {c:"Equipement personnel", n:"Waders"},
+      ]},
+      { title: "Sécurité & Hygiène", items: [
+        {c:"Sécurité", n:"Gilet de sauvetage"},
+        {c:"Sécurité", n:"Trousse de secours"},
+        {c:"Hygiène", n:"Pastilles de Désinfection"},
+        {c:"Hygiène", n:"Pulvérisateur Désinfection"},
+      ]},
+      { title: "Outillage", items: [
+        {c:"Outillage", n:"Machette"},
+        {c:"Outillage", n:"Piles"},
+      ]},
+    ]
+  },
+  eau_plan_eau: {
+    group: "eau", label: "Eau plan d'eau",
+    sections: [
+      { title: "Nautisme", items: [
+        {c:"Nautisme", n:"Batterie moteur électrique"},
+        {c:"Nautisme", n:"Moteur électrique Bateau"},
+      ]},
+      { title: "Prél. Eau", items: [
+        {c:"Prél. Eau", n:"Bouteille à prélèvement"},
+        {c:"Prél. Eau", n:"Corde (Sceaux)"},
+        {c:"Prél. Eau", n:"Cuve inox / PEHD de mélange"},
+        {c:"Prél. Eau", n:"Perche de prélèvement d'eau"},
+        {c:"Prél. Eau", n:"Sceau inox / PEHD de prélèvement"},
+        {c:"Prél. Eau", n:"Sceau plastique pour mesure PC"},
+        {c:"Prél. Eau", n:"Tuyau intégrateur"},
+      ]},
+      { title: "Prél. Plancton", items: [
+        {c:"Prél. Phytoplancton", n:"Filet Phytoplancton"},
+        {c:"Prél. Zooplancton", n:"Filet Zooplancton (30 µm)"},
+      ]},
+      { title: "Echantillons", items: [
+        {c:"Echantillons", n:"Blocs eutectique (N × glacières)"},
+        {c:"Echantillons", n:"Bons de transport (1/glacière)"},
+        {c:"Echantillons", n:"Congélateur"},
+        {c:"Echantillons", n:"Etiquettes flacons"},
+        {c:"Echantillons", n:"Flacons Prélèvements Eau"},
+        {c:"Echantillons", n:"Glacière prélèvements"},
+        {c:"Echantillons", n:"Scotch"},
+      ]},
+      { title: "Mesures", items: [
+        {c:"Mesures Eau", n:"Etalonner sonde"},
+        {c:"Mesures Eau", n:"Matériel d'étalonnage des sondes"},
+        {c:"Mesures Eau", n:"Secchi"},
+        {c:"Mesures Eau", n:"Sonde Conductivité"},
+        {c:"Mesures Eau", n:"Sonde oxygène"},
+        {c:"Mesures Eau", n:"Sonde pH"},
+        {c:"Mesures Eau", n:"Sonde plan d'eau"},
+        {c:"Mesures Terrain", n:"Appareil Photo"},
+        {c:"Mesures Terrain", n:"GPS"},
+      ]},
+      { title: "Organisation & Saisie", items: [
+        {c:"Organisation", n:"Classeur étude"},
+        {c:"Organisation", n:"Fiches stations"},
+        {c:"Organisation", n:"Protocoles"},
+        {c:"Saisie", n:"Fiches de prélèvements d'eau plan d'eau"},
+        {c:"Saisie", n:"Fiches terrain"},
+        {c:"Saisie", n:"Planchette de saisie"},
+        {c:"Saisie", n:"Tablette de saisie informatique"},
+        {c:"Saisie", n:"Trousse"},
+      ]},
+      { title: "Equipement personnel", items: [
+        {c:"Equipement personnel", n:"Bottes"},
+        {c:"Equipement personnel", n:"Casquette"},
+        {c:"Equipement personnel", n:"Crème solaire"},
+        {c:"Equipement personnel", n:"Gourde"},
+        {c:"Equipement personnel", n:"Lunettes de soleil"},
+        {c:"Equipement personnel", n:"Rechange"},
+        {c:"Equipement personnel", n:"Téléphone de terrain"},
+      ]},
+      { title: "Sécurité & Hygiène", items: [
+        {c:"Sécurité", n:"Extincteur"},
+        {c:"Sécurité", n:"Gilet de sauvetage"},
+        {c:"Sécurité", n:"Trousse de secours"},
+        {c:"Hygiène", n:"Pastilles de Désinfection"},
+        {c:"Hygiène", n:"Pulvérisateur Désinfection"},
+      ]},
+      { title: "Outillage", items: [
+        {c:"Outillage", n:"Machette"},
+        {c:"Outillage", n:"Piles"},
+      ]},
+    ]
+  },
+
+  // ---- DEBITS ----
+  debits: {
+    group: "debits", label: "Débits",
+    sections: [
+      { title: "Mesures", items: [
+        {c:"Mesures Eau", n:"Courantomètre"},
+        {c:"Mesures Terrain", n:"Appareil Photo"},
+        {c:"Mesures Terrain", n:"Décamètre"},
+        {c:"Mesures Terrain", n:"GPS"},
+        {c:"Mesures Terrain", n:"Mire graduée"},
+        {c:"Mesures Terrain", n:"Télémètre"},
+      ]},
+      { title: "Organisation & Saisie", items: [
+        {c:"Organisation", n:"Classeur étude"},
+        {c:"Organisation", n:"Fiches stations"},
+        {c:"Organisation", n:"Protocoles"},
+        {c:"Saisie", n:"Fiches de prélèvements Débits"},
+        {c:"Saisie", n:"Fiches terrain"},
+        {c:"Saisie", n:"Planchette de saisie"},
+        {c:"Saisie", n:"Tablette de saisie informatique"},
+        {c:"Saisie", n:"Trousse"},
+      ]},
+      { title: "Equipement personnel", items: [
+        {c:"Equipement personnel", n:"Casquette"},
+        {c:"Equipement personnel", n:"Crème solaire"},
+        {c:"Equipement personnel", n:"Lunettes de soleil"},
+        {c:"Equipement personnel", n:"Téléphone de terrain"},
+        {c:"Equipement personnel", n:"Waders"},
+      ]},
+      { title: "Sécurité & Hygiène", items: [
+        {c:"Sécurité", n:"Trousse de secours"},
+        {c:"Hygiène", n:"Pastilles de Désinfection"},
+        {c:"Hygiène", n:"Pulvérisateur Désinfection"},
+      ]},
+      { title: "Outillage", items: [
+        {c:"Outillage", n:"Piles"},
+        {c:"Outillage", n:"Sardines"},
+      ]},
+    ]
+  },
+
+  // ---- RECO FRAYERE ----
+  reco_frayere: {
+    group: "reco", label: "Reco frayère-habitat",
+    sections: [
+      { title: "Mesures", items: [
+        {c:"Mesures Terrain", n:"Appareil Photo"},
+        {c:"Mesures Terrain", n:"GPS"},
+        {c:"Mesures Terrain", n:"Jumelles"},
+        {c:"Mesures Terrain", n:"Mire graduée"},
+        {c:"Mesures Terrain", n:"Télémètre"},
+        {c:"Prél. Marcophytes", n:"Bathyscope"},
+      ]},
+      { title: "Organisation & Saisie", items: [
+        {c:"Organisation", n:"Classeur étude"},
+        {c:"Saisie", n:"Fiches de prélèvements Morpho"},
+        {c:"Saisie", n:"Tablette de saisie informatique"},
+      ]},
+      { title: "Equipement personnel", items: [
+        {c:"Equipement personnel", n:"Bottes"},
+        {c:"Equipement personnel", n:"Casquette"},
+        {c:"Equipement personnel", n:"Crème solaire"},
+        {c:"Equipement personnel", n:"Cuissardes"},
+        {c:"Equipement personnel", n:"Gants pour le froid"},
+        {c:"Equipement personnel", n:"Gourde"},
+        {c:"Equipement personnel", n:"Lunettes de soleil"},
+        {c:"Equipement personnel", n:"Pantalon de pluie"},
+        {c:"Equipement personnel", n:"Rechange"},
+        {c:"Equipement personnel", n:"Téléphone de terrain"},
+        {c:"Equipement personnel", n:"Veste de pluie"},
+        {c:"Equipement personnel", n:"Waders"},
+      ]},
+    ]
+  },
+
+  // ---- CHARLI ALBER ----
+  charli_alber: {
+    group: "charli", label: "Charli Alber",
+    sections: [
+      { title: "Nautisme", items: [
+        {c:"Nautisme", n:"Armement Bateau"},
+        {c:"Nautisme", n:"Bateau sur remorque"},
+        {c:"Nautisme", n:"Bidon étanche"},
+        {c:"Nautisme", n:"Moteur thermique Bateau"},
+        {c:"Nautisme", n:"Nourisse Bateau"},
+      ]},
+      { title: "Mesures", items: [
+        {c:"Mesures Eau", n:"Secchi"},
+        {c:"Mesures Terrain", n:"Appareil Photo"},
+        {c:"Mesures Terrain", n:"Caméra subaquatique sur perche"},
+        {c:"Mesures Terrain", n:"Echosondeur"},
+        {c:"Mesures Terrain", n:"GNSS"},
+        {c:"Mesures Terrain", n:"GPS"},
+        {c:"Mesures Terrain", n:"Mire graduée"},
+        {c:"Mesures Terrain", n:"Profondimètre (Sondeur à main)"},
+        {c:"Mesures Terrain", n:"Télémètre"},
+      ]},
+      { title: "Prél. Marcophytes", items: [
+        {c:"Prél. Marcophytes", n:"Bathyscope"},
+        {c:"Prél. Marcophytes", n:"Rateau"},
+      ]},
+      { title: "Organisation & Saisie", items: [
+        {c:"Organisation", n:"Classeur étude"},
+        {c:"Organisation", n:"Fiches stations"},
+        {c:"Organisation", n:"Protocoles"},
+        {c:"Saisie", n:"Fiches terrain"},
+        {c:"Saisie", n:"Parapluie"},
+        {c:"Saisie", n:"Planchette de saisie"},
+        {c:"Saisie", n:"Tablette de saisie informatique"},
+        {c:"Saisie", n:"Trousse"},
+      ]},
+      { title: "Equipement personnel", items: [
+        {c:"Equipement personnel", n:"Bottes"},
+        {c:"Equipement personnel", n:"Casquette"},
+        {c:"Equipement personnel", n:"Crème solaire"},
+        {c:"Equipement personnel", n:"Gants pour le froid"},
+        {c:"Equipement personnel", n:"Gourde"},
+        {c:"Equipement personnel", n:"Lunettes de soleil"},
+        {c:"Equipement personnel", n:"Pantalon de pluie"},
+        {c:"Equipement personnel", n:"Rechange"},
+        {c:"Equipement personnel", n:"Téléphone de terrain"},
+        {c:"Equipement personnel", n:"Veste de pluie"},
+      ]},
+      { title: "Sécurité", items: [
+        {c:"Sécurité", n:"Gilet de sauvetage"},
+        {c:"Sécurité", n:"Talkie-walkie"},
+        {c:"Sécurité", n:"Trousse de secours"},
+        {c:"Sécurité", n:"VHF"},
+      ]},
+      { title: "Outillage", items: [
+        {c:"Outillage", n:"Corde (traction)"},
+        {c:"Outillage", n:"Trousse à outils"},
+      ]},
+    ]
+  },
+
+  // ---- VERNE VANADAL ----
+  verne_vanadal: {
+    group: "verne", label: "Verne Vanadal",
+    sections: [
+      { title: "À chaque intervention", items: [
+        {c:"Organisation", n:"Classeur étude"},
+        {c:"Organisation", n:"Fiches stations", note:"dans classeur"},
+        {c:"Organisation", n:"Protocoles"},
+        {c:"Nautisme", n:"Bateau pneumatique sur remorque"},
+        {c:"Nautisme", n:"Moteur électrique Bateau"},
+        {c:"Nautisme", n:"Batterie moteur électrique"},
+        {c:"Nautisme", n:"Moteur thermique Bateau", note:"Pêches Vernes ou vent fort"},
+        {c:"Nautisme", n:"Nourisse Bateau", note:"Pêches Vernes ou vent fort"},
+        {c:"Nautisme", n:"Armement Bateau"},
+        {c:"Nautisme", n:"Bidon étanche"},
+        {c:"Nautisme", n:"Ancre"},
+        {c:"Nautisme", n:"Cordes (Ancre)"},
+        {c:"Mesures Terrain", n:"Appareil Photo"},
+        {c:"Mesures Terrain", n:"GPS"},
+        {c:"Outillage", n:"Piles"},
+        {c:"Saisie", n:"Planchette de saisie"},
+        {c:"Saisie", n:"Tablette de saisie informatique", note:"avec logiciel Kor installé"},
+        {c:"Saisie", n:"Trousse"},
+        {c:"Sécurité", n:"Extincteur"},
+        {c:"Sécurité", n:"Gilet de sauvetage", note:"1/personne"},
+        {c:"Sécurité", n:"Trousse de secours"},
+        {c:"Hygiène", n:"Pastilles de Désinfection"},
+        {c:"Hygiène", n:"Pulvérisateur Désinfection"},
+        {c:"Equipement personnel", n:"Bottes"},
+        {c:"Equipement personnel", n:"Casquette"},
+        {c:"Equipement personnel", n:"Crème solaire"},
+        {c:"Equipement personnel", n:"Gourde"},
+        {c:"Equipement personnel", n:"Lunettes de soleil"},
+        {c:"Equipement personnel", n:"Rechange"},
+        {c:"Equipement personnel", n:"Téléphone de terrain"},
+      ]},
+      { title: "Tous prélèvements", items: [
+        {c:"Mesures Eau", n:"Sonde plan d'eau avec son touret", note:"SOND-517 en priorité"},
+        {c:"Mesures Eau", n:"Sonde Conductivité", note:"pour mesure robinet prise"},
+        {c:"Mesures Eau", n:"Sonde oxygène", note:"pour mesure robinet prise"},
+        {c:"Mesures Eau", n:"Sonde pH", note:"pour mesure robinet prise"},
+        {c:"Mesures Eau", n:"Matériel d'étalonnage des sondes"},
+        {c:"Mesures Eau", n:"Étalonner sonde"},
+        {c:"Prél. Eau", n:"Cuve inox / PEHD de mélange"},
+        {c:"Prél. Eau", n:"Sceau plastique pour mesure PC"},
+        {c:"Prél. Eau", n:"Bécher"},
+        {c:"Mesures Eau", n:"Secchi"},
+        {c:"Mesures Terrain", n:"Échosondeur (+batterie)", note:"Pour Pmax"},
+        {c:"Mesures Terrain", n:"Profondimètre (Sondeur à main)", note:"Pour Pmax"},
+        {c:"Echantillons", n:"Étiquettes flacons"},
+        {c:"Echantillons", n:"Glacière prélèvements"},
+        {c:"Echantillons", n:"Bons de transport (1/glacière)"},
+        {c:"Echantillons", n:"Blocs eutectique (N × glacières)"},
+        {c:"Echantillons", n:"Congélateur"},
+        {c:"Echantillons", n:"Scotch"},
+        {c:"Saisie", n:"Fiches Profil PC"},
+      ]},
+      { title: "Phytoplancton / Zooplancton", items: [
+        {c:"Prél. Eau", n:"Tuyau intégrateur"},
+        {c:"Echantillons", n:"Flacons Phytoplancton (500 mL)", note:"1/PE = 2, remplir à 400 mL — Si efflorescence : Verne +2, Vanadal +1 → Total = 5"},
+        {c:"Echantillons", n:"Micrositine (verre brun 300 mL)", note:"1/PE = 2 — Si efflorescence : Verne +2, Vanadal +1 → Total = 5"},
+        {c:"Prél. Zooplancton", n:"Filet Zooplancton (30 μm)"},
+        {c:"Echantillons", n:"Flacons Zooplancton (500 mL)", note:"1/PE = 2"},
+        {c:"Echantillons", n:"Pilulier (120 mL)", note:"1/PE = 2"},
+        {c:"Echantillons", n:"Lugol", note:"Phyto: 0,5 mL/100 mL (=10 mL) — Zoo: 0,75 mL/100 mL (=7,5 mL) — Total max = 17,5 mL"},
+        {c:"Saisie", n:"Fiches de prélèvements phytoplancton"},
+        {c:"Saisie", n:"Fiches de prélèvements zooplancton"},
+        {c:"Echantillons", n:"Étiquettes flacons"},
+      ]},
+      { title: "Eau", items: [
+        {c:"Prél. Eau", n:"Bouteille à prélèvement + corde"},
+        {c:"Prél. Eau", n:"Tuyau intégrateur"},
+        {c:"Echantillons", n:"Flacons Prélèvements Eau", note:"9 / station (2×3 stations)"},
+        {c:"Saisie", n:"Fiches de prélèvements plan d'eau"},
+        {c:"Echantillons", n:"Étiquettes flacons"},
+      ]},
+      { title: "Sédiments / IOBL", items: [
+        {c:"Nautisme", n:"Ancre"},
+        {c:"Nautisme", n:"Cordes (Ancre)"},
+        {c:"Prél. Sédiments", n:"Benne sédiments"},
+        {c:"Prél. Sédiments", n:"Cordes (benne)"},
+        {c:"Prél. Sédiments", n:"Gamate (sédiments)", note:"× 2 mini"},
+        {c:"Prél. Sédiments", n:"Truelle (sédiments)"},
+        {c:"Saisie", n:"Fiches de prélèvements IOBL", note:"2 stations / plan d'eau"},
+        {c:"Saisie", n:"Fiches de prélèvements Sédiments"},
+        {c:"Prél. Invertébrés", n:"Bassines + seaux"},
+        {c:"Prél. Invertébrés", n:"Entonnoire Inv."},
+        {c:"Prél. Invertébrés", n:"Éthanol", note:"1 fixation sur terrain puis changement de l'éthanol le lendemain au bureau"},
+        {c:"Prél. Invertébrés", n:"Filet conique"},
+        {c:"Prél. Invertébrés", n:"Flacons Prélèvements Inv."},
+        {c:"Prél. Invertébrés", n:"Pissettes"},
+        {c:"Prél. Invertébrés", n:"Tamis IOBL 250 μm"},
+        {c:"Echantillons", n:"Flacons Prélèvements Sédiments", note:"Dans lavabo labo"},
+        {c:"Echantillons", n:"Flacons Prélèvements IOBL"},
+      ]},
+    ]
+  },
+};
+
+// ============================================================
+// STATE
+// ============================================================
+let currentGroup = "peche";
+let currentMode = "peche_2a_fixe";
+let filterMissing = false;
+let allOpen = true;
+let checks = {}; // { modeId: { itemKey: bool } }
+
+function storageKey() { return `cl_checks_v2`; }
+function saveChecks() { localStorage.setItem(storageKey(), JSON.stringify(checks)); }
+function loadChecks() {
+  const raw = localStorage.getItem(storageKey());
+  checks = raw ? JSON.parse(raw) : {};
+}
+
+function modeChecks() {
+  if (!checks[currentMode]) checks[currentMode] = {};
+  return checks[currentMode];
+}
+
+function itemKey(secTitle, itemName) {
+  return secTitle + "|" + itemName;
+}
+
+// ============================================================
+// BUILD UI
+// ============================================================
+function buildMainTabs() {
+  const el = document.getElementById("tabs-main");
+  el.innerHTML = "";
+  GROUPS.forEach(g => {
+    const t = document.createElement("div");
+    t.className = "tab-main" + (g.id === currentGroup ? " active" : "");
+    t.innerHTML = g.label;
+    t.onclick = () => selectGroup(g.id);
+    el.appendChild(t);
+  });
+}
+
+function buildSubTabs() {
+  const modes = Object.entries(MODES).filter(([,m]) => m.group === currentGroup);
+  const subEl = document.getElementById("tabs-sub");
+
+  if (modes.length <= 1) {
+    subEl.style.display = "none";
+    return;
+  }
+  subEl.style.display = "flex";
+  subEl.innerHTML = "";
+  modes.forEach(([id, m]) => {
+    const t = document.createElement("div");
+    t.className = "tab-sub" + (id === currentMode ? " active" : "");
+    t.textContent = m.label;
+    t.onclick = () => selectMode(id);
+    subEl.appendChild(t);
+  });
+}
+
+function buildSections() {
+  const mode = MODES[currentMode];
+  const wrap = document.getElementById("sections-wrap");
+  wrap.innerHTML = "";
+  const mc = modeChecks();
+
+  mode.sections.forEach(sec => {
+    const secEl = document.createElement("div");
+    secEl.className = "section";
+    secEl.id = "sec-" + sec.title.replace(/\s+/g, "_");
+
+    const done = sec.items.filter(it => mc[itemKey(sec.title, it.n)]).length;
+    const total = sec.items.length;
+
+    secEl.innerHTML = `
+      <div class="sec-hdr" onclick="toggleSec(this.parentElement)">
+        <div class="sec-title">${sec.title}</div>
+        <div class="sec-cnt ${done===total?'done':''}" id="cnt-${sec.title.replace(/\s+/g,'_')}">${done}/${total}</div>
+        <div class="chevron">▼</div>
+      </div>
+      <div class="sec-minibar"><div class="sec-minibar-fill" style="width:${total?done/total*100:0}%" id="bar-${sec.title.replace(/\s+/g,'_')}"></div></div>
+      <div class="items-list" id="list-${sec.title.replace(/\s+/g,'_')}"></div>
+    `;
+
+    const list = secEl.querySelector(".items-list");
+    sec.items.forEach(it => {
+      const key = itemKey(sec.title, it.n);
+      const checked = !!mc[key];
+      const div = document.createElement("div");
+      div.className = "item" + (checked ? " checked" : "");
+      div.onclick = () => toggleItem(sec.title, it.n, div, sec.title.replace(/\s+/g,'_'));
+      div.innerHTML = `
+        <div class="chk"><span class="chk-tick">✓</span></div>
+        <div class="item-body">
+          <div class="item-name">${it.n}</div>
+          <div class="item-meta"><span class="tag ${CAT_CLASS[it.c]||'tc-org'}">${it.c}</span></div>
+          ${it.note ? `<div class="item-note">${it.note}</div>` : ""}
+        </div>
+      `;
+      list.appendChild(div);
+    });
+
+    if (done === total) secEl.classList.add("all-done");
+    wrap.appendChild(secEl);
+  });
+
+  updateStats();
+}
+
+function toggleItem(secTitle, itemName, el, secId) {
+  const key = itemKey(secTitle, itemName);
+  const mc = modeChecks();
+  mc[key] = !mc[key];
+  saveChecks();
+  el.classList.toggle("checked", mc[key]);
+  updateSecStats(secTitle, secId);
+  updateStats();
+}
+
+function updateSecStats(secTitle, secId) {
+  const mode = MODES[currentMode];
+  const sec = mode.sections.find(s => s.title === secTitle);
+  if (!sec) return;
+  const mc = modeChecks();
+  const done = sec.items.filter(it => mc[itemKey(sec.title, it.n)]).length;
+  const total = sec.items.length;
+  const cntEl = document.getElementById("cnt-" + secId);
+  const barEl = document.getElementById("bar-" + secId);
+  const secEl = document.getElementById("sec-" + secId);
+  if (cntEl) { cntEl.textContent = `${done}/${total}`; cntEl.className = "sec-cnt" + (done===total?" done":""); }
+  if (barEl) barEl.style.width = total ? (done/total*100)+"%" : "0%";
+  if (secEl) secEl.classList.toggle("all-done", done===total);
+}
+
+function updateStats() {
+  const mode = MODES[currentMode];
+  const mc = modeChecks();
+  let done = 0, total = 0;
+  mode.sections.forEach(sec => {
+    sec.items.forEach(it => {
+      total++;
+      if (mc[itemKey(sec.title, it.n)]) done++;
+    });
+  });
+  document.getElementById("pg-done").textContent = done;
+  document.getElementById("pg-total").textContent = total;
+  document.getElementById("global-bar").style.width = total ? (done/total*100)+"%" : "0%";
+  document.getElementById("fl-ok").textContent = done;
+  document.getElementById("fl-miss").textContent = total - done;
+  document.getElementById("fl-pct").textContent = total ? Math.round(done/total*100)+"%" : "0%";
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function selectGroup(gid) {
+  currentGroup = gid;
+  // Pick first mode in group
+  const first = Object.entries(MODES).find(([,m]) => m.group === gid);
+  if (first) currentMode = first[0];
+  buildMainTabs();
+  buildSubTabs();
+  buildSections();
+}
+
+function selectMode(mid) {
+  currentMode = mid;
+  buildSubTabs();
+  buildSections();
+}
+
+// ============================================================
+// CONTROLS
+// ============================================================
+function toggleSec(el) { el.classList.toggle("collapsed"); }
+
+function toggleAll() {
+  allOpen = !allOpen;
+  document.querySelectorAll(".section").forEach(s => {
+    s.classList.toggle("collapsed", !allOpen);
+  });
+  document.getElementById("btn-expand").textContent = allOpen ? "⊟ Tout fermer" : "⊞ Tout ouvrir";
+}
+
+function toggleFilter() {
+  filterMissing = !filterMissing;
+  document.body.classList.toggle("filter-missing", filterMissing);
+  const btn = document.getElementById("btn-filter");
+  btn.classList.toggle("active", filterMissing);
+  btn.textContent = filterMissing ? "👁 Tout afficher" : "👁 Manquants seuls";
+}
+
+function resetCurrent() {
+  if (!confirm(`Réinitialiser la liste "${MODES[currentMode].label}" ?`)) return;
+  checks[currentMode] = {};
+  saveChecks();
+  buildSections();
+}
+
+// ============================================================
+// INIT
+// ============================================================
+loadChecks();
+buildMainTabs();
+buildSubTabs();
+buildSections();
+</script>
+</body>
+</html>

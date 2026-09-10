@@ -1,0 +1,1783 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bilan Hydro-Météo — Aquascop</title>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@300;400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <!-- Icône écran d'accueil -->
+  <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIiB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiI+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMDBiNGQ4Ii8+CiAgICAgIDxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iIzAwNzdiNiIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICA8L2RlZnM+CiAgPHJlY3Qgd2lkdGg9IjUxMiIgaGVpZ2h0PSI1MTIiIHJ4PSI5NiIgcnk9Ijk2IiBmaWxsPSJ1cmwoI2cpIi8+CiAgPHRleHQgeD0iMjU2IiB5PSIzNDAiIGZvbnQtc2l6ZT0iMjgwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQXBwbGUgQ29sb3IgRW1vamksU2Vnb2UgVUkgRW1vamksTm90byBDb2xvciBFbW9qaSxzYW5zLXNlcmlmIj7wn5KnPC90ZXh0Pgo8L3N2Zz4=">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="HydroMétéo">
+  <meta name="theme-color" content="#00b4d8">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+  <style>
+    :root {
+      --bg:#0d1b2a; --surface:#142032; --surface2:#1c2d40; --surface3:#243650;
+      --border:#2c4060; --accent:#00b4d8; --accent-dim:rgba(0,180,216,.14);
+      --text:#d9e8f4; --muted:#7a9ec0; --green:#2ecc71; --red:#e74c3c;
+      --orange:#f39c12; --chart:#4fc3f7;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:15px}
+
+    /* ── HEADER ── */
+    header{background:var(--surface);border-bottom:2px solid var(--accent);padding:0 28px;height:62px;
+      display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:1000}
+    .brand{display:flex;align-items:center;gap:12px}
+    .brand-icon{width:38px;height:38px;background:linear-gradient(135deg,var(--accent),#0077b6);
+      border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px}
+    .brand-name{font-family:'Barlow Condensed',sans-serif;font-size:1.15rem;font-weight:700;letter-spacing:1px;text-transform:uppercase}
+    .brand-name span{color:var(--accent)}
+    .brand-sub{font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--muted)}
+    .hdate{font-family:'JetBrains Mono',monospace;font-size:.74rem;color:var(--muted)}
+
+    .main{max-width:1100px;margin:0 auto;padding:28px 20px 60px}
+
+    /* ── CARD ── */
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px 26px;margin-bottom:20px}
+    .card-lbl{font-family:'Barlow Condensed',sans-serif;font-size:.65rem;font-weight:600;
+      letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:16px}
+
+    /* ── TABS ── */
+    .tabs{display:flex;gap:4px;background:var(--surface2);border-radius:8px;padding:4px;width:fit-content;margin-bottom:16px}
+    .tab{padding:7px 20px;border-radius:6px;font-size:.85rem;font-weight:500;cursor:pointer;color:var(--muted);
+      border:none;background:none;font-family:'Barlow',sans-serif;transition:all .15s}
+    .tab.active{background:var(--accent);color:#fff;font-weight:600}
+    .tab:hover:not(.active){color:var(--text);background:var(--surface3)}
+
+    /* ── SEARCH ── */
+    .search-row{display:flex;gap:10px}
+    .search-input{flex:1;padding:11px 16px;background:var(--surface2);border:1px solid var(--border);
+      border-radius:8px;color:var(--text);font-family:'Barlow',sans-serif;font-size:.95rem;outline:none;
+      transition:border-color .2s,box-shadow .2s}
+    .search-input::placeholder{color:var(--muted)}
+    .search-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,180,216,.15)}
+    .btn{padding:11px 22px;border:none;border-radius:8px;font-family:'Barlow Condensed',sans-serif;
+      font-size:.95rem;font-weight:600;letter-spacing:.5px;cursor:pointer;transition:all .15s}
+    .btn-primary{background:var(--accent);color:#fff}
+    .btn-primary:hover{background:#02c5ed}
+    .btn-primary:disabled{background:var(--surface3);color:var(--muted);cursor:not-allowed}
+    .hint{font-size:.78rem;color:var(--muted);margin-top:10px}
+    .hint code{font-family:'JetBrains Mono',monospace;background:var(--surface3);padding:1px 6px;border-radius:4px;color:var(--accent)}
+
+    /* ── COMMUNE PICKER ── */
+    #commune-picker{display:none;margin-top:14px;padding:14px;background:var(--surface2);
+      border:1px solid var(--orange);border-radius:8px}
+    .picker-lbl{font-size:.78rem;color:var(--orange);margin-bottom:10px;font-weight:600}
+    .commune-btn{display:block;width:100%;text-align:left;padding:9px 14px;margin-bottom:5px;
+      background:var(--surface3);border:1px solid var(--border);border-radius:6px;color:var(--text);
+      font-family:'Barlow',sans-serif;font-size:.88rem;cursor:pointer;transition:border-color .15s}
+    .commune-btn:hover{border-color:var(--accent)}
+    .commune-btn strong{color:var(--accent)}
+
+    /* ── SPLIT PANEL: LIST + MAP ── */
+    #split-panel{display:none;margin-top:16px;gap:14px;align-items:stretch}
+    #split-panel.show{display:flex}
+
+    #station-list-wrap{
+      flex:0 0 42%;
+      display:flex;flex-direction:column;
+    }
+    .results-hdr{font-size:.78rem;color:var(--muted);margin-bottom:8px;padding-bottom:8px;
+      border-bottom:1px solid var(--border)}
+
+    #station-list{
+      flex:1;
+      overflow-y:auto;
+      max-height:420px;
+      display:flex;flex-direction:column;gap:5px;
+      /* Custom scrollbar */
+      scrollbar-width:thin;
+      scrollbar-color:var(--surface3) transparent;
+    }
+    #station-list::-webkit-scrollbar{width:5px}
+    #station-list::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:4px}
+
+    .sres{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:10px 13px;
+      background:var(--surface2);border:1px solid var(--border);
+      border-radius:8px;cursor:default;
+      transition:border-color .15s,background .15s;
+      flex-shrink:0;
+    }
+    .sres.hover{border-color:var(--accent);background:var(--surface3)}
+    .sres-name{font-weight:600;color:var(--text);font-size:.88rem;line-height:1.3}
+    .sres-meta{font-family:'JetBrains Mono',monospace;font-size:.69rem;color:var(--muted);margin-top:3px}
+    .btn-add{padding:5px 12px;cursor:pointer;background:var(--accent-dim);border:1px solid var(--accent);
+      color:var(--accent);border-radius:6px;font-size:.8rem;font-weight:600;font-family:'Barlow',sans-serif;
+      white-space:nowrap;flex-shrink:0;margin-left:10px;transition:all .15s}
+    .btn-add:hover{background:var(--accent);color:#fff}
+    .btn-add.added{background:rgba(46,204,113,.12);border-color:var(--green);color:var(--green);cursor:default}
+
+    /* ── SUBSTITUTION BLOCK ── */
+    .sub-block{
+      margin-top:16px;padding:14px 16px;
+      background:rgba(243,156,18,.07);
+      border:1px solid rgba(243,156,18,.35);
+      border-radius:8px;
+      display:flex;align-items:center;justify-content:space-between;gap:14px;
+    }
+    .sub-left{flex:1}
+    .sub-title{font-size:.75rem;color:var(--orange);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+    .sub-name{font-weight:600;font-size:.9rem;color:var(--text)}
+    .sub-meta{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--muted);margin-top:3px}
+    .sub-debit{font-family:'JetBrains Mono',monospace;font-size:.82rem;color:var(--green);margin-top:4px;font-weight:600}
+    .btn-sub{
+      padding:8px 16px;border:none;border-radius:7px;cursor:pointer;
+      background:var(--orange);color:#fff;
+      font-family:'Barlow Condensed',sans-serif;font-size:.88rem;font-weight:700;letter-spacing:.5px;
+      white-space:nowrap;flex-shrink:0;transition:opacity .15s;
+    }
+    .btn-sub:hover{opacity:.85}
+    .sub-searching{font-size:.78rem;color:var(--muted);font-style:italic;margin-top:12px}
+    .sub-none{font-size:.78rem;color:var(--muted);margin-top:12px}
+
+
+    #map-wrap{flex:1;border-radius:10px;overflow:hidden;border:1px solid var(--border);min-height:420px;position:relative;z-index:0;isolation:isolate}
+    #map{width:100%;height:100%;min-height:420px}
+
+    /* Leaflet overrides for light Voyager tiles */
+    .leaflet-container{background:#e8edf2}
+    .leaflet-popup-content-wrapper{
+      background:var(--surface);border:1px solid var(--border);color:var(--text);
+      border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.45);
+    }
+    .leaflet-popup-tip{background:var(--surface)}
+    .leaflet-popup-content{margin:10px 14px;font-family:'Barlow',sans-serif;font-size:.85rem}
+    .leaflet-popup-close-button{color:var(--muted)!important;font-size:18px!important;top:6px!important;right:8px!important}
+    .leaflet-popup-close-button:hover{color:var(--text)!important}
+    .leaflet-control-zoom a{background:var(--surface)!important;color:var(--text)!important;border-color:var(--border)!important}
+    .leaflet-control-zoom a:hover{background:var(--surface2)!important}
+    .leaflet-attribution-flag{display:none!important}
+    .leaflet-control-attribution{background:rgba(255,255,255,.7)!important;color:#666!important;font-size:.6rem!important}
+    .leaflet-control-attribution a{color:#555!important}
+
+    /* Custom marker dots */
+    .marker-dot{
+      width:16px;height:16px;border-radius:50%;
+      border:2px solid #fff;
+      box-shadow:0 0 6px rgba(0,0,0,.5);
+      transition:transform .15s;
+    }
+    .marker-dot.blue{background:var(--accent)}
+    .marker-dot.green{background:var(--green)}
+    .marker-dot.pulse{
+      width:22px;height:22px;margin:-3px 0 0 -3px;
+      border:2px solid #fff;
+      box-shadow:0 0 0 4px rgba(0,180,216,.35), 0 0 12px rgba(0,180,216,.4);
+      transform:scale(1.15);
+    }
+    .marker-dot.pulse.green{
+      box-shadow:0 0 0 4px rgba(46,204,113,.35), 0 0 12px rgba(46,204,113,.4);
+    }
+
+    /* Popup add button */
+    .popup-name{font-weight:700;font-size:.9rem;margin-bottom:4px}
+    .popup-meta{font-size:.76rem;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-bottom:8px}
+    .popup-add{
+      width:100%;padding:6px 0;background:var(--accent);color:#fff;
+      border:none;border-radius:5px;font-family:'Barlow Condensed',sans-serif;
+      font-size:.85rem;font-weight:700;letter-spacing:.5px;cursor:pointer;transition:opacity .15s
+    }
+    .popup-add:hover{opacity:.85}
+    .popup-add.added{background:rgba(46,204,113,.2);color:var(--green);border:1px solid var(--green);cursor:default}
+
+    /* ── CART ── */
+    .cart-empty{text-align:center;padding:18px;color:var(--muted);font-size:.85rem}
+    .cart-item{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;
+      background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-bottom:6px}
+    .ci-name{font-size:.88rem;font-weight:600}
+    .ci-code{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--muted)}
+    .btn-rm{background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.2rem;
+      padding:2px 6px;border-radius:4px;transition:color .15s}
+    .btn-rm:hover{color:var(--red)}
+    .btn-gen{width:100%;padding:14px;margin-top:12px;
+      background:linear-gradient(135deg,var(--accent),#0077b6);color:#fff;border:none;
+      border-radius:8px;font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:700;
+      letter-spacing:1px;cursor:pointer;transition:all .2s}
+    .btn-gen:hover{opacity:.92;transform:translateY(-1px)}
+    .btn-gen:disabled{background:var(--surface3);color:var(--muted);cursor:not-allowed;transform:none}
+
+    /* ── LOADER / ERRORS ── */
+    #loader{display:none;text-align:center;padding:48px}
+    #loader.show{display:block}
+    .ring{width:44px;height:44px;border:3px solid var(--surface3);border-top-color:var(--accent);
+      border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 14px}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .loader-msg{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--muted)}
+    .err-box{background:rgba(231,76,60,.1);border:1px solid rgba(231,76,60,.4);border-radius:8px;
+      padding:12px 16px;color:#e87a6b;font-size:.85rem}
+    .warn-box{background:rgba(243,156,18,.1);border:1px solid rgba(243,156,18,.4);border-radius:8px;
+      padding:10px 14px;color:#f6c05b;font-size:.8rem;margin-bottom:12px}
+
+    /* ── BILAN ── */
+    #bilan{display:none}
+    #bilan.show{display:block}
+    .station-sep{border:none;border-top:1px solid var(--border);margin:10px 0 20px}
+    .bilan-name{font-family:'Barlow Condensed',sans-serif;font-size:1.3rem;font-weight:700;margin-bottom:6px}
+    .bilan-meta{display:flex;gap:20px;flex-wrap:wrap}
+    .mkv{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--muted)}
+    .mkv span{color:var(--accent)}
+    .sec-lbl{font-family:'Barlow Condensed',sans-serif;font-size:.65rem;font-weight:600;
+      letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin:22px 0 14px}
+    .stats-row{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+    .stat-box{flex:1;min-width:120px;background:var(--surface2);border:1px solid var(--border);
+      border-radius:8px;padding:14px 16px;text-align:center}
+    .stat-val{font-family:'JetBrains Mono',monospace;font-size:1.3rem;font-weight:600;line-height:1.2}
+    .stat-u{font-size:.68rem;opacity:.65}
+    .stat-lbl{font-size:.72rem;color:var(--muted);margin-top:5px}
+    .sc .stat-val{color:var(--chart)} .sm .stat-val{color:var(--green)} .sq .stat-val{color:var(--red)} .sy .stat-val{color:#f1c40f}
+    .chart-wrap{position:relative;height:280px}
+    .meteo-table{width:100%;border-collapse:collapse;font-size:.87rem}
+    .meteo-table th{background:var(--surface2);color:var(--muted);font-weight:600;font-size:.73rem;
+      letter-spacing:.5px;text-transform:uppercase;padding:10px 14px;text-align:center;border-bottom:1px solid var(--border)}
+    .meteo-table td{padding:10px 14px;text-align:center;border-bottom:1px solid var(--surface2);
+      font-family:'JetBrains Mono',monospace;font-size:.81rem}
+    .meteo-table .dc{text-align:left;font-family:'Barlow',sans-serif;font-size:.85rem;font-weight:500}
+    .meteo-table tr:last-child td{border-bottom:none}
+    .meteo-table tr.td-today td{background:rgba(0,180,216,.06)}
+    .ph{color:var(--accent)} .pz{color:var(--muted)}
+
+    /* ── TOP NAV ── */
+    .top-nav{display:flex;gap:6px;padding:0 28px;background:var(--surface);border-bottom:1px solid var(--border)}
+    .top-nav-btn{padding:12px 22px;border:none;background:none;color:var(--muted);
+      font-family:'Barlow Condensed',sans-serif;font-size:.85rem;font-weight:600;
+      letter-spacing:1px;text-transform:uppercase;cursor:pointer;
+      border-bottom:3px solid transparent;margin-bottom:-1px;transition:all .15s}
+    .top-nav-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+    .top-nav-btn:hover:not(.active){color:var(--text)}
+
+    /* ── SECTIONS ── */
+    .page-section{display:none}
+    .page-section.active{display:block}
+
+    /* ── CARTE NATIONALE ── */
+    #map-national{width:100%;height:calc(100vh - 130px);min-height:500px;border-radius:0}
+    .map-national-wrap{position:relative}
+    .cn-legend{
+      position:absolute;bottom:28px;left:16px;z-index:500;
+      background:rgba(20,32,50,.92);border:1px solid var(--border);
+      border-radius:10px;padding:14px 18px;backdrop-filter:blur(4px);
+    }
+    .cn-legend-title{font-family:'Barlow Condensed',sans-serif;font-size:.65rem;
+      font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+    .cn-leg-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:.78rem;color:var(--text)}
+    .cn-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;border:2px solid rgba(255,255,255,.3)}
+    .cn-loader{
+      position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+      z-index:600;text-align:center;
+      background:rgba(13,27,42,.85);border:1px solid var(--border);
+      border-radius:12px;padding:28px 36px;backdrop-filter:blur(4px);
+    }
+    .cn-loader-msg{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--muted);margin-top:10px}
+    .cn-stats{
+      position:absolute;top:14px;left:16px;z-index:500;
+      background:rgba(20,32,50,.92);border:1px solid var(--border);
+      border-radius:8px;padding:8px 14px;backdrop-filter:blur(4px);
+      font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--muted);
+    }
+    .cn-stats span{color:var(--text);font-weight:600}
+    .cn-err{background:rgba(231,76,60,.1);border:1px solid rgba(231,76,60,.4);
+      border-radius:8px;padding:14px 18px;color:#e87a6b;font-size:.85rem;
+      position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+      z-index:600;text-align:center;max-width:420px}
+    .cn-popup-name{font-weight:700;font-size:.88rem;margin-bottom:4px}
+    .cn-popup-meta{font-family:'JetBrains Mono',monospace;font-size:.69rem;color:var(--muted);margin-bottom:8px;line-height:1.5}
+    .cn-popup-row{display:flex;justify-content:space-between;gap:16px;font-size:.8rem;
+      padding:5px 0;border-top:1px solid var(--border)}
+    .cn-popup-lbl{color:var(--muted)}
+    .cn-popup-val{font-family:'JetBrains Mono',monospace;font-weight:600}
+    .cn-no-csv{text-align:center;padding:60px 30px;color:var(--muted)}
+    .cn-no-csv h3{font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;margin-bottom:12px;color:var(--text)}
+    .cn-no-csv code{font-family:'JetBrains Mono',monospace;background:var(--surface3);
+      padding:2px 8px;border-radius:4px;color:var(--accent)}
+
+    /* ── AUTOCOMPLETE ── */
+    .search-wrap{position:relative;flex:1}
+    .suggestions{
+      position:absolute;top:100%;left:0;right:0;z-index:300;
+      background:var(--surface2);border:1px solid var(--accent);
+      border-top:none;border-radius:0 0 8px 8px;
+      max-height:220px;overflow-y:auto;
+      scrollbar-width:thin;scrollbar-color:var(--surface3) transparent;
+      display:none;box-shadow:0 4px 16px rgba(0,0,0,.3);
+    }
+    .suggestions.show{display:block}
+    .sug-item{padding:9px 16px;cursor:pointer;font-size:.88rem;border-bottom:1px solid var(--border);transition:background .1s}
+    .sug-item:last-child{border-bottom:none}
+    .sug-item:hover,.sug-item.kbd{background:var(--surface3);color:var(--accent)}
+    .sug-match{color:var(--accent);font-weight:600}
+
+    /* ── DESELECT ALL ── */
+    .cart-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+    .cart-header .card-lbl{margin-bottom:0}
+    .btn-deselect{
+      padding:4px 10px;background:rgba(231,76,60,.15);border:1px solid var(--red);
+      border-radius:6px;color:var(--red);font-size:.72rem;font-weight:600;
+      font-family:'Barlow Condensed',sans-serif;letter-spacing:.5px;
+      cursor:pointer;white-space:nowrap;transition:all .15s;display:none;
+    }
+    .btn-deselect:hover{background:var(--red);color:#fff}
+
+    @media(max-width:650px){
+      .top-nav{padding:0 10px}
+      .top-nav-btn{padding:10px 14px;font-size:.78rem}
+      #map-national{height:calc(100vh - 120px)}
+      .cn-legend{bottom:16px;left:8px;padding:10px 12px}
+      .cn-stats{top:8px;left:8px;padding:6px 10px}
+      /* Push zoom buttons down on mobile to avoid overlap with stats */
+      .leaflet-top.leaflet-right{top:48px!important}
+    }
+
+    @media(max-width:650px){
+      header{padding:0 14px;height:54px}
+      .brand-icon{width:32px;height:32px;font-size:16px}
+      .brand-name{font-size:.95rem}
+      .brand-sub{display:none}
+      .hdate{font-size:.62rem}
+      .main{padding:14px 10px 48px}
+      .card{padding:16px 14px;margin-bottom:14px}
+      .tabs{width:100%}
+      .tab{flex:1;text-align:center;padding:7px 8px;font-size:.8rem}
+      .search-row{flex-direction:column;gap:8px}
+      .btn{padding:12px;font-size:.95rem;width:100%}
+      .search-input{font-size:1rem;padding:12px 14px}
+      #split-panel{flex-direction:column!important}
+      #station-list-wrap{flex:none;width:100%}
+      #station-list{max-height:280px}
+      #map-wrap{flex:none;width:100%;min-height:260px;border-radius:8px;margin-top:10px}
+      #map{min-height:260px}
+      .sres{padding:12px 10px}
+      .sres-name{font-size:.85rem}
+      .sres-meta{font-size:.66rem}
+      .btn-add{padding:8px 12px;font-size:.8rem}
+      .cart-item{padding:10px 12px}
+      .btn-gen{padding:14px;font-size:1rem}
+      .bilan-name{font-size:1.1rem}
+      .bilan-meta{gap:10px}
+      .mkv{font-size:.68rem}
+      .stats-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+      .stat-box{min-width:0;padding:12px 10px}
+      .stat-val{font-size:1.1rem}
+      .stat-lbl{font-size:.68rem}
+      .chart-wrap{height:220px}
+      .meteo-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:6px;border:1px solid var(--border)}
+      .meteo-table{min-width:460px;font-size:.78rem}
+      .meteo-table th,.meteo-table td{padding:8px 10px}
+      .sub-block{flex-direction:column;gap:10px}
+      .btn-sub{width:100%;padding:11px}
+      .commune-btn{font-size:.82rem;padding:10px 12px}
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="brand-icon">💧</div>
+    <div>
+      <div class="brand-name">Bilan Hydro-Météo</div>
+      <div class="brand-sub">Hub'eau · Open-Meteo · AROME / ECMWF</div>
+    </div>
+  </div>
+  <div class="hdate" id="hdate"></div>
+</header>
+
+<!-- TOP NAV -->
+<nav class="top-nav">
+  <button class="top-nav-btn active" id="nav-bilan" onclick="switchPage('bilan')">📋 Bilan terrain</button>
+  <button class="top-nav-btn"        id="nav-carte" onclick="switchPage('carte')">🗺️ Carte nationale</button>
+</nav>
+
+<!-- PAGE BILAN TERRAIN -->
+<div class="page-section active" id="page-bilan">
+<div class="main">
+
+  <!-- SEARCH CARD -->
+  <div class="card">
+    <div class="card-lbl">Recherche de station hydrométrique</div>
+    <div class="tabs">
+      <button class="tab active" id="tab-river"   onclick="switchTab('river')">Cours d'eau</button>
+      <button class="tab"        id="tab-commune" onclick="switchTab('commune')">Commune</button>
+    </div>
+    <div class="search-row">
+      <div class="search-wrap">
+        <input type="text" class="search-input" id="searchInput" placeholder="ex : Hérault" autocomplete="off"/>
+        <div class="suggestions" id="suggestions"></div>
+      </div>
+      <button class="btn btn-primary" id="btnSearch" onclick="handleSearch()">Rechercher</button>
+    </div>
+    <p class="hint" id="searchHint">Saisir le nom du <strong>cours d'eau</strong> — ex : <code>Hérault</code>, <code>Aveyron</code>, <code>Lez</code></p>
+
+    <!-- Commune disambiguator -->
+    <div id="commune-picker">
+      <div class="picker-lbl">⚠ Plusieurs communes trouvées — sélectionnez la bonne :</div>
+      <div id="commune-list"></div>
+    </div>
+
+    <div class="err-box" id="searchError" style="display:none;margin-top:12px"></div>
+
+    <!-- Split panel: list left, map right -->
+    <div id="split-panel">
+      <div id="station-list-wrap">
+        <div class="results-hdr" id="results-hdr"></div>
+        <div id="station-list"></div>
+      </div>
+      <div id="map-wrap">
+        <div id="map"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CART -->
+  <div class="card">
+    <div class="cart-header">
+      <div class="card-lbl">Stations sélectionnées (<span id="cartCount">0</span>)</div>
+      <button class="btn-deselect" id="btnDeselect" onclick="deselectAll()">✕ Tout désélectionner</button>
+    </div>
+    <div id="cartItems"><div class="cart-empty">Aucune station — recherchez ci-dessus et cliquez sur <strong>+ Ajouter</strong>.</div></div>
+    <button class="btn-gen" id="btnGenerate" onclick="generateBilan()" disabled>⚡ Générer le bilan</button>
+  </div>
+
+  <div id="loader"><div class="ring"></div><div class="loader-msg" id="loaderMsg">Récupération des données…</div></div>
+  <div id="bilan"></div>
+</div>
+</div><!-- /page-bilan -->
+
+<!-- PAGE CARTE NATIONALE -->
+<div class="page-section" id="page-carte">
+  <div class="map-national-wrap">
+    <div id="map-national"></div>
+
+    <!-- Stats -->
+    <div class="cn-stats" id="cn-stats" style="display:none">
+      <span id="cn-stat-total">—</span> stations · QI disponible : <span id="cn-stat-qi">—</span>
+    </div>
+
+    <!-- Légende -->
+    <div class="cn-legend" id="cn-legend" style="display:none">
+      <div class="cn-legend-title">Conditions d'intervention terrain</div>
+      <div class="cn-leg-row"><div class="cn-dot" style="background:#2ecc71"></div> QI/QMJ ≤ Q25 — basses eaux favorables</div>
+      <div class="cn-leg-row"><div class="cn-dot" style="background:#f1c40f"></div> Q25 &lt; QI/QMJ ≤ Module — débit moyen</div>
+      <div class="cn-leg-row"><div class="cn-dot" style="background:#e74c3c"></div> QI/QMJ &gt; Module — hautes eaux</div>
+      <div class="cn-leg-row"><div class="cn-dot" style="background:#566573"></div> Données indisponibles</div>
+    </div>
+
+    <!-- Loader overlay -->
+    <div class="cn-loader" id="cn-loader" style="display:none">
+      <div class="ring"></div>
+      <div class="cn-loader-msg" id="cn-loader-msg">Chargement…</div>
+    </div>
+  </div>
+</div><!-- /page-carte -->
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// CONFIG & STATE
+// ═══════════════════════════════════════════════════════════
+const HUBEAU = 'https://hubeau.eaufrance.fr/api/v2/hydrometrie';
+const METEO  = 'https://api.open-meteo.com/v1/forecast';
+const GEOAPI = 'https://geo.api.gouv.fr';
+
+const state      = { mode:'river', selected:[] };
+let resultStore  = [];
+let communeStore = [];
+let charts       = {};
+let subsStore    = {};  // { oldCode: substitution station object }
+
+// Leaflet
+let map, markersLayer;
+
+// ═══════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', async () => {
+  document.getElementById('hdate').textContent =
+    new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  document.getElementById('searchInput').addEventListener('keydown', e => { if(e.key==='Enter') handleSearch(); });
+  initMap();
+  initAutocomplete();
+  // Préchargement du CSV au démarrage (autocomplete cours d'eau + carte nationale)
+  // async/await : le fetch est attendu proprement, sans effets de bord sur le DOM
+  try {
+    const r = await fetch('./stations_debits.csv');
+    if (r.ok) csvData = parseCSV(await r.text());
+  } catch(e) {}
+});
+
+// ── AUTOCOMPLETE ──────────────────────────────────────────
+let sugStore = [];  // stores suggestion values, referenced by index in onclick
+
+
+let sugIndex = -1;       // keyboard navigation index
+let sugDebounce = null;
+
+async function initAutocomplete() {
+  // Load communes CSV
+  try {
+    const r = await fetch('./communes.csv');
+    if (r.ok) {
+      const text = await r.text();
+      communesList = text.split('\n').slice(1).map(s=>s.trim()).filter(Boolean);
+    }
+  } catch(e) {}
+
+  const input = document.getElementById('searchInput');
+  const box   = document.getElementById('suggestions');
+
+  const onSearchInput = () => {
+    clearTimeout(sugDebounce);
+    sugDebounce = setTimeout(() => showSuggestions(input.value.trim()), 200);
+  };
+  window.onSearchInput = onSearchInput;  // expose globally for remove/add
+  input.addEventListener('input', onSearchInput);
+
+  input.addEventListener('keydown', e => {
+    const items = box.querySelectorAll('.sug-item');
+    if (!items.length) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      sugIndex = Math.min(sugIndex+1, items.length-1);
+      items.forEach((el,i) => el.classList.toggle('kbd', i===sugIndex));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      sugIndex = Math.max(sugIndex-1, 0);
+      items.forEach((el,i) => el.classList.toggle('kbd', i===sugIndex));
+    } else if (e.key === 'Escape') {
+      hideSuggestions();
+    }
+  });
+
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.search-wrap')) hideSuggestions();
+  });
+}
+
+// Normalise une chaîne : minuscules + suppression accents + espaces multiples
+function normalize(s) {
+  return (s||'').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/\s+/g,' ').trim();
+}
+
+async function showSuggestions(q) {
+  const box = document.getElementById('suggestions');
+  if (!q || q.length < 2) { hideSuggestions(); return; }
+
+  const qn = normalize(q);
+  let items = [];
+
+  if (state.mode === 'commune') {
+    // geo.api.gouv.fr — gère nativement accents, casse, variantes
+    try {
+      const r = await fetch(`${GEOAPI}/communes?nom=${enc(q)}&fields=nom,codeDepartement,codesPostaux&limit=10`);
+      if (r.ok) {
+        const data = await r.json();
+        const seen = new Set();
+        for (const c of data) {
+          const key = c.nom + '_' + c.codeDepartement;
+          if (!seen.has(key)) {
+            seen.add(key);
+            items.push({ label: `${c.nom} (${c.codeDepartement}) — ${(c.codesPostaux||[]).join(', ')}`, value: c.nom });
+          }
+        }
+      }
+    } catch(e) {}
+  } else {
+    // Cours d'eau : filtrage local depuis csvData (stations_debits.csv)
+    if (csvData && Object.keys(csvData).length > 0) {
+      const seen = new Set();
+      for (const st of Object.values(csvData)) {
+        const name = st.libelle_cours_eau;
+        if (name && !seen.has(name) && normalize(name).includes(qn)) {
+          seen.add(name);
+          items.push({ label: name, value: name });
+          // Pas de break ici — on parcourt tout pour avoir les meilleurs résultats
+        }
+      }
+      // Tri : priorité aux noms qui commencent par la saisie, puis alphabétique
+      items.sort((a,b) => {
+        const an = normalize(a.label), bn = normalize(b.label);
+        const aStart = an.startsWith(qn), bStart = bn.startsWith(qn);
+        if (aStart && !bStart) return -1;
+        if (!aStart && bStart) return 1;
+        return a.label.localeCompare(b.label, 'fr');
+      });
+      items = items.slice(0, 10);
+    }
+    // Si csvData pas encore chargé → pas de suggestions (pas d'appel API)
+  }
+
+  if (!items.length) { hideSuggestions(); return; }
+
+  sugStore = items.map(i => i.value);
+
+  box.innerHTML = items.map((item, idx) => {
+    const labelN = normalize(item.label);
+    const qnIdx  = labelN.indexOf(qn);
+    let highlighted;
+    if (qnIdx >= 0) {
+      highlighted = esc(item.label.slice(0, qnIdx))
+        + `<span class="sug-match">${esc(item.label.slice(qnIdx, qnIdx+q.length))}</span>`
+        + esc(item.label.slice(qnIdx+q.length));
+    } else {
+      highlighted = esc(item.label);
+    }
+    return `<div class="sug-item" onmousedown="selectSuggestion(${idx})">${highlighted}</div>`;
+  }).join('');
+
+  sugIndex = -1;
+  box.classList.add('show');
+}
+
+function selectSuggestion(idx) {
+  const val = sugStore[idx];
+  if (!val) return;
+  clearTimeout(sugDebounce);   // annule tout debounce en cours
+  hideSuggestions();
+  const input = document.getElementById('searchInput');
+  // Bloque temporairement l'autocomplete pendant qu'on écrit la valeur
+  input.removeEventListener('input', window.onSearchInput);
+  input.value = val;
+  requestAnimationFrame(() => input.addEventListener('input', window.onSearchInput));
+  handleSearch();
+}
+
+function hideSuggestions() {
+  document.getElementById('suggestions').classList.remove('show');
+  sugIndex = -1;
+}
+
+function initMap() {
+  if (typeof L === 'undefined') {
+    document.getElementById('map-wrap').innerHTML =
+      '<div style="height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:.82rem;text-align:center;padding:20px">' +
+      '🗺️ Carte indisponible dans cet environnement.<br>Téléchargez le fichier et ouvrez-le dans votre navigateur.</div>';
+    return;
+  }
+  map = L.map('map', { center:[46.5,2.5], zoom:5, zoomControl:true, attributionControl:true });
+  L.tileLayer('https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap France · © contributeurs OpenStreetMap',
+    subdomains: 'abc',
+    maxZoom: 20
+  }).addTo(map);
+  markersLayer = L.layerGroup().addTo(map);
+}
+
+// ═══════════════════════════════════════════════════════════
+// TAB SWITCH
+// ═══════════════════════════════════════════════════════════
+function switchTab(mode) {
+  state.mode = mode;
+  document.getElementById('searchInput').value = '';
+  document.getElementById('commune-picker').style.display = 'none';
+  document.getElementById('searchError').style.display = 'none';
+  hideSuggestions();
+  resultStore = []; communeStore = [];
+  clearResults();
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-'+mode).classList.add('active');
+  const hint=document.getElementById('searchHint'), inp=document.getElementById('searchInput');
+  if (mode==='river') {
+    hint.innerHTML = "Saisir le nom du <strong>cours d'eau</strong> — ex : <code>Hérault</code>, <code>Aveyron</code>, <code>Lez</code>";
+    inp.placeholder = 'ex : Hérault';
+  } else {
+    hint.innerHTML = "Saisir le nom de la <strong>commune</strong> — stations actives dans un rayon de 10 km";
+    inp.placeholder = 'ex : Montpellier';
+  }
+}
+
+function clearResults() {
+  document.getElementById('station-list').innerHTML = '';
+  document.getElementById('results-hdr').textContent = '';
+  document.getElementById('split-panel').classList.remove('show');
+  if (markersLayer) markersLayer.clearLayers();
+}
+
+// ═══════════════════════════════════════════════════════════
+// SEARCH
+// ═══════════════════════════════════════════════════════════
+async function handleSearch() {
+  const q = document.getElementById('searchInput').value.trim();
+  if (!q) return;
+  hideSuggestions();
+  document.getElementById('commune-picker').style.display = 'none';
+  document.getElementById('searchError').style.display = 'none';
+  clearResults();
+  resultStore = []; communeStore = [];
+  const btn = document.getElementById('btnSearch');
+  btn.disabled=true; btn.textContent='…';
+  try {
+    state.mode==='river' ? await searchByRiver(q) : await searchByCommune(q);
+  } catch(e) { showErr(e.message); }
+  btn.disabled=false; btn.textContent='Rechercher';
+}
+
+async function searchByRiver(name) {
+  const url = `${HUBEAU}/referentiel/stations?libelle_cours_eau=${enc(name)}&en_service=true`
+    + `&fields=code_station,libelle_station,libelle_cours_eau,libelle_commune,longitude_station,latitude_station&size=50`;
+  const d = await hubGet(url);
+  const list = (d.data||[]).filter(s => s.latitude_station && s.longitude_station);
+  if (!list.length) { showErr(`Aucune station active pour le cours d'eau « ${name} ».`); return; }
+  resultStore = list;
+  showResults();
+}
+
+async function searchByCommune(name) {
+  const geo = await get(`${GEOAPI}/communes?nom=${enc(name)}&fields=code,nom,codeDepartement,codesPostaux,centre&limit=10`);
+  if (!geo||!geo.length) { showErr(`Commune « ${name} » introuvable.`); return; }
+  const seen=new Set(), unique=[];
+  for (const c of geo) { const k=c.nom+'_'+c.codeDepartement; if(!seen.has(k)){seen.add(k);unique.push(c);} }
+  if (unique.length>1) {
+    communeStore = unique;
+    document.getElementById('commune-list').innerHTML = unique.map((_,i)=>`
+      <button class="commune-btn" onclick="selectCommune(${i})">
+        <strong>${esc(unique[i].nom)}</strong> (${esc(unique[i].codeDepartement)}) — ${esc((unique[i].codesPostaux||[]).join(', '))}
+      </button>`).join('');
+    document.getElementById('commune-picker').style.display='block';
+  } else {
+    await loadNear(unique[0]);
+  }
+}
+
+async function selectCommune(idx) {
+  document.getElementById('commune-picker').style.display='none';
+  await loadNear(communeStore[idx]);
+}
+
+async function loadNear(commune) {
+  const [clon,clat] = commune.centre.coordinates;
+  const d = await hubGet(`${HUBEAU}/referentiel/stations?code_departement=${enc(commune.codeDepartement)}&en_service=true`
+    + `&fields=code_station,libelle_station,libelle_cours_eau,libelle_commune,longitude_station,latitude_station&size=500`);
+  const list = (d.data||[])
+    .filter(s => s.latitude_station && s.longitude_station)
+    .map(s => ({...s, _dist: haversine(clat,clon,+s.latitude_station,+s.longitude_station)}))
+    .filter(s => s._dist<=10)
+    .sort((a,b) => a._dist-b._dist);
+  if (!list.length) { showErr(`Aucune station active dans un rayon de 10 km autour de ${esc(commune.nom)}.`); return; }
+  resultStore = list;
+  showResults();
+}
+
+// ═══════════════════════════════════════════════════════════
+// RENDER: LIST + MAP (synchronized)
+// ═══════════════════════════════════════════════════════════
+function showResults() {
+  const panel = document.getElementById('split-panel');
+  panel.classList.add('show');
+
+  document.getElementById('results-hdr').textContent =
+    `${resultStore.length} station(s) active(s) trouvée(s)`;
+
+  const listEl = document.getElementById('station-list');
+  listEl.innerHTML = '';
+  if (markersLayer) markersLayer.clearLayers();
+
+  const bounds = [];
+  const markerRefs = [];
+
+  resultStore.forEach((s, idx) => {
+    const inCart = state.selected.some(x => x.code_station===s.code_station);
+    const lat = +s.latitude_station, lon = +s.longitude_station;
+    bounds.push([lat, lon]);
+
+    // ── LIST ITEM ──
+    const row = document.createElement('div');
+    row.className = 'sres';
+    row.id = `sres_${idx}`;
+    const dist = s._dist!=null ? ` · ${s._dist.toFixed(1)} km` : '';
+    row.innerHTML = `
+      <div>
+        <div class="sres-name">${esc(s.libelle_station)}</div>
+        <div class="sres-meta">${esc(s.code_station)} · ${esc(s.libelle_cours_eau||'—')} · ${esc(s.libelle_commune||'—')}${dist}</div>
+      </div>
+      <button class="btn-add ${inCart?'added':''}" id="addbtn_${idx}" onclick="addToCart(${idx})">
+        ${inCart?'✓ Ajoutée':'+ Ajouter'}
+      </button>`;
+
+    // Hover list → pulse marker only (no popup)
+    row.addEventListener('mouseenter', () => {
+      row.classList.add('hover');
+      const dot = document.getElementById('mdot_'+idx);
+      if (dot) dot.classList.add('pulse');
+    });
+    row.addEventListener('mouseleave', () => {
+      row.classList.remove('hover');
+      const dot = document.getElementById('mdot_'+idx);
+      if (dot) dot.classList.remove('pulse');
+    });
+    listEl.appendChild(row);
+
+    // ── MARKER ──
+    if (map && markersLayer) {
+      const dotColor = inCart ? 'green' : 'blue';
+      const icon = L.divIcon({
+        className: '',
+        html: `<div class="marker-dot ${dotColor}" id="mdot_${idx}"></div>`,
+        iconSize: [16,16], iconAnchor: [8,8], popupAnchor: [0,-12]
+      });
+      const marker = L.marker([lat,lon], {icon}).addTo(markersLayer);
+      const popupHtml = () => {
+        const added = state.selected.some(x => x.code_station===s.code_station);
+        return `<div class="popup-name">${esc(s.libelle_station)}</div>
+          <div class="popup-meta">${esc(s.code_station)}<br>${esc(s.libelle_cours_eau||'—')} · ${esc(s.libelle_commune||'—')}</div>
+          <button class="popup-add ${added?'added':''}" onclick="addToCart(${idx})" id="popupbtn_${idx}">
+            ${added?'✓ Ajoutée':'+ Ajouter'}
+          </button>`;
+      };
+      marker.bindPopup(popupHtml, {closeButton:true, autoPan:false, minWidth:180});
+
+      // Hover marker → highlight list row + pulse (no popup)
+      marker.on('mouseover', () => {
+        const dot = document.getElementById('mdot_'+idx);
+        if (dot) dot.classList.add('pulse');
+        const r = document.getElementById('sres_'+idx);
+        if (r) { r.classList.add('hover'); r.scrollIntoView({block:'nearest',behavior:'smooth'}); }
+      });
+      marker.on('mouseout', () => {
+        const dot = document.getElementById('mdot_'+idx);
+        if (dot) dot.classList.remove('pulse');
+        const r = document.getElementById('sres_'+idx);
+        if (r) r.classList.remove('hover');
+      });
+
+      // Click marker → sticky popup
+      marker.on('click', () => {
+        marker.setPopupContent(popupHtml());
+        marker.openPopup();
+      });
+      markerRefs[idx] = marker;
+    }
+  });
+
+  // invalidateSize + fitBounds in the same setTimeout so map knows its dimensions
+  // (bounds is fully populated by the time the callback fires)
+  if (map) {
+    setTimeout(() => {
+      map.invalidateSize();
+      if (bounds.length === 1) {
+        map.setView(bounds[0], 11);
+      } else if (bounds.length > 1) {
+        map.fitBounds(bounds, {padding:[40,40]});
+      }
+    }, 80);
+  }
+
+  resultStore._markerRefs = markerRefs;
+}
+
+// ═══════════════════════════════════════════════════════════
+// CART
+// ═══════════════════════════════════════════════════════════
+function addToCart(idx) {
+  const s = resultStore[idx];
+  if (!s || state.selected.some(x => x.code_station===s.code_station)) return;
+  state.selected.push({
+    code_station: s.code_station,
+    libelle_station: s.libelle_station,
+    libelle_cours_eau: s.libelle_cours_eau||'',
+    libelle_commune: s.libelle_commune||'',
+    lat: +s.latitude_station,
+    lon: +s.longitude_station
+  });
+  updateCartUI();
+  // Update list button
+  const btn = document.getElementById('addbtn_'+idx);
+  if (btn) { btn.textContent='✓ Ajoutée'; btn.classList.add('added'); }
+  // Update marker color to green
+  const dot = document.getElementById('mdot_'+idx);
+  if (dot) { dot.classList.remove('blue'); dot.classList.add('green'); }
+}
+
+function removeFromCart(code) {
+  state.selected = state.selected.filter(s => s.code_station!==code);
+  updateCartUI();
+  refreshMarkerColors();
+}
+
+function updateCartUI() {
+  const n = state.selected.length;
+  document.getElementById('cartCount').textContent = n;
+  document.getElementById('btnGenerate').disabled = n===0;
+  const desel = document.getElementById('btnDeselect');
+  desel.style.display = n > 0 ? 'block' : 'none';
+  const el = document.getElementById('cartItems');
+  if (!n) {
+    el.innerHTML = '<div class="cart-empty">Aucune station — recherchez ci-dessus et cliquez sur <strong>+ Ajouter</strong>.</div>';
+    return;
+  }
+  el.innerHTML = state.selected.map((s,i) => `
+    <div class="cart-item">
+      <div><div class="ci-name">${esc(s.libelle_station)}</div>
+      <div class="ci-code">${esc(s.code_station)} · ${esc(s.libelle_cours_eau||'—')}</div></div>
+      <button class="btn-rm" id="rmbtn_${i}" data-code="${esc(s.code_station)}"
+        onclick="removeFromCart(document.getElementById('rmbtn_${i}').dataset.code)" title="Retirer">×</button>
+    </div>`).join('');
+}
+
+function deselectAll() {
+  state.selected = [];
+  updateCartUI();
+  refreshMarkerColors();
+  // Clear bilan
+  const bilanEl = document.getElementById('bilan');
+  bilanEl.innerHTML = ''; bilanEl.classList.remove('show');
+  Object.values(charts).forEach(c=>c.destroy()); charts={};
+  subsStore={};
+}
+
+// ═══════════════════════════════════════════════════════════
+// GENERATE BILAN
+// ═══════════════════════════════════════════════════════════
+async function generateBilan() {
+  if (!state.selected.length) return;
+  const bilanEl = document.getElementById('bilan');
+  bilanEl.innerHTML=''; bilanEl.classList.remove('show');
+  Object.values(charts).forEach(c=>c.destroy()); charts={};
+  subsStore={};
+
+  const total = state.selected.length;
+  let done = 0;
+  const setMsg = () => setLoader(true, `Récupération des données… (${done}/${total})`);
+  setMsg();
+
+  const results = await Promise.all(state.selected.map(async st => {
+    try {
+      // Si la station est dans le CSV, ses débits caractéristiques sont déjà connus :
+      // on évite les gros appels QmM (module/QMNA5) et QmnJ complet (Q25).
+      const inCsv = csvData && csvData[st.code_station] && csvData[st.code_station].module != null;
+      const [qmj,qmm,qmjAll,qinstant,meteo] = await Promise.all([
+        fetchQMJ(st.code_station, daysAgo(14), today()),
+        inCsv ? Promise.resolve([]) : fetchQMM(st.code_station),
+        inCsv ? Promise.resolve([]) : fetchQMJAll(st.code_station),
+        fetchQinstant(st.code_station),
+        fetchMeteo(st.lat, st.lon)
+      ]);
+      done++; setMsg();
+      return {st,qmj,qmm,qmjAll,qinstant,meteo,err:null};
+    } catch(e) { done++; setMsg(); return {st,err:e.message}; }
+  }));
+
+  setLoader(false);
+  renderBilan(results);
+  bilanEl.classList.add('show');
+  bilanEl.scrollIntoView({behavior:'smooth',block:'start'});
+
+  // After render: find substitutions asynchronously for no-data stations
+  results.forEach(r => {
+    if (r.err) return;
+    const hasData = hasRecentData(r.qmj, r.qinstant);
+    if (!hasData) findAndRenderSubstitution(r.st);
+  });
+}
+
+// Une station a des données exploitables si :
+//  - elle a un QMJ non-nul dans les 14 derniers jours (cohérent avec le graphique),
+//  - OU un débit instantané (QI) temps réel disponible.
+// Le délai de validation des QMJ étant souvent de plusieurs jours, un seuil de
+// 5 jours masquait à tort des stations actives (ex : dernier QMJ à J-9).
+function hasRecentData(qmj, qinstant) {
+  if (qinstant && qinstant.val != null) return true;
+  const recent = [...(qmj||[])].reverse().find(d => d.resultat_obs_elab != null);
+  if (!recent) return false;
+  return (new Date(today()) - new Date(recent.date_obs_elab)) / 86400000 <= 14;
+}
+
+
+// ═══════════════════════════════════════════════════════════
+// API
+// ═══════════════════════════════════════════════════════════
+async function fetchQMJ(code,from,to) {
+  const d = await hubGet(`${HUBEAU}/obs_elab?code_entite=${enc(code)}&grandeur_hydro_elab=QmnJ`
+    +`&date_debut_obs_elab=${from}&date_fin_obs_elab=${to}&size=20`);
+  return (d.data||[]).sort((a,b)=>new Date(a.date_obs_elab)-new Date(b.date_obs_elab));
+}
+async function fetchQMJAll(code) {
+  // Pagine par date_debut pour couvrir les longues chroniques (certaines stations
+  // ont >20000 jours depuis 1910). Sans pagination, l'API renvoie les 20000
+  // PREMIÈRES valeurs (les plus anciennes) → Q25 calculé sur données obsolètes.
+  const all = [];
+  let dateDebut = null;
+  for (let guard = 0; guard < 10; guard++) {
+    let url = `${HUBEAU}/obs_elab?code_entite=${enc(code)}&grandeur_hydro_elab=QmnJ&size=20000`;
+    if (dateDebut) url += `&date_debut_obs_elab=${dateDebut}`;
+    const d = await hubGet(url);
+    const rows = (d.data||[]).filter(r => r.resultat_obs_elab != null);
+    if (!rows.length) break;
+    all.push(...rows);
+    if (rows.length < 20000) break;
+    // Avance d'un jour après la dernière date reçue
+    const latest = rows.reduce((mx, r) => r.date_obs_elab > mx ? r.date_obs_elab : mx, rows[0].date_obs_elab);
+    const next = new Date(latest); next.setDate(next.getDate() + 1);
+    dateDebut = next.toISOString().split('T')[0];
+  }
+  return all;
+}
+// Débit instantané temps réel (observations_tr, toutes les 5 min, en L/s)
+async function fetchQinstant(code) {
+  try {
+    const d = await hubGet(`${HUBEAU}/observations_tr?code_entite=${enc(code)}&grandeur_hydro=Q&size=1&sort=desc`);
+    const r = (d.data||[]).find(x => x.resultat_obs != null);
+    if (!r) return null;
+    return { val: r.resultat_obs / 1000, date: r.date_obs };
+  } catch(e) { return null; }
+}
+async function fetchQMM(code) {
+  const d = await hubGet(`${HUBEAU}/obs_elab?code_entite=${enc(code)}&grandeur_hydro_elab=QmM&size=500`);
+  return (d.data||[]).sort((a,b)=>new Date(a.date_obs_elab)-new Date(b.date_obs_elab));
+}
+async function fetchMeteo(lat,lon) {
+  const p = new URLSearchParams({latitude:lat,longitude:lon,
+    daily:'precipitation_sum,temperature_2m_max,temperature_2m_min,wind_speed_10m_max,wind_direction_10m_dominant',
+    timezone:'Europe/Paris',forecast_days:7,wind_speed_unit:'kmh'});
+  return await get(`${METEO}?${p}`);
+}
+async function hubGet(url) {
+  const r = await fetch(url);
+  if (r.status!==200&&r.status!==206) throw new Error(`Hub'eau HTTP ${r.status}`);
+  return r.json();
+}
+async function get(url) {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.json();
+}
+
+// ═══════════════════════════════════════════════════════════
+// SUBSTITUTION
+// ═══════════════════════════════════════════════════════════
+
+// Find best substitution station for a no-data station, render result in DOM
+async function findAndRenderSubstitution(st) {
+  const slotId = 'sub_' + st.code_station.replace(/\W/g,'_');
+  const slot = document.getElementById(slotId);
+  if (!slot) return;
+
+  // Show searching state
+  slot.innerHTML = '<div class="sub-searching">🔍 Recherche d\'une station de substitution…</div>';
+
+  const sub = await findSubstitution(st);
+
+  if (!sub) {
+    slot.innerHTML = '<div class="sub-none">Aucune station avec données disponibles dans un rayon de 50 km.</div>';
+    return;
+  }
+
+  subsStore[st.code_station] = sub;
+  const sameRiver = sub.libelle_cours_eau === st.libelle_cours_eau;
+  const distTxt = sub._dist != null ? `${sub._dist.toFixed(1)} km` : '';
+  const riverTag = sameRiver
+    ? `<span style="color:var(--green)">● Même cours d'eau</span>`
+    : `<span style="color:var(--orange)">● Cours d'eau différent</span>`;
+
+  // Store sub data as JSON in a hidden span — avoids any onclick quoting issues
+  const subJson = JSON.stringify({
+    code_station: sub.code_station,
+    libelle_station: sub.libelle_station,
+    libelle_cours_eau: sub.libelle_cours_eau||'',
+    libelle_commune: sub.libelle_commune||'',
+    lat: sub.lat,
+    lon: sub.lon
+  });
+
+  slot.innerHTML = `
+    <div class="sub-block">
+      <div class="sub-left">
+        <div class="sub-title">📡 Station de substitution proposée</div>
+        <div class="sub-name">${esc(sub.libelle_station)}</div>
+        <div class="sub-meta">${esc(sub.code_station)} · ${esc(sub.libelle_cours_eau||'—')} · ${esc(sub.libelle_commune||'—')} · ${distTxt} — ${riverTag}</div>
+        <div class="sub-debit">Débit récent : ${rnd(sub._lastVal)} m³/s (${sub._lastDate})</div>
+        <span id="subdata_${st.code_station.replace(/\W/g,'_')}" style="display:none">${esc(subJson)}</span>
+      </div>
+      <button class="btn-sub" id="subbtn_${st.code_station.replace(/\W/g,'_')}">
+        ↻ Remplacer par cette station
+      </button>
+    </div>`;
+
+  // Attach click handler directly — no inline JSON in onclick
+  document.getElementById('subbtn_'+st.code_station.replace(/\W/g,'_'))
+    .addEventListener('click', () => replaceStation(st.code_station, sub));
+}
+
+async function findSubstitution(st) {
+  const from = daysAgo(5), to = today();
+
+  // ── Step 1: same river ──
+  if (st.libelle_cours_eau) {
+    try {
+      const url = `${HUBEAU}/referentiel/stations?libelle_cours_eau=${enc(st.libelle_cours_eau)}&en_service=true`
+        + `&fields=code_station,libelle_station,libelle_cours_eau,libelle_commune,longitude_station,latitude_station&size=50`;
+      const d = await hubGet(url);
+      const candidates = (d.data||[])
+        .filter(s => s.code_station!==st.code_station && s.latitude_station && s.longitude_station)
+        .map(s => ({...s, _dist: haversine(st.lat, st.lon, +s.latitude_station, +s.longitude_station)}))
+        .sort((a,b) => a._dist-b._dist)
+        .slice(0, 6);
+
+      for (const c of candidates) {
+        const result = await checkStationData(c, from, to);
+        if (result) return result;
+      }
+    } catch(e) {}
+  }
+
+  // ── Step 2: nearest station any river (bbox ~50 km) ──
+  try {
+    const dlat=0.45, dlon=0.65;
+    const url = `${HUBEAU}/referentiel/stations?en_service=true`
+      + `&bbox=${(st.lon-dlon).toFixed(4)},${(st.lat-dlat).toFixed(4)},${(st.lon+dlon).toFixed(4)},${(st.lat+dlat).toFixed(4)}`
+      + `&fields=code_station,libelle_station,libelle_cours_eau,libelle_commune,longitude_station,latitude_station&size=100`;
+    const d = await hubGet(url);
+    const candidates = (d.data||[])
+      .filter(s => s.code_station!==st.code_station && s.latitude_station && s.longitude_station)
+      .map(s => ({...s, _dist: haversine(st.lat, st.lon, +s.latitude_station, +s.longitude_station)}))
+      .sort((a,b) => a._dist-b._dist)
+      .slice(0, 8);
+
+    for (const c of candidates) {
+      const result = await checkStationData(c, from, to);
+      if (result) return result;
+    }
+  } catch(e) {}
+
+  return null;
+}
+
+// Check if a candidate station has recent QMJ data; if yes return enriched object
+async function checkStationData(c, from, to) {
+  try {
+    const qmj = await fetchQMJ(c.code_station, from, to);
+    const last = [...qmj].reverse().find(d => d.resultat_obs_elab != null);
+    if (!last) return null;
+    return {
+      ...c,
+      lat: +c.latitude_station,
+      lon: +c.longitude_station,
+      _lastVal: ls2m3(last.resultat_obs_elab),
+      _lastDate: fmtShort(last.date_obs_elab)
+    };
+  } catch(e) { return null; }
+}
+
+// Replace old station with substitution and regenerate bilan
+async function replaceStation(oldCode, sub) {
+  const idx = state.selected.findIndex(s => s.code_station === oldCode);
+  if (idx === -1) return;
+
+  const newStation = {
+    code_station: sub.code_station,
+    libelle_station: sub.libelle_station,
+    libelle_cours_eau: sub.libelle_cours_eau||'',
+    libelle_commune: sub.libelle_commune||'',
+    lat: sub.lat,
+    lon: sub.lon
+  };
+
+  // If sub already in cart: just remove old, don't create a duplicate
+  const alreadyIn = state.selected.some(s => s.code_station === sub.code_station);
+  if (alreadyIn) {
+    state.selected.splice(idx, 1);
+  } else {
+    state.selected[idx] = newStation;
+  }
+
+  updateCartUI();
+  refreshMarkerColors();
+  await generateBilan();
+}
+
+// Sync all marker dot colors with current cart state (green=in cart, blue=not)
+function refreshMarkerColors() {
+  if (!resultStore.length) return;
+  const inCart = new Set(state.selected.map(s => s.code_station));
+  resultStore.forEach((s, idx) => {
+    const dot = document.getElementById('mdot_' + idx);
+    if (!dot) return;
+    const isInCart = inCart.has(s.code_station);
+    dot.classList.toggle('green', isInCart);
+    dot.classList.toggle('blue', !isInCart);
+    // Sync list button too
+    const btn = document.getElementById('addbtn_' + idx);
+    if (btn) {
+      btn.textContent = isInCart ? '✓ Ajoutée' : '+ Ajouter';
+      btn.classList.toggle('added', isInCart);
+    }
+  });
+}
+
+
+// ═══════════════════════════════════════════════════════════
+// HYDRO STATS
+// ═══════════════════════════════════════════════════════════
+const ls2m3 = v => v!=null ? v/1000 : null;
+
+function calcModule(qmm) {
+  const vals = (qmm||[]).map(d=>ls2m3(d.resultat_obs_elab)).filter(v=>v!=null&&v>=0);
+  if (!vals.length) return null;
+  return vals.reduce((a,b)=>a+b,0)/vals.length;
+}
+function calcQMNA5(qmm) {
+  if (!qmm||qmm.length<12) return null;
+  const byHydro={};
+  for (const r of qmm) {
+    if (r.resultat_obs_elab==null) continue;
+    const yr=+r.date_obs_elab.substring(0,4), mo=+r.date_obs_elab.substring(5,7);
+    const h=mo>=10?yr+1:yr;
+    (byHydro[h]=byHydro[h]||[]).push(ls2m3(r.resultat_obs_elab));
+  }
+  const mins=Object.values(byHydro).filter(v=>v.length>=10).map(v=>Math.min(...v)).sort((a,b)=>a-b);
+  if (mins.length<5) return null;
+  return mins[Math.floor(mins.length*0.20)];
+}
+function calcQ25(qmjAll) {
+  const vals=(qmjAll||[]).map(d=>ls2m3(d.resultat_obs_elab)).filter(v=>v!=null&&v>=0);
+  if (vals.length<10) return null;
+  vals.sort((a,b)=>a-b);
+  return vals[Math.floor(vals.length*0.25)];
+}
+function nYears(qmm) {
+  return new Set((qmm||[]).filter(r=>r.resultat_obs_elab!=null).map(r=>r.date_obs_elab.substring(0,4))).size;
+}
+
+// ═══════════════════════════════════════════════════════════
+// RENDER BILAN
+// ═══════════════════════════════════════════════════════════
+function renderBilan(results) {
+  const el = document.getElementById('bilan');
+  let html = '';
+  results.forEach((r,i) => {
+    const {st,qmj,qmm,qmjAll,qinstant,meteo,err} = r;
+    const uid = st.code_station.replace(/\W/g,'_');
+    if (i>0) html += '<hr class="station-sep">';
+    // Débits caractéristiques : priorité au CSV (valeurs officielles pré-calculées),
+    // fallback sur calcul direct si la station est absente du CSV.
+    const ref = (csvData && csvData[st.code_station]) ? csvData[st.code_station] : null;
+    let mod, qmna5, q25, ny, fromCsv;
+    if (ref && ref.module != null) {
+      mod     = ref.module;
+      qmna5   = ref.qmna5;
+      q25     = ref.q25;
+      ny      = ref.nb_annees || 0;
+      fromCsv = true;
+    } else {
+      mod     = err?null:calcModule(qmm);
+      qmna5   = err?null:calcQMNA5(qmm);
+      q25     = err?null:calcQ25(qmjAll);
+      ny      = err?0:nYears(qmm);
+      fromCsv = false;
+    }
+    // Débit actuel : instantané si dispo, sinon dernier QMJ
+    const qi    = err?null:(qinstant||null);
+    const lastEntry = err?null:[...(qmj||[])].reverse().find(d=>d.resultat_obs_elab!=null);
+    const lastVal   = lastEntry?ls2m3(lastEntry.resultat_obs_elab):null;
+    const lastDate  = lastEntry?fmtShort(lastEntry.date_obs_elab):null;
+    const curVal    = qi ? qi.val : lastVal;
+    const curLabel  = qi
+      ? `Débit instantané (${fmtHour(qi.date)})`
+      : `Débit actuel${lastDate?' ('+lastDate+')':''}`;
+
+    html += `<div class="card">
+      <div class="bilan-name">📍 ${esc(st.libelle_station)}</div>
+      <div class="bilan-meta">
+        <div class="mkv">Cours d'eau : <span>${esc(st.libelle_cours_eau||'—')}</span></div>
+        <div class="mkv">Commune : <span>${esc(st.libelle_commune||'—')}</span></div>
+        <div class="mkv">Code : <span>${esc(st.code_station)}</span></div>
+        <div class="mkv">Coord. : <span>${st.lat.toFixed(4)}°N ${st.lon.toFixed(4)}°E</span></div>
+      </div>
+      ${err?`<div class="err-box" style="margin-top:14px">Erreur : ${esc(err)}</div>`:''}
+      ${!err?`
+        <div class="sec-lbl">📈 Débit moyen journalier — 14 derniers jours</div>
+        ${(!fromCsv && ny<5)?`<div class="warn-box">⚠ Historique insuffisant (${ny} an(s)) — Module et QMNA5 non calculables.</div>`:''}
+        <div class="stats-row">
+          <div class="stat-box sc">
+            <div class="stat-val">${curVal!==null?rnd(curVal):'—'} ${curVal!==null?'<span class="stat-u">m³/s</span>':''}</div>
+            <div class="stat-lbl">${curLabel}</div>
+          </div>
+          <div class="stat-box sm">
+            <div class="stat-val">${mod!==null?rnd(mod):'—'} ${mod!==null?'<span class="stat-u">m³/s</span>':''}</div>
+            <div class="stat-lbl">Module${ny?` (${ny} ans)`:''}</div>
+          </div>
+          <div class="stat-box sy">
+            <div class="stat-val">${q25!==null?rnd(q25):'—'} ${q25!==null?'<span class="stat-u">m³/s</span>':''}</div>
+            <div class="stat-lbl">Q25</div>
+          </div>
+          <div class="stat-box sq">
+            <div class="stat-val">${qmna5!==null?rnd(qmna5):'—'} ${qmna5!==null?'<span class="stat-u">m³/s</span>':''}</div>
+            <div class="stat-lbl">QMNA5</div>
+          </div>
+        </div>
+        ${(qmj&&qmj.length&&hasRecentData(qmj,qinstant))?`<div class="chart-wrap"><canvas id="chart_${uid}"></canvas></div>`
+          :`<div style="color:var(--muted);font-size:.84rem;padding:12px 0">Aucune donnée de débit disponible sur les 14 derniers jours.</div>
+           <div id="sub_${uid}"><div class="sub-searching">🔍 Recherche d\'une station de substitution…</div></div>`}
+        ${(meteo&&meteo.daily)?renderMeteo(meteo):'<div class="warn-box" style="margin-top:18px">⚠ Données météo indisponibles.</div>'}
+      `:''}
+    </div>`;
+  });
+  el.innerHTML = html;
+  results.forEach(r => {
+    if (r.err||!r.qmj||!r.qmj.length||!hasRecentData(r.qmj,r.qinstant)) return;
+    // Débits de référence pour les lignes du graphique : CSV prioritaire, fallback calcul
+    const ref = (csvData && csvData[r.st.code_station]) ? csvData[r.st.code_station] : null;
+    const useCsv = ref && ref.module != null;
+    const cMod   = useCsv ? ref.module : calcModule(r.qmm);
+    const cQmna5 = useCsv ? ref.qmna5  : calcQMNA5(r.qmm);
+    const cQ25   = useCsv ? ref.q25    : calcQ25(r.qmjAll);
+    buildChart('chart_'+r.st.code_station.replace(/\W/g,'_'), r.qmj, cMod, cQmna5, cQ25, r.qinstant);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+// METEO TABLE
+// ═══════════════════════════════════════════════════════════
+function renderMeteo(meteo) {
+  const d=meteo.daily, t0=today();
+  let rows='';
+  for (let i=0;i<d.time.length;i++) {
+    const isTd=d.time[i]===t0;
+    const prec=d.precipitation_sum[i];
+    const pcls=prec===0?'pz':prec>5?'ph':'';
+    rows+=`<tr ${isTd?'class="td-today"':''}>
+      <td class="dc">${fmtLong(d.time[i])}${isTd?' · <strong>Auj.</strong>':''}</td>
+      <td class="${pcls}">${prec!=null?prec.toFixed(1):'—'}</td>
+      <td>${d.temperature_2m_min[i]!=null?d.temperature_2m_min[i].toFixed(1)+'°':'—'}</td>
+      <td>${d.temperature_2m_max[i]!=null?d.temperature_2m_max[i].toFixed(1)+'°':'—'}</td>
+      <td>${d.wind_speed_10m_max[i]!=null?Math.round(d.wind_speed_10m_max[i]):'—'}</td>
+      <td>${d.wind_direction_10m_dominant[i]!=null?arrow(d.wind_direction_10m_dominant[i])+' '+card(d.wind_direction_10m_dominant[i]):'—'}</td>
+    </tr>`;
+  }
+  return `<div class="sec-lbl" style="margin-top:28px">🌤️ Prévisions météo 7 jours — Open-Meteo (AROME · ECMWF)</div>
+    <div class="meteo-table-wrap"><table class="meteo-table">
+      <thead><tr><th style="text-align:left">Date</th><th>Précip. (mm)</th><th>T° min</th><th>T° max</th><th>Vent max (km/h)</th><th>Direction</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// CHART
+// ═══════════════════════════════════════════════════════════
+function buildChart(id, qmjData, module, qmna5, q25, qinstant) {
+  const canvas = document.getElementById(id); if (!canvas) return;
+  const labels = qmjData.map(d=>fmtShort(d.date_obs_elab));
+  const values = qmjData.map(d=>d.resultat_obs_elab!=null?ls2m3(d.resultat_obs_elab):null);
+
+  // Intègre le QI dans la série uniquement si sa date >= dernier QMJ
+  let qiIdx = -1;
+  if (qinstant) {
+    const instDate  = fmtShort(qinstant.date);
+    const lastLabel = labels[labels.length - 1];
+    const instDateObj = new Date(qinstant.date);
+    const lastQMJDate = qmjData.length ? new Date(qmjData[qmjData.length-1].date_obs_elab) : null;
+
+    // N'ajoute le QI que s'il est plus récent ou du même jour que le dernier QMJ
+    if (!lastQMJDate || instDateObj >= lastQMJDate) {
+      if (instDate === lastLabel) {
+        values[values.length - 1] = qinstant.val;
+        qiIdx = values.length - 1;
+      } else {
+        labels.push(instDate);
+        values.push(qinstant.val);
+        qiIdx = labels.length - 1;
+      }
+    }
+    // Si QI plus ancien que dernier QMJ → on l'ignore silencieusement
+  }
+
+  const dataMax = Math.max(0, ...values.filter(v=>v!=null));
+  const moduleOnChart = module!=null && module<=Math.max(dataMax*2,(qmna5||0)*2,(q25||0)*2,0.01);
+  const yMax = Math.max(dataMax, moduleOnChart?(module||0):0, qmna5!=null?(qmna5||0):0, q25!=null?(q25||0):0)*1.25||1;
+
+  const ann={};
+  if (moduleOnChart) ann.mod = {
+    type:'line',yMin:module,yMax:module,borderColor:'#2ecc71',borderWidth:2,borderDash:[7,4],
+    label:{display:true,content:`Module : ${rnd(module)} m³/s`,position:'start',yAdjust:-12,
+      backgroundColor:'rgba(46,204,113,.15)',color:'#2ecc71',
+      font:{size:11,weight:'600',family:'Barlow'},padding:{x:7,y:3},borderRadius:4}
+  };
+  if (q25!=null) ann.q25 = {
+    type:'line',yMin:q25,yMax:q25,borderColor:'#f1c40f',borderWidth:2,borderDash:[7,4],
+    label:{display:true,content:`Q25 : ${rnd(q25)} m³/s`,position:'start',yAdjust:-12,
+      backgroundColor:'rgba(241,196,15,.15)',color:'#f1c40f',
+      font:{size:11,weight:'600',family:'Barlow'},padding:{x:7,y:3},borderRadius:4}
+  };
+  if (qmna5!=null) ann.q5 = {
+    type:'line',yMin:qmna5,yMax:qmna5,borderColor:'#e74c3c',borderWidth:2,borderDash:[7,4],
+    label:{display:true,content:`QMNA5 : ${rnd(qmna5)} m³/s`,position:'end',yAdjust:-12,
+      backgroundColor:'rgba(231,76,60,.15)',color:'#e74c3c',
+      font:{size:11,weight:'600',family:'Barlow'},padding:{x:7,y:3},borderRadius:4}
+  };
+
+  if (module!=null&&!moduleOnChart) {
+    const note=document.createElement('div');
+    note.style.cssText='font-size:.76rem;color:#2ecc71;margin-top:6px;padding:4px 10px;background:rgba(46,204,113,.08);border-radius:4px;display:inline-block';
+    note.textContent=`ℹ Module (${rnd(module)} m³/s) hors échelle — débit actuel très inférieur au module annuel`;
+    canvas.parentElement.insertAdjacentElement('afterend',note);
+  }
+
+  // Styles de points : le QI est plus grand et blanc pour le distinguer visuellement
+  const ptRadius = values.map((_,i) => i===qiIdx ? 7 : 3);
+  const ptBgColor = values.map((_,i) => i===qiIdx ? '#fff' : '#1c2d40');
+  const ptBdColor = values.map((_,i) => i===qiIdx ? '#4fc3f7' : '#4fc3f7');
+  const ptBdWidth = values.map((_,i) => i===qiIdx ? 3 : 2);
+
+  charts[id] = new Chart(canvas.getContext('2d'),{
+    type:'line',
+    data:{labels, datasets:[{
+      data: values,
+      borderColor:'#4fc3f7', backgroundColor:'rgba(79,195,247,.07)',
+      borderWidth:2.5, tension:0.35, fill:true, spanGaps:true,
+      pointRadius: ptRadius,
+      pointBackgroundColor: ptBgColor,
+      pointBorderColor: ptBdColor,
+      pointBorderWidth: ptBdWidth
+    }]},
+    options:{
+      responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          backgroundColor:'#1c2d40', borderColor:'#2c4060', borderWidth:1,
+          titleFont:{family:'Barlow',size:12}, bodyFont:{family:'JetBrains Mono',size:12},
+          callbacks:{
+            label: c => {
+              if (c.parsed.y==null) return '  — données manquantes';
+              const label = c.dataIndex===qiIdx ? '  QI' : '  QMJ';
+              return `${label} : ${rnd(c.parsed.y)} m³/s`;
+            }
+          }
+        },
+        annotation:{annotations:ann}
+      },
+      scales:{
+        x:{grid:{color:'rgba(44,64,96,.5)'},ticks:{color:'#7a9ec0',font:{size:11,family:'Barlow'}}},
+        y:{min:0,max:yMax,grid:{color:'rgba(44,64,96,.5)'},
+          ticks:{color:'#7a9ec0',font:{size:11,family:'JetBrains Mono'},callback:v=>v===0?'0':rnd(v)},
+          title:{display:true,text:'m³/s',color:'#7a9ec0',font:{size:11}}}
+      }
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════════════════
+const today    = () => new Date().toISOString().split('T')[0];
+function daysAgo(n){const d=new Date();d.setDate(d.getDate()-n);return d.toISOString().split('T')[0];}
+function setLoader(show,msg=''){document.getElementById('loader').className=show?'show':'';if(msg)document.getElementById('loaderMsg').textContent=msg;}
+function showErr(msg){const el=document.getElementById('searchError');el.textContent=msg;el.style.display='block';}
+const enc      = s => encodeURIComponent(s);
+const esc      = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const fmtShort = s => new Date(s).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'});
+const fmtLong  = s => new Date(s+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'});
+const fmtHour  = s => { const d=new Date(s); return d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'})+' '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}); };
+function rnd(v){if(v==null)return'—';if(v<0.01)return v.toFixed(4);if(v<1)return v.toFixed(3);if(v<10)return v.toFixed(2);if(v<100)return v.toFixed(1);return Math.round(v).toString();}
+const card  = deg => ['N','NE','E','SE','S','SO','O','NO'][Math.round(deg/45)%8];
+const arrow = deg => ['↑','↗','→','↘','↓','↙','←','↖'][Math.round(deg/45)%8];
+function haversine(la1,lo1,la2,lo2){
+  const R=6371,dLa=(la2-la1)*Math.PI/180,dLo=(lo2-lo1)*Math.PI/180;
+  const a=Math.sin(dLa/2)**2+Math.cos(la1*Math.PI/180)*Math.cos(la2*Math.PI/180)*Math.sin(dLo/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+// ═══════════════════════════════════════════════════════════
+// PAGE NAVIGATION
+// ═══════════════════════════════════════════════════════════
+function switchPage(page) {
+  document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.top-nav-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.getElementById('nav-' + page).classList.add('active');
+  if (page === 'carte') initCarteNationale();
+}
+
+// ═══════════════════════════════════════════════════════════
+// CARTE NATIONALE
+// ═══════════════════════════════════════════════════════════
+let mapNat = null, markersNat = null;
+let csvData = null;      // { code_station: { module, q25, qmna5, lat, lon, ... } }
+let carteReady = false;  // true once fully loaded once
+
+const CN_CSV_URL = './stations_debits.csv';
+
+// Couleurs selon conditions d'intervention terrain
+// Vert = débit faible → conditions favorables
+// Jaune = débit moyen → intervention possible
+// Rouge = débit fort → intervention difficile / dangereuse
+function cnColor(qi, module, q25, qmna5) {
+  if (qi == null || module == null) return '#566573'; // gris — pas de référence
+  if (qi > module)              return '#e74c3c';     // rouge — au-dessus du module, hautes eaux
+  if (q25 != null && qi > q25) return '#f1c40f';     // jaune — entre Q25 et module
+  return '#2ecc71';                                   // vert  — sous le Q25, basses eaux favorables
+}
+
+function cnColorLabel(qi, module, q25, qmna5) {
+  if (qi == null || module == null) return '— données manquantes';
+  if (qi > module)              return `${rnd(qi)} m³/s > Module — hautes eaux`;
+  if (q25 != null && qi > q25) return `Q25 < ${rnd(qi)} m³/s ≤ Module`;
+  return `${rnd(qi)} m³/s ≤ Q25 — basses eaux`;
+}
+
+async function initCarteNationale() {
+  if (carteReady) return;  // Déjà chargé
+
+  // Init carte Leaflet
+  if (!mapNat) {
+    if (typeof L === 'undefined') {
+      document.getElementById('page-carte').innerHTML =
+        '<div class="cn-no-csv"><h3>Carte indisponible</h3><p>Ouvrez le fichier dans votre navigateur.</p></div>';
+      return;
+    }
+    mapNat = L.map('map-national', { center:[46.5,2.5], zoom:6, zoomControl:false });
+    L.control.zoom({ position:'topright' }).addTo(mapNat);
+    L.tileLayer('https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap France · © contributeurs OpenStreetMap',
+      subdomains: 'abc',
+      maxZoom: 20
+    }).addTo(mapNat);
+    markersNat = L.layerGroup().addTo(mapNat);
+  }
+
+  cnShowLoader('Chargement du référentiel CSV…');
+
+  // 1. Charger le CSV (déjà en mémoire si préchargé au démarrage)
+  if (!csvData || Object.keys(csvData).length === 0) {
+    cnShowLoader('Chargement du référentiel CSV…');
+    const ok = await loadCSV();
+    if (!ok) return;
+  }
+
+  // 2. Charger les QI temps réel + fallback QMJ
+  cnShowLoader(`Récupération des débits…`);
+  const { qiMap, phase1Count } = await fetchAllQI();
+
+  // 3. Placer les marqueurs
+  renderMarkersNat(qiMap);
+
+  cnHideLoader();
+  document.getElementById('cn-legend').style.display = 'block';
+  document.getElementById('cn-stats').style.display = 'block';
+  carteReady = true;
+
+  // Stats
+  const total   = Object.keys(csvData).length;
+  const withVal = Object.values(qiMap).filter(v => v !== null).length;
+  const withQI  = phase1Count;
+  const withQMJ = withVal - withQI;
+  document.getElementById('cn-stat-total').textContent = total;
+  document.getElementById('cn-stat-qi').textContent = `${withQI} QI + ${withQMJ} QMJ`;
+}
+
+// ── Charger et parser le CSV ──────────────────────────────
+async function loadCSV() {
+  try {
+    const resp = await fetch(CN_CSV_URL);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const text = await resp.text();
+    csvData = parseCSV(text);
+    const n = Object.keys(csvData).length;
+    if (n === 0) throw new Error('CSV vide ou mal formaté');
+    return true;
+  } catch(e) {
+    cnHideLoader();
+    document.getElementById('page-carte').querySelector('.map-national-wrap').insertAdjacentHTML('afterbegin',
+      `<div class="cn-err">
+        <strong>Fichier CSV introuvable</strong><br><br>
+        Déposez <code>stations_debits.csv</code> dans le même dossier que ce fichier HTML sur Netlify.<br><br>
+        <small>${e.message}</small>
+      </div>`);
+    return false;
+  }
+}
+
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  const headers = lines[0].split(',').map(h => h.trim());
+  const result = {};
+  for (let i = 1; i < lines.length; i++) {
+    const vals = lines[i].split(',');
+    if (vals.length < headers.length) continue;
+    const row = {};
+    headers.forEach((h, idx) => row[h] = vals[idx]?.trim() ?? '');
+    const code = row.code_station;
+    if (!code) continue;
+    result[code] = {
+      libelle_station:   row.libelle_station   || '',
+      libelle_cours_eau: row.libelle_cours_eau || '',
+      libelle_commune:   row.libelle_commune   || '',
+      lat:    parseFloat(row.latitude)  || null,
+      lon:    parseFloat(row.longitude) || null,
+      module: row.module_m3s ? parseFloat(row.module_m3s) : null,
+      q25:    row.q25_m3s    ? parseFloat(row.q25_m3s)    : null,
+      qmna5:  row.qmna5_m3s  ? parseFloat(row.qmna5_m3s)  : null,
+      nb_annees: row.nb_annees ? parseInt(row.nb_annees)   : null
+    };
+  }
+  return result;
+}
+
+// ── Charger les QI temps réel + fallback QMJ pour les stations sans QI ────
+async function fetchAllQI() {
+  const qiMap   = {};   // code → { val, type } ou null
+  const allCodes = Object.keys(csvData);
+  allCodes.forEach(code => qiMap[code] = null);
+
+  // ── PHASE 1 : observations_tr paginé sur 2h (max 3 pages) ──
+  // 2h de données = ~55 000 mesures → couvre ~1900 stations de façon stable
+  cnShowLoader('Phase 1/2 — Débits instantanés (fenêtre 2h)…');
+  try {
+    const now2h = new Date(Date.now() - 2 * 60 * 60 * 1000);
+    const dateDebut = now2h.toISOString().replace(/\.\d{3}Z$/, 'Z');
+    let dateCursor = null;
+    let page = 0;
+    const MAX_PAGES = 3;
+
+    while (page < MAX_PAGES) {
+      const params = new URLSearchParams({
+        grandeur_hydro: 'Q',
+        size: 10000,
+        sort: 'desc',
+        date_debut_obs: dateDebut,
+        fields: 'code_station,date_obs,resultat_obs'
+      });
+      if (dateCursor) params.set('date_fin_obs', dateCursor);
+
+      const r = await fetch(`${HUBEAU}/observations_tr?${params}`);
+      if (!r.ok) break;
+      const d = await r.json();
+      const rows = d.data || [];
+      if (!rows.length) break;
+
+      for (const row of rows) {
+        const code = row.code_station;
+        if (code && qiMap[code] === null && row.resultat_obs != null) {
+          qiMap[code] = { val: row.resultat_obs / 1000, type: 'QI' };
+        }
+      }
+
+      page++;
+      const p1Count = Object.values(qiMap).filter(v => v !== null).length;
+      cnShowLoader(`Phase 1/2 — Page ${page}/${MAX_PAGES} · ${p1Count} stations QI…`);
+
+      if (rows.length < 10000) break;
+      dateCursor = rows.reduce((min, r) => r.date_obs < min ? r.date_obs : min, rows[0].date_obs);
+    }
+  } catch(e) {}
+
+  const phase1Count = Object.values(qiMap).filter(v => v !== null).length;
+
+  // ── PHASE 2 : obs_elab QmnJ (7 derniers jours) pour les stations sans QI ──
+  const sans = allCodes.filter(c => qiMap[c] === null && csvData[c]?.module != null);
+  cnShowLoader(`Phase 2/2 — Dernier QMJ pour ${sans.length} stations sans QI temps réel…`);
+
+  const BATCH = 30;
+  const dateFrom = daysAgo(7);
+  const dateTo   = today();
+
+  for (let i = 0; i < sans.length; i += BATCH) {
+    const batch = sans.slice(i, i + BATCH);
+    const codes = batch.join(',');
+    try {
+      const r = await fetch(
+        `${HUBEAU}/obs_elab?code_entite=${codes}&grandeur_hydro_elab=QmnJ` +
+        `&date_debut_obs_elab=${dateFrom}&date_fin_obs_elab=${dateTo}&size=500`
+      );
+      if (!r.ok) continue;
+      const d = await r.json();
+      // Pour chaque station du batch, prendre la valeur la plus récente
+      const byStation = {};
+      for (const row of (d.data || [])) {
+        const c = row.code_station;
+        if (row.resultat_obs_elab == null) continue;
+        if (!byStation[c] || row.date_obs_elab > byStation[c].date) {
+          byStation[c] = { val: row.resultat_obs_elab / 1000, date: row.date_obs_elab };
+        }
+      }
+      for (const [c, v] of Object.entries(byStation)) {
+        if (qiMap[c] === null) qiMap[c] = { val: v.val, type: 'QMJ' };
+      }
+    } catch(e) {}
+
+    // Mise à jour progression toutes les 5 batches
+    if (i % (BATCH * 5) === 0) {
+      const done = Object.values(qiMap).filter(v => v !== null).length;
+      cnShowLoader(`Phase 2/2 — ${done} stations chargées sur ${allCodes.length}…`);
+    }
+  }
+
+  return { qiMap, phase1Count };
+}
+
+// ── Placer les marqueurs sur la carte ─────────────────────
+function renderMarkersNat(qiMap) {
+  markersNat.clearLayers();
+
+  Object.entries(csvData).forEach(([code, st]) => {
+    if (!st.lat || !st.lon) return;
+
+    const entry  = qiMap[code];
+    const qi     = entry ? entry.val : null;
+    const qtype  = entry ? entry.type : null;  // 'QI' ou 'QMJ'
+    const color  = cnColor(qi, st.module, st.q25, st.qmna5);
+    const label  = cnColorLabel(qi, st.module, st.q25, st.qmna5);
+    const radius  = qi != null ? 6 : 4;
+    const opacity = qi != null ? 0.9 : 0.45;
+
+    const marker = L.circleMarker([st.lat, st.lon], {
+      radius, fillColor: color,
+      color: 'rgba(255,255,255,0.4)', weight: 1, fillOpacity: opacity
+    });
+
+    marker.bindPopup(() => {
+      const qi_color = '#4fc3f7';  // bleu
+      const qi_label = qtype === 'QI' ? 'Débit instantané (QI)' : 'Dernier débit journalier (QMJ)';
+      const qi_txt   = qi != null
+        ? `<span style="color:${qi_color};font-weight:700;font-size:1rem">${rnd(qi)} m³/s</span>
+           <span style="font-size:.7rem;color:var(--muted)"> — ${qi_label}</span>`
+        : '<span style="color:var(--muted)">— indisponible</span>';
+      const mod_txt  = st.module != null ? `${rnd(st.module)} m³/s` : '—';
+      const q25_txt  = st.q25    != null ? `${rnd(st.q25)} m³/s`    : '—';
+      const qm_txt   = st.qmna5  != null ? `${rnd(st.qmna5)} m³/s`  : '—';
+      return `
+        <div class="cn-popup-name">${esc(st.libelle_station)}</div>
+        <div class="cn-popup-meta">
+          ${esc(code)}<br>
+          ${esc(st.libelle_cours_eau||'—')} · ${esc(st.libelle_commune||'—')}
+        </div>
+        <div class="cn-popup-row">
+          <span class="cn-popup-lbl">${qi_label}</span>
+          <span class="cn-popup-val">${qi_txt}</span>
+        </div>
+        <div style="margin:6px 0 4px;font-size:.7rem;color:var(--muted);border-top:1px solid var(--border);padding-top:6px">
+          Débits de référence
+        </div>
+        <div class="cn-popup-row"><span class="cn-popup-lbl">Module</span>
+          <span class="cn-popup-val" style="color:#4fc3f7">${mod_txt}</span></div>
+        <div class="cn-popup-row"><span class="cn-popup-lbl">Q25</span>
+          <span class="cn-popup-val" style="color:#4fc3f7">${q25_txt}</span></div>
+        <div class="cn-popup-row"><span class="cn-popup-lbl">QMNA5</span>
+          <span class="cn-popup-val" style="color:#4fc3f7">${qm_txt}</span></div>
+        <div style="margin-top:6px;font-size:.68rem;color:var(--muted)">
+          ${st.nb_annees ? `Référence sur ${st.nb_annees} ans · ` : ''}
+          <span style="color:${color};font-weight:600">${label}</span>
+        </div>`;
+    }, { maxWidth: 240 });
+
+    markersNat.addLayer(marker);
+  });
+}
+
+function cnShowLoader(msg) {
+  const el = document.getElementById('cn-loader');
+  el.style.display = 'block';
+  document.getElementById('cn-loader-msg').textContent = msg;
+}
+function cnHideLoader() {
+  document.getElementById('cn-loader').style.display = 'none';
+}
+</script>
+</body>
+</html>

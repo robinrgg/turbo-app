@@ -1,0 +1,1817 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0b1014">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Jaugeage</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230b1014'/%3E%3Cpath d='M4 22 Q8 14 12 22 T20 22 T28 22' stroke='%2356c2b1' stroke-width='2' fill='none'/%3E%3C/svg%3E">
+<link rel="manifest" href="./manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" media="print" onload="this.media='all'">
+
+<style>
+:root {
+  --bg: #0b1014;
+  --bg-elev: #131a21;
+  --bg-elev2: #1a232c;
+  --border: #232f3a;
+  --border-strong: #34454f;
+  --txt: #e6e8ea;
+  --txt-dim: #8a96a3;
+  --txt-mute: #5e6b78;
+  --accent: #56c2b1;
+  --accent-dim: #3a8a7e;
+  --warn: #d9a566;
+  --err: #d96666;
+  --ok: #6cc26c;
+  --r: 6px;
+  --r-sm: 4px;
+  --tap: 44px;
+  font-size: 16px;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; padding: 0; background: var(--bg); color: var(--txt); }
+body {
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-size: 14px; line-height: 1.45;
+  min-height: 100vh; overscroll-behavior: none;
+}
+.mono { font-family: 'IBM Plex Mono', ui-monospace, monospace; }
+input, select, textarea, button { font-family: inherit; font-size: inherit; color: inherit; }
+
+/* Masquer les flèches up/down sur les inputs numériques (anti miss-click tactile) */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+button { cursor: pointer; }
+
+.app-header {
+  position: sticky; top: 0; z-index: 50;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 14px 9px;
+  display: flex; align-items: center; gap: 10px;
+}
+.app-header h1 { margin: 0; font-size: 14px; font-weight: 600; letter-spacing: 0.04em; flex: 1; }
+.app-header h1 .accent { color: var(--accent); margin-right: 4px; }
+.app-header h1 .sub { color: var(--txt-dim); font-weight: 400; font-size: 12px; margin-left: 4px; }
+.status-pill {
+  font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+  padding: 3px 7px; border-radius: 10px;
+  background: var(--bg-elev); color: var(--txt-dim);
+  border: 1px solid var(--border); white-space: nowrap;
+}
+.status-pill.saved { color: var(--ok); }
+.status-pill.unsaved { color: var(--warn); }
+.status-pill.err { color: var(--err); }
+
+.tab-nav {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  display: grid; grid-template-columns: 1fr 1fr;
+  background: var(--bg); border-top: 1px solid var(--border);
+  z-index: 60; padding-bottom: env(safe-area-inset-bottom);
+}
+.tab-nav button {
+  background: transparent; border: none;
+  padding: 10px 8px 12px;
+  color: var(--txt-mute);
+  font-size: 11px; font-weight: 500;
+  letter-spacing: 0.05em; text-transform: uppercase;
+  border-top: 2px solid transparent;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  min-height: 56px;
+}
+.tab-nav button.active {
+  color: var(--accent);
+  border-top-color: var(--accent);
+  background: var(--bg-elev);
+}
+.tab-nav .ico { font-size: 20px; line-height: 1; }
+
+.tab-content { display: none; padding: 12px 10px 90px; max-width: 900px; margin: 0 auto; }
+.tab-content.active { display: block; }
+
+section.card {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  margin-bottom: 12px; overflow: hidden;
+}
+section.card > header {
+  padding: 10px 12px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 8px;
+  background: var(--bg-elev2); user-select: none;
+}
+section.card > header .title {
+  font-size: 11px; font-weight: 600; flex: 1;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--txt-dim);
+}
+section.card > header .title .accent-bar {
+  display: inline-block; width: 3px; height: 11px;
+  background: var(--accent); margin-right: 6px; vertical-align: middle;
+}
+section.card > .body { padding: 12px; }
+section.card.collapsed > .body { display: none; }
+section.card .toggle { color: var(--txt-mute); font-size: 16px; transition: transform 0.2s; }
+section.card.collapsed .toggle { transform: rotate(-90deg); }
+
+.field { display: flex; flex-direction: column; gap: 3px; margin-bottom: 8px; }
+.field-row { display: grid; gap: 8px; margin-bottom: 8px; }
+.field label {
+  font-size: 10px; color: var(--txt-mute);
+  text-transform: uppercase; letter-spacing: 0.06em; font-weight: 500;
+}
+.field input, .field select, .field textarea {
+  background: var(--bg);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  padding: 9px 10px; min-height: var(--tap);
+  outline: none; transition: border-color 0.15s;
+  width: 100%;
+}
+.field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); }
+.field input.mono, .field select.mono { font-family: 'IBM Plex Mono', monospace; }
+.field textarea { min-height: 56px; resize: vertical; }
+@media (min-width: 520px) {
+  .field-row.cols-2 { grid-template-columns: 1fr 1fr; }
+}
+
+.verticales-list { display: flex; flex-direction: column; gap: 6px; }
+.vert-card {
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--bg); overflow: hidden;
+}
+.vert-card.is-bord { border-color: var(--border-strong); background: var(--bg-elev2); }
+.vert-card.is-bathy { background: var(--bg-elev2); }
+.vert-card.is-active { border-color: var(--accent); }
+.vert-card.quality-green { border-left: 3px solid #4ade80; }
+.vert-card.quality-yellow { border-left: 3px solid #facc15; }
+.vert-card.quality-red { border-left: 3px solid #ef4444; }
+.vert-summary {
+  display: grid;
+  grid-template-columns: 30px 1fr 1fr auto 24px;
+  align-items: center; padding: 9px 8px; gap: 6px;
+  cursor: pointer;
+}
+.vert-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px; font-weight: 600;
+  color: var(--txt-mute); text-align: center;
+}
+.vert-card.is-bord .vert-num { color: var(--accent-dim); }
+.vert-card.is-bathy .vert-num { color: #38bdf8; }
+.vert-cell { display: flex; flex-direction: column; gap: 1px; }
+.vert-cell .v {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 14px; font-weight: 500;
+}
+.vert-cell .lbl {
+  font-size: 9px; color: var(--txt-mute);
+  text-transform: uppercase; letter-spacing: 0.06em;
+}
+.vert-handle { color: var(--txt-mute); font-size: 14px; text-align: center; }
+
+/* Valeur de contribution colorée selon la qualité de répartition (cf. quality-*) */
+.vert-card.quality-green .qual-val { color: #4ade80; }
+.vert-card.quality-yellow .qual-val { color: #facc15; }
+.vert-card.quality-red .qual-val { color: #ef4444; }
+
+.vert-detail {
+  border-top: 1px solid var(--border);
+  padding: 10px; background: var(--bg-elev2);
+}
+
+.points-list { display: flex; flex-direction: column; gap: 6px; margin: 8px 0; }
+.point-row {
+  display: grid;
+  grid-template-columns: 64px 64px 1fr 32px;
+  gap: 6px; align-items: center;
+}
+.point-row .pos-label, .point-row .h-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px; padding: 0 4px;
+  color: var(--txt);
+}
+.point-row .h-label { color: var(--accent); }
+.point-row input {
+  min-height: 38px; padding: 6px 8px;
+  background: var(--bg);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 14px; width: 100%; text-align: right;
+}
+.point-row input.pos-input {
+  text-align: center; padding: 6px 4px;
+}
+.point-row .ico-btn {
+  background: transparent; border: none;
+  color: var(--err); padding: 4px;
+  min-height: 38px; min-width: 32px; font-size: 16px;
+}
+.points-header {
+  display: grid;
+  grid-template-columns: 64px 64px 1fr 32px;
+  gap: 6px; font-size: 9px;
+  color: var(--txt-mute);
+  text-transform: uppercase; letter-spacing: 0.06em;
+  padding: 0 4px 2px;
+  border-bottom: 1px solid var(--border);
+}
+.points-header > span { text-align: center; }
+.points-header > span:nth-child(3) { text-align: right; padding-right: 8px; }
+
+
+button.btn {
+  background: var(--bg-elev2);
+  border: 1px solid var(--border-strong);
+  color: var(--txt);
+  border-radius: var(--r-sm);
+  padding: 9px 12px; min-height: var(--tap);
+  font-weight: 500;
+  transition: background 0.15s, border-color 0.15s;
+}
+button.btn:active { transform: translateY(1px); }
+button.btn.primary {
+  background: var(--accent); border-color: var(--accent);
+  color: #0b1014; font-weight: 600;
+}
+button.btn.danger { color: var(--err); border-color: rgba(217,102,102,0.4); }
+button.btn.ghost { background: transparent; }
+button.btn.small { min-height: 36px; padding: 6px 10px; font-size: 13px; }
+button.btn.full { width: 100%; }
+.btn-group { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.results-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 1px; background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--r); overflow: hidden;
+}
+.result-cell {
+  background: var(--bg-elev);
+  padding: 12px 10px;
+  display: flex; flex-direction: column; gap: 3px;
+}
+.result-cell .lbl {
+  font-size: 9px; color: var(--txt-mute);
+  text-transform: uppercase; letter-spacing: 0.08em;
+  font-weight: 500;
+}
+.result-cell .val {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 18px; font-weight: 500; letter-spacing: -0.01em;
+}
+.result-cell .val .unit {
+  font-size: 11px; color: var(--txt-dim);
+  margin-left: 3px; font-weight: 400;
+}
+.result-cell .val .sub {
+  display: block; font-size: 11px; color: var(--txt-dim);
+  font-weight: 400; margin-top: 2px; letter-spacing: 0;
+}
+.result-cell.hi { grid-column: 1 / -1; background: var(--bg-elev2); }
+.result-cell.hi .val { color: var(--accent); font-size: 26px; }
+@media (min-width: 520px) {
+  .results-grid { grid-template-columns: repeat(4, 1fr); }
+  .result-cell.hi { grid-column: 1 / -1; }
+}
+
+.viz-wrap {
+  background: var(--bg);
+  border-radius: var(--r-sm);
+  padding: 6px; border: 1px solid var(--border);
+}
+.viz-wrap svg { width: 100%; display: block; }
+
+.archive-list { display: flex; flex-direction: column; gap: 6px; }
+.archive-item {
+  display: grid; grid-template-columns: 1fr auto;
+  gap: 8px; padding: 10px 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm); align-items: center;
+}
+.archive-item .meta { font-size: 13px; min-width: 0; }
+.archive-item .meta .main { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.archive-item .meta .sub {
+  font-size: 11px; color: var(--txt-dim);
+  margin-top: 2px;
+  font-family: 'IBM Plex Mono', monospace;
+}
+.archive-item .q {
+  font-family: 'IBM Plex Mono', monospace;
+  color: var(--accent); font-size: 13px; font-weight: 500;
+  margin-top: 2px;
+}
+.archive-item .actions { display: flex; gap: 4px; flex-direction: column; }
+.empty {
+  padding: 24px 16px; text-align: center;
+  color: var(--txt-mute); font-size: 13px;
+  border: 1px dashed var(--border);
+  border-radius: var(--r-sm); background: var(--bg);
+}
+
+.toast {
+  position: fixed; bottom: 80px; left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-elev2); color: var(--txt);
+  border: 1px solid var(--border-strong);
+  padding: 10px 16px; border-radius: var(--r);
+  z-index: 100; opacity: 0; pointer-events: none;
+  transition: opacity 0.2s; font-size: 13px;
+  max-width: 90%; text-align: center;
+  display: flex; align-items: center; gap: 12px;
+}
+.toast.show { opacity: 1; pointer-events: auto; }
+.toast.ok { border-left: 3px solid var(--ok); }
+.toast.err { border-left: 3px solid var(--err); }
+.toast.warn { border-left: 3px solid var(--warn); }
+.toast .toast-action {
+  background: transparent; color: var(--accent); border: none;
+  font-weight: 600; cursor: pointer; padding: 4px 8px;
+  font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;
+}
+.toast .toast-action:hover { color: var(--accent-dim); }
+
+.modal-bg {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.6); z-index: 200;
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.modal-bg.hidden { display: none; }
+.modal {
+  background: var(--bg-elev);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r);
+  max-width: 420px; width: 100%;
+  max-height: 90vh; overflow: auto;
+}
+.modal header { padding: 12px 14px; border-bottom: 1px solid var(--border); }
+.modal header h3 { margin: 0; font-size: 14px; }
+.modal .body { padding: 14px; font-size: 13px; }
+.modal footer { padding: 10px 14px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+
+.hint { font-size: 11px; color: var(--txt-mute); margin-top: 4px; line-height: 1.4; }
+.warn-line { color: var(--warn); font-size: 11px; margin: 4px 0; }
+.switch-wrap { display: flex; align-items: center; gap: 8px; padding: 6px 0; }
+.switch-wrap input { width: 18px; height: 18px; accent-color: var(--accent); }
+.switch-wrap label { font-size: 12px; color: var(--txt-dim); }
+.section-action-bar { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <h1><span class="accent">▌</span>JAUGEAGE</h1>
+  <span class="status-pill" id="saveStatus">—</span>
+</header>
+
+<!-- TAB SAISIE -->
+<div class="tab-content active" id="tab-saisie">
+
+  <section class="card collapsed" id="metaCard">
+    <header onclick="toggleCard('metaCard')">
+      <span class="title"><span class="accent-bar"></span>Métadonnées</span>
+      <span class="toggle">▾</span>
+    </header>
+    <div class="body">
+      <div class="field-row cols-2">
+        <div class="field"><label>Date</label><input type="date" id="m_date" class="mono"></div>
+        <div class="field"><label>Heure</label><input type="time" id="m_heure" class="mono"></div>
+      </div>
+      <div class="field"><label>Cours d'eau</label><input type="text" id="m_cours" placeholder="Le Lez"></div>
+      <div class="field"><label>Station / lieu-dit</label><input type="text" id="m_station" placeholder="Pont de Lavalette"></div>
+      <div class="field-row cols-2">
+        <div class="field"><label>Opérateur(s)</label><input type="text" id="m_operateur"></div>
+        <div class="field"><label>Matériel</label><input type="text" id="m_materiel" placeholder="Micromoulinet OTT C2"></div>
+      </div>
+      <div class="field"><label>Hauteur échelle (cm)</label><input type="number" step="0.1" id="m_echelle" class="mono"></div>
+      <div class="field">
+        <label>Observations</label>
+        <textarea id="m_notes" placeholder="Conditions, faciès, observations…"></textarea>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <header>
+      <span class="title"><span class="accent-bar"></span>Verticales</span>
+      <span class="mono" style="color:var(--txt-dim);font-size:11px" id="vertCount">0</span>
+    </header>
+    <div class="body">
+      <div class="hint" style="margin-bottom:10px">
+        Saisir d'une rive vers l'autre. Aux extrémités, cocher « Bord » sur la verticale pour appliquer le coefficient de rive.
+      </div>
+      <div class="verticales-list" id="vertList"></div>
+      <div class="section-action-bar">
+        <button class="btn primary small" onclick="addVerticale()">＋ Verticale</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <header><span class="title"><span class="accent-bar"></span>Résultats</span></header>
+    <div class="body">
+      <div class="results-grid">
+        <div class="result-cell hi">
+          <span class="lbl">Débit total</span>
+          <span class="val mono" id="r_Q">—<span class="unit">m³/s</span></span>
+        </div>
+        <div class="result-cell">
+          <span class="lbl">Incertitude (95 %)</span>
+          <span class="val mono" id="r_U">—<span class="unit">%</span></span>
+        </div>
+        <div class="result-cell">
+          <span class="lbl">Section</span>
+          <span class="val mono" id="r_S">—<span class="unit">m²</span></span>
+        </div>
+        <div class="result-cell">
+          <span class="lbl">V moyenne</span>
+          <span class="val mono" id="r_Vmoy">—<span class="unit">m/s</span></span>
+        </div>
+        <div class="result-cell">
+          <span class="lbl">P moyenne</span>
+          <span class="val mono" id="r_Pmoy">—<span class="unit">m</span></span>
+        </div>
+        <div class="result-cell">
+          <span class="lbl">Largeur</span>
+          <span class="val mono" id="r_L">—<span class="unit">m</span></span>
+        </div>
+      </div>
+      <div id="r_warn" style="margin-top:8px"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <header><span class="title"><span class="accent-bar"></span>Profil en travers</span></header>
+    <div class="body">
+      <div class="viz-wrap">
+        <svg id="viz" preserveAspectRatio="xMidYMid meet"></svg>
+      </div>
+    </div>
+  </section>
+
+  <button class="btn ghost full small" style="margin-top:10px" onclick="confirmReset()">✕ Réinitialiser le jaugeage en cours</button>
+
+</div>
+
+<!-- TAB DONNEES -->
+<div class="tab-content" id="tab-donnees">
+
+  <section class="card">
+    <header><span class="title"><span class="accent-bar"></span>Jaugeage en cours</span></header>
+    <div class="body">
+      <div id="currentSummary" style="margin-bottom:10px"></div>
+      <button class="btn primary full" onclick="saveCurrent()">💾 Enregistrer dans la liste</button>
+      <div class="hint" style="margin-top:8px">
+        Enregistre le jaugeage actuel dans la liste des jaugeages ci-dessous. Le jaugeage en cours dans l'onglet Saisie reste actif tant que tu ne le réinitialises pas.
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <header>
+      <span class="title"><span class="accent-bar"></span>Mes jaugeages <span id="archCount" class="mono" style="color:var(--txt-mute);text-transform:none;font-weight:400">(0)</span></span>
+    </header>
+    <div class="body">
+      <div class="archive-list" id="archList"></div>
+      <div class="section-action-bar">
+        <button class="btn small" onclick="exportArchive()">⬇ Tout exporter</button>
+        <button class="btn small" onclick="document.getElementById('importArchiveFile').click()">⬆ Tout importer</button>
+        <input type="file" id="importArchiveFile" accept=".json" style="display:none" onchange="importArchive(event)">
+      </div>
+      <div class="hint" style="margin-top:8px">
+        « Tout exporter » crée un fichier JSON de l'ensemble de la liste — utile pour sauvegarder ou transférer vers un autre appareil.
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <header><span class="title"><span class="accent-bar"></span>Export du jaugeage en cours</span></header>
+    <div class="body">
+      <div class="btn-group">
+        <button class="btn small" onclick="exportJSON()">⬇ Exporter en JSON</button>
+        <button class="btn small" onclick="exportCSV()">⬇ Exporter en CSV</button>
+        <button class="btn small" onclick="document.getElementById('importFile').click()">⬆ Charger un JSON</button>
+        <input type="file" id="importFile" accept=".json" style="display:none" onchange="importJSON(event)">
+      </div>
+      <div class="hint" style="margin-top:8px">
+        Exporte le jaugeage en cours. JSON pour réimport ultérieur. CSV pour exploitation Excel/Calc.
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<nav class="tab-nav">
+  <button data-tab="saisie" class="active" onclick="switchTab('saisie')">
+    <span class="ico">📋</span><span>Saisie</span>
+  </button>
+  <button data-tab="donnees" onclick="switchTab('donnees')">
+    <span class="ico">💾</span><span>Données</span>
+  </button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal-bg hidden" id="modalBg">
+  <div class="modal">
+    <header><h3 id="modalTitle">Confirmation</h3></header>
+    <div class="body" id="modalBody"></div>
+    <footer id="modalFooter">
+      <button class="btn ghost" onclick="closeModal()">Annuler</button>
+      <button class="btn primary" id="modalOk">OK</button>
+    </footer>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'jaugeage_current_v2';
+const ARCHIVE_KEY = 'jaugeage_archive_v2';
+
+const defaultMeta = () => ({
+  date: new Date().toISOString().slice(0,10),
+  heure: new Date().toTimeString().slice(0,5),
+  cours: '', station: '', operateur: '', materiel: '',
+  echelle: '', notes: ''
+});
+
+const newVerticale = (abscisse = 0, isBord = false) => ({
+  id: 'v' + Math.random().toString(36).slice(2, 9),
+  abscisse: abscisse,
+  profondeur: isBord ? 0 : '',
+  isBord: isBord,
+  isBathy: false,                       // verticale bathymétrique (profondeur seule, vitesse interpolée par Froude)
+  coeffRive: isBord ? 0.67 : null,      // coefficient de rive (berge naturelle 0,67 par défaut)
+  pointsMode: 'auto',
+  points: []                            // les bords n'ont plus de points : leur vitesse est calculée par α·V_proche
+});
+
+let state = { meta: defaultMeta(), verticales: [], expandedVertId: null };
+let saveTimer = null;
+let saveStatus = 'saved';
+
+/* PERSISTENCE */
+function saveState() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      meta: state.meta, verticales: state.verticales, ts: Date.now()
+    }));
+    setSaveStatus('saved');
+  } catch (e) {
+    setSaveStatus('err');
+    toast('Erreur sauvegarde locale: ' + e.message, 'err');
+  }
+}
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const data = JSON.parse(raw);
+      if (data.meta) state.meta = { ...defaultMeta(), ...data.meta };
+      if (Array.isArray(data.verticales)) state.verticales = normalizeVerticales(data.verticales);
+    }
+  } catch (e) { console.error(e); }
+}
+function debounceSave() {
+  setSaveStatus('saving');
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(saveState, 400);
+}
+function setSaveStatus(s) {
+  saveStatus = s;
+  const el = document.getElementById('saveStatus');
+  if (s === 'saved') { el.textContent = '● enreg.'; el.className = 'status-pill saved'; }
+  else if (s === 'saving') { el.textContent = '○ ...'; el.className = 'status-pill unsaved'; }
+  else { el.textContent = '✕ erreur'; el.className = 'status-pill err'; }
+}
+
+/* ARCHIVE */
+function loadArchive() {
+  try { return JSON.parse(localStorage.getItem(ARCHIVE_KEY) || '[]'); } catch { return []; }
+}
+function saveArchive(arr) { localStorage.setItem(ARCHIVE_KEY, JSON.stringify(arr)); }
+function saveCurrent() {
+  if (state.verticales.length < 2) { toast('Au moins 2 verticales nécessaires.', 'warn'); return; }
+  const r = computeAll();
+  const arr = loadArchive();
+  arr.unshift({
+    id: 'jg' + Date.now(),
+    ts: Date.now(),
+    meta: { ...state.meta },
+    verticales: JSON.parse(JSON.stringify(state.verticales)),
+    Q: r.Q, S: r.S, Vmoy: r.Vmoy
+  });
+  saveArchive(arr);
+  toast('Jaugeage archivé.', 'ok');
+  renderArchive();
+  renderCurrentSummary();
+}
+function loadFromArchive(id) {
+  showModal('Charger ce jaugeage ?',
+    'Le jaugeage en cours sera remplacé. Pensez à l\'archiver avant si nécessaire.',
+    () => {
+      const item = loadArchive().find(x => x.id === id);
+      if (!item) return;
+      state.meta = { ...defaultMeta(), ...item.meta };
+      state.verticales = normalizeVerticales(JSON.parse(JSON.stringify(item.verticales)));
+      state.expandedVertId = null;
+      renderAll();
+      saveState();
+      switchTab('saisie');
+      toast('Jaugeage chargé.', 'ok');
+    });
+}
+function deleteFromArchive(id) {
+  showModal('Supprimer ce jaugeage ?', 'Cette action est irréversible.', () => {
+    saveArchive(loadArchive().filter(x => x.id !== id));
+    renderArchive();
+    toast('Supprimé.', 'ok');
+  });
+}
+
+/* CALCULS — section médiane uniquement */
+function near(a, b, tol = 0.05) { return Math.abs(a - b) < tol; }
+
+function meanVelocity(points) {
+  if (!points || points.length === 0) return 0;
+  const valid = points.filter(p =>
+    typeof p.v === 'number' && !isNaN(p.v) &&
+    typeof p.z_rel === 'number' && !isNaN(p.z_rel)
+  );
+  if (valid.length === 0) return 0;
+  const sorted = [...valid].sort((a,b) => a.z_rel - b.z_rel);
+  const n = sorted.length;
+  if (n === 1) return sorted[0].v;
+  if (n === 2 && near(sorted[0].z_rel, 0.2) && near(sorted[1].z_rel, 0.8)) {
+    return (sorted[0].v + sorted[1].v) / 2;
+  }
+  if (n === 3 && near(sorted[0].z_rel, 0.2) && near(sorted[1].z_rel, 0.4) && near(sorted[2].z_rel, 0.8)) {
+    return (sorted[0].v + 2*sorted[1].v + sorted[2].v) / 4;
+  }
+  if (n === 5 && near(sorted[0].z_rel, 0) && near(sorted[1].z_rel, 0.2) && near(sorted[2].z_rel, 0.4) && near(sorted[3].z_rel, 0.8) && near(sorted[4].z_rel, 1)) {
+    // ISO 748:2021 §7.1.4.3.5 (éq. 9). En repère depuis la surface : 0,1·(v_s + 3·v_0,2 + 3·v_0,6 + 2·v_0,8 + v_f)
+    // Transposé en repère fond (poids 1, 2, 3, 3, 1 du fond vers la surface) :
+    return (sorted[0].v + 2*sorted[1].v + 3*sorted[2].v + 3*sorted[3].v + sorted[4].v) / 10;
+  }
+  if (n === 6 && near(sorted[0].z_rel, 0) && near(sorted[1].z_rel, 0.2) && near(sorted[2].z_rel, 0.4) && near(sorted[3].z_rel, 0.6) && near(sorted[4].z_rel, 0.8) && near(sorted[5].z_rel, 1)) {
+    // ISO 748:2021 §7.1.4.3.6 (éq. 10), symétrique (1, 2, 2, 2, 2, 1)
+    return (sorted[0].v + 2*sorted[1].v + 2*sorted[2].v + 2*sorted[3].v + 2*sorted[4].v + sorted[5].v) / 10;
+  }
+  let z = sorted.map(p => p.z_rel);
+  let v = sorted.map(p => p.v);
+  if (z[0] > 0.001) { z = [0, ...z]; v = [0, ...v]; }
+  if (z[z.length-1] < 0.999) { z = [...z, 1]; v = [...v, v[v.length-1]]; }
+  let integ = 0;
+  for (let i = 0; i < z.length - 1; i++) {
+    integ += (v[i] + v[i+1]) / 2 * (z[i+1] - z[i]);
+  }
+  return integ;
+}
+
+function computeAll() {
+  const verts = state.verticales
+    .filter(v => v.abscisse !== '' && v.abscisse !== null && !isNaN(parseFloat(v.abscisse)))
+    .map(v => ({
+      ...v,
+      abscisse: parseFloat(v.abscisse),
+      profondeur: parseFloat(v.profondeur) || 0,
+      coeffRive: (v.coeffRive !== null && v.coeffRive !== undefined && v.coeffRive !== '') ? parseFloat(v.coeffRive) : null,
+      V_mes: meanVelocity((v.points || []).map(p => ({
+        z_rel: parseFloat(p.z_rel), v: parseFloat(p.v)
+      }))),
+    }))
+    .sort((a, b) => a.abscisse - b.abscisse);
+
+  if (verts.length < 2) return { Q: 0, S: 0, Vmoy: 0, Pmoy: 0, L: 0, verts, partials: [], uncertainty: null };
+
+  /* Calcul des V_moy effectives selon le type de verticale */
+  const g = 9.81;
+  const isComplete = (v) => !v.isBord && !v.isBathy && v.V_mes > 0;
+
+  /* On résout d'abord les verticales mesurées (pour qu'elles aient V_moy), puis les bathy, puis les bords */
+  verts.forEach(v => { if (!v.isBord && !v.isBathy) v.V_moy = v.V_mes; });
+
+  verts.forEach((v, i) => {
+    if (!v.isBathy) return;
+    /* Verticale bathymétrique : interpolation linéaire du nombre de Froude
+       (Le Coz et al. 2012, fiche OFB 4.4). Conformément au modèle Moulinet INRAE,
+       l'interpolation N'EST PAS EXTRAPOLÉE : sans encadrement par deux verticales
+       complètes (une à gauche ET une à droite), V_moy est forcée à 0
+       (le débit partiel sera nul). */
+    const { left, right } = surroundingCompleteIdx(verts, i);
+    if (left !== -1 && right !== -1) {
+      const vL = verts[left], vR = verts[right];
+      const FrL = vL.profondeur > 0 ? vL.V_mes / Math.sqrt(g * vL.profondeur) : 0;
+      const FrR = vR.profondeur > 0 ? vR.V_mes / Math.sqrt(g * vR.profondeur) : 0;
+      const dx = vR.abscisse - vL.abscisse;
+      const Fr = dx > 0 ? ((vR.abscisse - v.abscisse) * FrL + (v.abscisse - vL.abscisse) * FrR) / dx : 0;
+      v.V_moy = v.profondeur > 0 ? Fr * Math.sqrt(g * v.profondeur) : 0;
+    } else {
+      v.V_moy = 0;
+    }
+  });
+
+  verts.forEach((v, i) => {
+    if (!v.isBord) return;
+    /* Bord : V_bord = α × V_verticale_immédiatement_adjacente_dans_le_transect
+       (modèle Moulinet INRAE — utilise verticals[1] pour le bord gauche et
+       verticals[n-2] pour le bord droit, qu'elle soit complète ou bathymétrique). */
+    const alpha = v.coeffRive !== null ? v.coeffRive : 0.67;
+    let adjacent;
+    if (i === 0 && verts.length > 1) adjacent = verts[1];
+    else if (i === verts.length - 1 && verts.length > 1) adjacent = verts[verts.length - 2];
+    v.V_moy = (adjacent && typeof adjacent.V_moy === 'number') ? alpha * adjacent.V_moy : 0;
+  });
+
+  /* Méthode section médiane ISO 748 §8.1.3 */
+  let Q = 0, S = 0;
+  const partials = [];
+  for (let i = 0; i < verts.length; i++) {
+    let L;
+    if (i === 0) L = (verts[1].abscisse - verts[0].abscisse) / 2;
+    else if (i === verts.length - 1) L = (verts[i].abscisse - verts[i-1].abscisse) / 2;
+    else L = (verts[i+1].abscisse - verts[i-1].abscisse) / 2;
+    const Qi = verts[i].V_moy * verts[i].profondeur * L;
+    const Si = verts[i].profondeur * L;
+    Q += Qi; S += Si;
+    partials.push({ id: verts[i].id, Q: Qi, S: Si, L });
+  }
+  const Vmoy = S > 0 ? Q / S : 0;
+  const Pmoy = verts.reduce((a, v) => a + v.profondeur, 0) / verts.length;
+  const L = verts[verts.length-1].abscisse - verts[0].abscisse;
+
+  /* Incertitude ISO 748:2021 §9.2 */
+  const uncertainty = Q > 0 ? computeUncertaintyISO748(verts, partials, Q) : null;
+
+  return { Q, S, Vmoy, Pmoy, L, verts, partials, uncertainty };
+}
+
+/* Verticales complètes encadrantes (gauche/droite) pour interpolation Froude des bathy */
+function surroundingCompleteIdx(verts, i) {
+  let left = -1, right = -1;
+  for (let j = i - 1; j >= 0; j--) {
+    if (!verts[j].isBord && !verts[j].isBathy && verts[j].V_mes > 0) { left = j; break; }
+  }
+  for (let j = i + 1; j < verts.length; j++) {
+    if (!verts[j].isBord && !verts[j].isBathy && verts[j].V_mes > 0) { right = j; break; }
+  }
+  return { left, right };
+}
+
+/* Incertitude composée selon ISO 748:2021 §9.2 — formule (21)
+   u_Q² = u_s² + u_m² + Σ(q_i²·u_q,i²) / Q²
+   où u_q,i² = u_b² + u_d² + u_p² + u_c² + u_e,i²
+   Résultat en % au niveau de confiance 95 % (k=2 implicite par convention ISO).
+   Valeurs par défaut alignées sur Moulinet INRAE (chunk-UDDJD3IE.js, classe uo) :
+   - u_s = 1 %   (incertitude systématique)
+   - u_b = 0,5 % (largeur)
+   - u_d = 0,5 % (profondeur)
+   - u_p = 1 %   (vitesse ponctuelle, hors étalonnage)
+   - u_c = 1 %   (étalonnage moulinet)
+   - u_e dépend du nombre de points par verticale (table E.5 ISO 748:2007)
+   - u_m dépend du nombre de verticales (table D.6 ISO 748:2021) */
+function computeUncertaintyISO748(verts, partials, Q) {
+  const u_s = 1.0, u_b = 0.5, u_d = 0.5, u_p = 1.0, u_c = 1.0;
+
+  const n = verts.length;
+  let u_m;
+  if (n >= 35) u_m = 2.0;
+  else if (n >= 25) u_m = 2.5;
+  else if (n >= 20) u_m = 3.0;
+  else if (n >= 15) u_m = 4.0;
+  else if (n >= 10) u_m = 5.0;
+  else if (n >= 5)  u_m = 7.5;
+  else              u_m = 10.0;
+
+  function u_e_for_vertical(v) {
+    if (v.isBord)  return 10.0;
+    if (v.isBathy) return 7.5;
+    const np = (v.points || []).filter(p => !isNaN(parseFloat(p.v))).length;
+    if (np >= 6) return 2.0;
+    if (np === 5) return 2.5;
+    if (np >= 3)  return 3.0;
+    if (np === 2) return 3.5;
+    return 7.5;
+  }
+
+  let sumSq = 0;
+  verts.forEach((v, i) => {
+    const u_e = u_e_for_vertical(v);
+    const u_qi2 = u_b*u_b + u_d*u_d + u_p*u_p + u_c*u_c + u_e*u_e;
+    const qi = partials[i].Q;
+    sumSq += qi * qi * u_qi2;
+  });
+  const u_q_rel2 = Q > 0 ? sumSq / (Q * Q) : 0;
+  const u_Q = Math.sqrt(u_s*u_s + u_m*u_m + u_q_rel2);
+
+  return { u_Q, u_s, u_m, u_b, u_d, u_p, u_c, n };
+}
+
+/* Normalisation : détecte automatiquement les bords aux extrémités du transect */
+function normalizeVerticales(verts) {
+  if (!verts || verts.length < 2) return verts || [];
+  const valid = verts.filter(v => !isNaN(parseFloat(v.abscisse)));
+  if (valid.length < 2) return verts;
+  const xs = valid.map(v => parseFloat(v.abscisse));
+  const xMin = Math.min(...xs);
+  const xMax = Math.max(...xs);
+  return verts.map(v => {
+    const x = parseFloat(v.abscisse);
+    const p = parseFloat(v.profondeur);
+    const isExtreme = (x === xMin || x === xMax);
+    const noDepth = isNaN(p) || p === 0 || v.profondeur === '' || v.profondeur === null;
+    if (isExtreme && noDepth && !v.isBord) {
+      return { ...v, isBord: true, profondeur: 0, points: [], coeffRive: 0.67 };
+    }
+    return v;
+  });
+}
+
+function autoPointsForDepth(D) {
+  D = parseFloat(D) || 0;
+  if (D <= 0) return [];
+  if (D < 0.10) return [{ z_rel: 0.4, v: '' }];
+  if (D < 0.20) return [{ z_rel: 0.2, v: '' }, { z_rel: 0.8, v: '' }];
+  return [{ z_rel: 0.2, v: '' }, { z_rel: 0.4, v: '' }, { z_rel: 0.8, v: '' }];
+}
+function pointsForMode(mode, D) {
+  switch (mode) {
+    case 'auto': return autoPointsForDepth(D);
+    case '1': return [{ z_rel: 0.4, v: '' }];
+    case '2': return [{ z_rel: 0.2, v: '' }, { z_rel: 0.8, v: '' }];
+    case '3': return [{ z_rel: 0.2, v: '' }, { z_rel: 0.4, v: '' }, { z_rel: 0.8, v: '' }];
+    case '5': return [{ z_rel: 0, v: '' },{ z_rel: 0.2, v: '' },{ z_rel: 0.4, v: '' },{ z_rel: 0.8, v: '' },{ z_rel: 1, v: '' }];
+    case '6': return [{ z_rel: 0, v: '' },{ z_rel: 0.2, v: '' },{ z_rel: 0.4, v: '' },{ z_rel: 0.6, v: '' },{ z_rel: 0.8, v: '' },{ z_rel: 1, v: '' }];
+    default: return [];
+  }
+}
+
+/* RENDU */
+function renderAll() {
+  renderMeta(); renderVerticales(); renderResults(); renderViz();
+  renderArchive(); renderCurrentSummary();
+}
+function renderMeta() {
+  document.getElementById('m_date').value = state.meta.date || '';
+  document.getElementById('m_heure').value = state.meta.heure || '';
+  document.getElementById('m_cours').value = state.meta.cours || '';
+  document.getElementById('m_station').value = state.meta.station || '';
+  document.getElementById('m_operateur').value = state.meta.operateur || '';
+  document.getElementById('m_materiel').value = state.meta.materiel || '';
+  document.getElementById('m_echelle').value = state.meta.echelle || '';
+  document.getElementById('m_notes').value = state.meta.notes || '';
+}
+function renderVerticales() {
+  const list = document.getElementById('vertList');
+  document.getElementById('vertCount').textContent =
+    state.verticales.length + ' verticale' + (state.verticales.length > 1 ? 's' : '');
+  if (state.verticales.length === 0) {
+    list.innerHTML = '<div class="empty">Aucune verticale.<br>Toucher « ＋ Verticale » pour démarrer.</div>';
+    return;
+  }
+  /* Récupère les débits partiels pour la coloration qualité */
+  const r = computeAll();
+  const partialByVertId = {};
+  if (r && r.partials && r.Q > 0) {
+    r.partials.forEach(p => { partialByVertId[p.id] = Math.abs(p.Q) / r.Q; });
+  }
+
+  const sorted = [...state.verticales].map((v, i) => ({ ...v, _idx: i }))
+    .sort((a, b) => {
+      const aa = parseFloat(a.abscisse); const bb = parseFloat(b.abscisse);
+      if (isNaN(aa) && isNaN(bb)) return a._idx - b._idx;
+      if (isNaN(aa)) return 1; if (isNaN(bb)) return -1;
+      return aa - bb;
+    });
+  list.innerHTML = '';
+  sorted.forEach((v, dispIdx) => {
+    const part = partialByVertId[v.id] || 0;
+    let qualCls = '';
+    if (r.Q > 0) {
+      if (part > 0.15) qualCls = ' quality-red';
+      else if (part > 0.10) qualCls = ' quality-yellow';
+      else qualCls = ' quality-green';
+    }
+    const card = document.createElement('div');
+    let typeCls = '';
+    if (v.isBord) typeCls = ' is-bord';
+    else if (v.isBathy) typeCls = ' is-bathy';
+    card.className = 'vert-card' + typeCls + qualCls + (state.expandedVertId === v.id ? ' is-active' : '');
+
+    let tag = '';
+    if (v.isBord) tag = '·B';
+    else if (v.isBathy) tag = '·Z';
+    const partBadge = (r.Q > 0 && !isNaN(part))
+      ? `<div class="vert-cell qual-cell"><span class="lbl">Contribution</span><span class="v qual-val">${(part*100).toFixed(1)} %</span></div>`
+      : '';
+
+    const summary = document.createElement('div');
+    summary.className = 'vert-summary';
+    summary.innerHTML = `
+      <div class="vert-num mono">${dispIdx + 1}${tag}</div>
+      <div class="vert-cell"><span class="lbl">Distance au bord</span><span class="v">${fmt(v.abscisse, 2)} m</span></div>
+      <div class="vert-cell"><span class="lbl">Profondeur</span><span class="v">${fmt(v.profondeur, 2)} m</span></div>
+      ${partBadge}
+      <div class="vert-handle">${state.expandedVertId === v.id ? '▾' : '▸'}</div>
+    `;
+    summary.onclick = (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
+      state.expandedVertId = state.expandedVertId === v.id ? null : v.id;
+      renderVerticales();
+    };
+    card.appendChild(summary);
+
+    if (state.expandedVertId === v.id) {
+      const detail = document.createElement('div');
+      detail.className = 'vert-detail';
+      detail.innerHTML = renderVertDetail(v);
+      card.appendChild(detail);
+    }
+    list.appendChild(card);
+  });
+}
+function renderVertDetail(v) {
+  const D = parseFloat(v.profondeur) || 0;
+  const isCustom = v.pointsMode === 'custom';
+  const showPoints = !v.isBord && !v.isBathy;
+
+  const pointsHtml = (v.points || []).map((p, idx) => {
+    const zRel = parseFloat(p.z_rel);
+    const hMeters = !isNaN(zRel) && D > 0 ? (zRel * D).toFixed(2).replace('.', ',') : '—';
+    const positionLabel = !isNaN(zRel) ? fmtZ(zRel) + ' H' : '—';
+    if (isCustom) {
+      return `
+        <div class="point-row">
+          <input type="number" step="0.01" inputmode="decimal" class="pos-input" placeholder="z" value="${p.z_rel ?? ''}" oninput="updPoint('${v.id}', ${idx}, 'z_rel', this.value)">
+          <span class="h-label">${hMeters}</span>
+          <input type="number" step="0.001" inputmode="decimal" placeholder="v" value="${p.v ?? ''}" oninput="updPoint('${v.id}', ${idx}, 'v', this.value)">
+          <button class="ico-btn" onclick="rmPoint('${v.id}', ${idx})">✕</button>
+        </div>
+      `;
+    }
+    return `
+      <div class="point-row">
+        <span class="pos-label">${positionLabel}</span>
+        <span class="h-label">${hMeters}</span>
+        <input type="number" step="0.001" inputmode="decimal" placeholder="v" value="${p.v ?? ''}" oninput="updPoint('${v.id}', ${idx}, 'v', this.value)">
+        <span></span>
+      </div>
+    `;
+  }).join('');
+
+  /* Bloc spécifique : coefficient de rive (bord uniquement) */
+  const bordBlock = v.isBord ? `
+    <div class="field">
+      <label>Coefficient de rive α</label>
+      <select class="mono" onchange="setCoeffRive('${v.id}', this.value)">
+        <option value="0.67" ${near(v.coeffRive, 0.67) ? 'selected' : ''}>0,67 — berge inclinée naturelle</option>
+        <option value="0.86" ${near(v.coeffRive, 0.86) ? 'selected' : ''}>0,86 — intermédiaire</option>
+        <option value="0.91" ${near(v.coeffRive, 0.91) ? 'selected' : ''}>0,91 — paroi verticale lisse</option>
+      </select>
+    </div>
+  ` : '';
+
+  /* Bloc spécifique : verticale bathymétrique */
+  const bathyBlock = v.isBathy ? `
+    <div class="hint">Verticale bathymétrique : profondeur seule. V<sub>moy</sub> interpolée par F<sub>r</sub> local entre les deux verticales complètes encadrantes (Le Coz et al. 2012).</div>
+  ` : '';
+
+  return `
+    <div class="field-row cols-2">
+      <div class="field"><label>Distance au bord (m)</label>
+        <input type="number" step="0.01" inputmode="decimal" class="mono" value="${v.abscisse ?? ''}" oninput="updVert('${v.id}','abscisse',this.value)">
+      </div>
+      <div class="field"><label>Profondeur (m)</label>
+        <input type="number" step="0.01" inputmode="decimal" class="mono" value="${v.profondeur ?? ''}" oninput="updVert('${v.id}','profondeur',this.value)">
+      </div>
+    </div>
+    ${showPoints ? `
+    <div class="field"><label>Mode points</label>
+      <select class="mono" onchange="changeMode('${v.id}', this.value)">
+        <option value="auto" ${v.pointsMode==='auto'?'selected':''}>Auto (selon profondeur)</option>
+        <option value="1" ${v.pointsMode==='1'?'selected':''}>1 pt — 0,4 H</option>
+        <option value="2" ${v.pointsMode==='2'?'selected':''}>2 pts — 0,2 / 0,8 H</option>
+        <option value="3" ${v.pointsMode==='3'?'selected':''}>3 pts — 0,2 / 0,4 / 0,8 H</option>
+        <option value="5" ${v.pointsMode==='5'?'selected':''}>5 pts — 0 / 0,2 / 0,4 / 0,8 / 1 H</option>
+        <option value="6" ${v.pointsMode==='6'?'selected':''}>6 pts — 0 / 0,2 / 0,4 / 0,6 / 0,8 / 1 H</option>
+        <option value="custom" ${v.pointsMode==='custom'?'selected':''}>Personnalisé</option>
+      </select>
+    </div>
+    ` : ''}
+    ${bordBlock}
+    ${bathyBlock}
+    <div class="switch-wrap">
+      <input type="checkbox" id="bord_${v.id}" ${v.isBord?'checked':''} onchange="toggleBord('${v.id}', this.checked)">
+      <label for="bord_${v.id}">Verticale de bord (coefficient de rive)</label>
+    </div>
+    <div class="switch-wrap">
+      <input type="checkbox" id="bathy_${v.id}" ${v.isBathy?'checked':''} onchange="toggleBathy('${v.id}', this.checked)" ${v.isBord?'disabled':''}>
+      <label for="bathy_${v.id}">Verticale bathymétrique (profondeur seule)</label>
+    </div>
+    ${showPoints ? `
+      <div class="points-header">
+        <span>Position</span><span>H (m)</span><span>v (m/s)</span><span></span>
+      </div>
+      <div class="points-list">${pointsHtml}</div>
+      ${isCustom ? `<button class="btn small ghost" onclick="addPoint('${v.id}')">＋ Point</button>` : ''}
+    ` : ''}
+    <div style="margin-top:12px;display:flex;justify-content:flex-end">
+      <button class="btn small danger" onclick="rmVert('${v.id}')">✕ Supprimer</button>
+    </div>
+  `;
+}
+function renderResults() {
+  const r = computeAll();
+  document.getElementById('r_Q').innerHTML = `${fmt(r.Q, 3)}<span class="unit">m³/s</span>`;
+  document.getElementById('r_S').innerHTML = `${fmt(r.S, 2)}<span class="unit">m²</span>`;
+  document.getElementById('r_Vmoy').innerHTML = `${fmt(r.Vmoy, 3)}<span class="unit">m/s</span>`;
+  document.getElementById('r_Pmoy').innerHTML = `${fmt(r.Pmoy, 2)}<span class="unit">m</span>`;
+  document.getElementById('r_L').innerHTML = `${fmt(r.L, 2)}<span class="unit">m</span>`;
+  const uEl = document.getElementById('r_U');
+  if (uEl) {
+    if (r.uncertainty) {
+      const uPct = r.uncertainty.u_Q;
+      const uAbs = r.Q * uPct / 100;
+      uEl.innerHTML = `±${fmt(uPct, 1)}<span class="unit">%</span><span class="sub mono">±${fmt(uAbs, 3)} m³/s</span>`;
+    } else {
+      uEl.innerHTML = `—<span class="unit">%</span>`;
+    }
+  }
+
+  const warnings = [];
+  if (r.verts.length < 2) {
+    warnings.push('⚠ Au moins 2 verticales nécessaires pour calculer un débit.');
+  }
+  if (r.verts.length > 0) {
+    const xMin = Math.min(...r.verts.map(x => x.abscisse));
+    const xMax = Math.max(...r.verts.map(x => x.abscisse));
+    if (!r.verts.some(v => v.isBord && v.abscisse === xMin))
+      warnings.push('ℹ Pas de bord en début de transect.');
+    if (!r.verts.some(v => v.isBord && v.abscisse === xMax))
+      warnings.push('ℹ Pas de bord en fin de transect.');
+  }
+  /* Qualité de la répartition : verticales captant > 15 % du débit */
+  if (r.Q > 0) {
+    const redVerts = r.partials.filter((p, i) => !r.verts[i].isBord && Math.abs(p.Q) / r.Q > 0.15).length;
+    if (redVerts > 0) {
+      warnings.push(`⚠ ${redVerts} verticale${redVerts > 1 ? 's captent' : ' capte'} plus de 15 % du débit (cf. barre rouge) : densifier les mesures à cet endroit.`);
+    }
+  }
+  /* Verticales bathymétriques sans encadrement complet (V_moy forcée à 0) */
+  const bathyNonEncadrees = r.verts.filter((v, i) => {
+    if (!v.isBathy) return false;
+    const { left, right } = surroundingCompleteIdx(r.verts, i);
+    return left === -1 || right === -1;
+  }).length;
+  if (bathyNonEncadrees > 0) {
+    warnings.push(`⚠ ${bathyNonEncadrees} verticale${bathyNonEncadrees > 1 ? 's' : ''} bathymétrique${bathyNonEncadrees > 1 ? 's' : ''} sans encadrement complet (V_moy = 0, contribution nulle au débit).`);
+  }
+  /* Nombre de verticales complètes : recommandation ISO 748 (15 à 25) */
+  const nComplet = r.verts.filter(v => !v.isBord && !v.isBathy).length;
+  if (nComplet > 0 && nComplet < 5) {
+    warnings.push(`ℹ Seulement ${nComplet} verticale${nComplet > 1 ? 's complètes' : ' complète'} mesurée${nComplet > 1 ? 's' : ''} : incertitude transversale élevée (u_m ≥ 7,5 %).`);
+  }
+  document.getElementById('r_warn').innerHTML = warnings.map(w => `<div class="warn-line">${w}</div>`).join('');
+}
+/* ----- Profil en travers : raster de vitesses interpolées ----- */
+
+// Échelle de bleus (style Blues ColorBrewer)
+function blueScale(t) {
+  if (isNaN(t) || t < 0) return '#f7fbff';
+  t = Math.min(1, t);
+  const stops = [
+    [0.000, [247, 251, 255]],
+    [0.125, [222, 235, 247]],
+    [0.250, [198, 219, 239]],
+    [0.375, [158, 202, 225]],
+    [0.500, [107, 174, 214]],
+    [0.625, [66, 146, 198]],
+    [0.750, [33, 113, 181]],
+    [0.875, [8, 81, 156]],
+    [1.000, [8, 48, 107]]
+  ];
+  for (let i = 0; i < stops.length - 1; i++) {
+    if (t <= stops[i+1][0]) {
+      const r = (t - stops[i][0]) / (stops[i+1][0] - stops[i][0]);
+      const c = [0, 1, 2].map(k => Math.round(stops[i][1][k] + r * (stops[i+1][1][k] - stops[i][1][k])));
+      return `rgb(${c[0]},${c[1]},${c[2]})`;
+    }
+  }
+  return '#08306b';
+}
+
+// Vitesse à profondeur relative z_rel (0=fond, 1=surface) sur une verticale
+function velAtZRel(v, zrel) {
+  if (v.isBord || !v.points || v.points.length === 0) return 0;
+  const sorted = [...v.points]
+    .filter(p => !isNaN(parseFloat(p.v)) && !isNaN(parseFloat(p.z_rel)))
+    .map(p => ({ z_rel: parseFloat(p.z_rel), v: parseFloat(p.v) }))
+    .sort((a, b) => a.z_rel - b.z_rel);
+  if (sorted.length === 0) return 0;
+  let z = sorted.map(p => p.z_rel);
+  let val = sorted.map(p => p.v);
+  // Extrapolation : v=0 au fond, v plateau à la surface
+  if (z[0] > 0.001) { z = [0, ...z]; val = [0, ...val]; }
+  if (z[z.length-1] < 0.999) { z = [...z, 1]; val = [...val, val[val.length-1]]; }
+  if (zrel <= z[0]) return val[0];
+  if (zrel >= z[z.length-1]) return val[val.length-1];
+  for (let i = 0; i < z.length - 1; i++) {
+    if (zrel >= z[i] && zrel <= z[i+1]) {
+      const t = (zrel - z[i]) / (z[i+1] - z[i]);
+      return val[i] + t * (val[i+1] - val[i]);
+    }
+  }
+  return 0;
+}
+
+// Vitesse interpolée à (x, y) où y = profondeur depuis la surface
+// Pour le rendu du champ de vitesse :
+//   - Bords (rive) : pris en compte avec V=0 par condition aux limites physique
+//   - Bathymétriques : ignorés pour l'interpolation horizontale (pas de mesure
+//     ponctuelle ; le calcul Froude au niveau intégré ne donne pas un profil)
+//   - Verticales mesurées : utilisées pleinement
+function velAt(x, y, verts) {
+  if (verts.length < 2) return null;
+  /* Indices encadrant pour la géométrie du fond (toutes verticales) */
+  let iLg = 0, iRg = verts.length - 1;
+  if (x <= verts[0].abscisse) { iLg = 0; iRg = 0; }
+  else if (x >= verts[verts.length-1].abscisse) { iLg = verts.length-1; iRg = verts.length-1; }
+  else {
+    for (let i = 0; i < verts.length - 1; i++) {
+      if (verts[i].abscisse <= x && verts[i+1].abscisse >= x) { iLg = i; iRg = i + 1; break; }
+    }
+  }
+  const vLg = verts[iLg], vRg = verts[iRg];
+  const tg = (vLg.abscisse === vRg.abscisse) ? 0 : (x - vLg.abscisse) / (vRg.abscisse - vLg.abscisse);
+  const fond = vLg.profondeur + tg * (vRg.profondeur - vLg.profondeur);
+  if (fond <= 0 || y >= fond) return null;
+  /* Champ de vitesse : bords (V=0) + mesurées uniquement, bathy ignorées */
+  const validForField = v => v.isBord || (v.points && v.points.some(p => !isNaN(parseFloat(p.v))));
+  let vL = null, vR = null;
+  for (let j = iLg; j >= 0; j--) { if (validForField(verts[j])) { vL = verts[j]; break; } }
+  for (let j = iRg; j < verts.length; j++) { if (validForField(verts[j])) { vR = verts[j]; break; } }
+  if (!vL && !vR) return 0;
+  if (!vL) vL = vR;
+  if (!vR) vR = vL;
+  const tv = (vL.abscisse === vR.abscisse) ? 0 : (x - vL.abscisse) / (vR.abscisse - vL.abscisse);
+  const z_rel = (fond - y) / fond;
+  /* Au bord : V=0 partout (condition aux limites). Sinon : profil mesuré. */
+  const vL_z = vL.isBord ? 0 : velAtZRel(vL, z_rel);
+  const vR_z = vR.isBord ? 0 : velAtZRel(vR, z_rel);
+  return vL_z + tv * (vR_z - vL_z);
+}
+
+function renderViz() {
+  const svg = document.getElementById('viz');
+  const W = 800, H = 300;
+  const padL = 58, padR = 95, padT = 22, padB = 44;
+  const verts = state.verticales
+    .filter(v => v.abscisse !== '' && v.abscisse !== null && !isNaN(parseFloat(v.abscisse)))
+    .map(v => ({
+      ...v,
+      abscisse: parseFloat(v.abscisse),
+      profondeur: parseFloat(v.profondeur) || 0,
+    }))
+    .sort((a, b) => a.abscisse - b.abscisse);
+
+  if (verts.length < 2) {
+    svg.innerHTML = `<text x="${W/2}" y="${H/2}" text-anchor="middle" fill="#5e6b78" font-family="IBM Plex Sans" font-size="13">Saisir au moins 2 verticales</text>`;
+    return;
+  }
+  const xMin = verts[0].abscisse, xMax = verts[verts.length-1].abscisse;
+  const Pmax = Math.max(...verts.map(v => v.profondeur), 0.01);
+
+  // Vmax : max parmi tous les points mesurés (et défaut 0.1 si tout vide)
+  let Vmax = 0;
+  verts.forEach(v => {
+    if (v.isBord) return;
+    (v.points || []).forEach(p => {
+      const vv = parseFloat(p.v);
+      if (!isNaN(vv) && vv > Vmax) Vmax = vv;
+    });
+  });
+  Vmax = Math.max(0.1, Vmax);
+
+  const xScale = x => padL + (x - xMin) / (xMax - xMin) * (W - padL - padR);
+  const yScale = p => padT + p / Pmax * (H - padT - padB);
+
+  // Raster d'interpolation
+  const NX = 90, NY = 36;
+  const cellW = (W - padL - padR) / NX;
+  const cellH = (H - padT - padB) / NY;
+  let cells = '';
+  for (let i = 0; i < NX; i++) {
+    for (let j = 0; j < NY; j++) {
+      const xc = xMin + (i + 0.5) / NX * (xMax - xMin);
+      const yc = (j + 0.5) / NY * Pmax;
+      const v = velAt(xc, yc, verts);
+      if (v === null) continue;
+      const color = blueScale(v / Vmax);
+      const x = padL + i * cellW;
+      const y = padT + j * cellH;
+      cells += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${(cellW + 0.6).toFixed(2)}" height="${(cellH + 0.6).toFixed(2)}" fill="${color}"/>`;
+    }
+  }
+
+  // Polygone de clip = forme du profil en travers
+  const clipPts = [
+    `${xScale(verts[0].abscisse)},${padT}`,
+    ...verts.map(v => `${xScale(v.abscisse)},${yScale(v.profondeur)}`),
+    `${xScale(verts[verts.length-1].abscisse)},${padT}`
+  ].join(' ');
+
+  // Contour du fond + verticales
+  const bedPoints = verts.map(v => `${xScale(v.abscisse)},${yScale(v.profondeur)}`).join(' ');
+  const vertLines = verts.map(v => {
+    const x = xScale(v.abscisse);
+    const yBed = yScale(v.profondeur);
+    return `<line x1="${x}" y1="${padT}" x2="${x}" y2="${yBed}" stroke="#0b1014" stroke-width="0.6" stroke-dasharray="2,3" opacity="0.5"/>`;
+  }).join('');
+
+  // Carrés rouges aux points de mesure (style DEPJAU)
+  let measurementPoints = '';
+  verts.forEach(v => {
+    if (v.isBord) return;
+    (v.points || []).forEach(p => {
+      const z_rel = parseFloat(p.z_rel);
+      const vv = parseFloat(p.v);
+      if (isNaN(z_rel) || isNaN(vv)) return;
+      const yPos = v.profondeur * (1 - z_rel);
+      if (yPos < 0 || yPos > Pmax) return;
+      const cx = xScale(v.abscisse), cy = yScale(yPos);
+      measurementPoints += `<rect x="${cx-3.5}" y="${cy-3.5}" width="7" height="7" fill="#c93434" stroke="#0b1014" stroke-width="0.8"/>`;
+    });
+  });
+
+  // Barre d'échelle (gradient continu via SVG linearGradient)
+  const scaleX = W - padR + 18;
+  const scaleW = 16;
+  const scaleH = H - padT - padB;
+  const NScaleStops = 20;
+  let gradientStops = '';
+  for (let i = 0; i <= NScaleStops; i++) {
+    const t = i / NScaleStops;
+    gradientStops += `<stop offset="${(t*100).toFixed(0)}%" stop-color="${blueScale(1 - t)}"/>`;
+  }
+  // Étiquettes échelle
+  const NTicks = 5;
+  let scaleTicks = '';
+  for (let i = 0; i <= NTicks; i++) {
+    const v = Vmax * i / NTicks;
+    const y = padT + (NTicks - i) * scaleH / NTicks;
+    scaleTicks += `<line x1="${scaleX + scaleW}" y1="${y}" x2="${scaleX + scaleW + 3}" y2="${y}" stroke="#5e6b78"/><text x="${scaleX + scaleW + 6}" y="${y + 3}" fill="#8a96a3" font-family="IBM Plex Mono" font-size="9">${v.toFixed(2)}</text>`;
+  }
+
+  // Axes
+  const xTicks = 6;
+  const ticksHtml = Array.from({length: xTicks+1}, (_, i) => {
+    const xVal = xMin + (xMax - xMin) * i / xTicks;
+    const x = xScale(xVal);
+    return `<line x1="${x}" y1="${H-padB}" x2="${x}" y2="${H-padB+4}" stroke="#5e6b78"/><text x="${x}" y="${H-padB+18}" text-anchor="middle" fill="#8a96a3" font-family="IBM Plex Mono" font-size="10">${xVal.toFixed(1)}</text>`;
+  }).join('');
+  const yTicks = 4;
+  const yTicksHtml = Array.from({length: yTicks+1}, (_, i) => {
+    const pVal = Pmax * i / yTicks;
+    const y = yScale(pVal);
+    return `<line x1="${padL-4}" y1="${y}" x2="${padL}" y2="${y}" stroke="#5e6b78"/><text x="${padL-8}" y="${y+3}" text-anchor="end" fill="#8a96a3" font-family="IBM Plex Mono" font-size="10">${pVal.toFixed(2)}</text>`;
+  }).join('');
+
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.innerHTML = `
+    <defs>
+      <clipPath id="profileClip"><polygon points="${clipPts}"/></clipPath>
+      <linearGradient id="velGradient" x1="0" y1="0" x2="0" y2="1">${gradientStops}</linearGradient>
+    </defs>
+    <g clip-path="url(#profileClip)">${cells}</g>
+    <polyline points="${bedPoints}" fill="none" stroke="#0e1620" stroke-width="2" stroke-linejoin="round"/>
+    <line x1="${xScale(verts[0].abscisse)}" y1="${padT}" x2="${xScale(verts[verts.length-1].abscisse)}" y2="${padT}" stroke="#0e1620" stroke-width="1.5"/>
+    ${vertLines}
+    ${measurementPoints}
+    <line x1="${padL}" y1="${H-padB}" x2="${W-padR}" y2="${H-padB}" stroke="#5e6b78" stroke-width="0.5"/>
+    <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${H-padB}" stroke="#5e6b78" stroke-width="0.5"/>
+    ${ticksHtml}${yTicksHtml}
+    <text x="${(padL + W - padR)/2}" y="${H-6}" text-anchor="middle" fill="#8a96a3" font-family="IBM Plex Sans" font-size="11">Distance au bord (m)</text>
+    <text x="13" y="${(H-padB+padT)/2}" text-anchor="middle" fill="#8a96a3" font-family="IBM Plex Sans" font-size="11" transform="rotate(-90 13 ${(H-padB+padT)/2})">Profondeur (m)</text>
+    <rect x="${scaleX}" y="${padT}" width="${scaleW}" height="${scaleH}" fill="url(#velGradient)" stroke="#34454f" stroke-width="0.5"/>
+    ${scaleTicks}
+    <text x="${scaleX + scaleW/2}" y="${padT - 7}" text-anchor="middle" fill="#8a96a3" font-family="IBM Plex Sans" font-size="10">v (m/s)</text>
+  `;
+}
+function renderArchive() {
+  const arr = loadArchive();
+  document.getElementById('archCount').textContent = '(' + arr.length + ')';
+  const list = document.getElementById('archList');
+  if (arr.length === 0) {
+    list.innerHTML = '<div class="empty">Aucun jaugeage archivé.</div>';
+    return;
+  }
+  list.innerHTML = arr.map(item => `
+    <div class="archive-item">
+      <div class="meta">
+        <div class="main">${escapeHtml(item.meta.cours || '—')} · ${escapeHtml(item.meta.station || 'sans station')}</div>
+        <div class="sub">${escapeHtml(item.meta.date || '')} ${escapeHtml(item.meta.heure || '')}</div>
+        <div class="q">Q = ${fmt(item.Q, 3)} m³/s</div>
+      </div>
+      <div class="actions">
+        <button class="btn small" onclick="loadFromArchive('${item.id}')">⤴ Charger</button>
+        <button class="btn small danger" onclick="deleteFromArchive('${item.id}')">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+function renderCurrentSummary() {
+  const r = computeAll();
+  const m = state.meta;
+  const el = document.getElementById('currentSummary');
+  if (state.verticales.length === 0) {
+    el.innerHTML = '<div class="empty">Pas de verticale saisie.</div>';
+    return;
+  }
+  el.innerHTML = `
+    <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 12px">
+      <div style="font-size:13px;font-weight:500;margin-bottom:2px">${escapeHtml(m.cours||'—')} · ${escapeHtml(m.station||'sans station')}</div>
+      <div class="mono" style="font-size:11px;color:var(--txt-dim);margin-bottom:6px">${escapeHtml(m.date||'')} ${escapeHtml(m.heure||'')} — ${state.verticales.length} verticale${state.verticales.length>1?'s':''}</div>
+      <div class="mono" style="font-size:14px;color:var(--accent)">Q = ${fmt(r.Q, 3)} m³/s · S = ${fmt(r.S, 2)} m² · V̄ = ${fmt(r.Vmoy, 3)} m/s</div>
+    </div>
+  `;
+}
+
+/* ACTIONS */
+function addVerticale() {
+  const lastX = state.verticales.length > 0
+    ? Math.max(...state.verticales.map(v => parseFloat(v.abscisse) || 0)) : 0;
+  const v = newVerticale(lastX > 0 ? +(lastX + 0.5).toFixed(2) : 0, false);
+  v.points = autoPointsForDepth(0);
+  state.verticales.push(v);
+  state.expandedVertId = v.id;
+  renderVerticales(); renderResults(); renderViz();
+  debounceSave();
+}
+function rmVert(id) {
+  const idx = state.verticales.findIndex(v => v.id === id);
+  if (idx === -1) return;
+  const deleted = state.verticales[idx];
+  state.verticales.splice(idx, 1);
+  if (state.expandedVertId === id) state.expandedVertId = null;
+  renderVerticales(); renderResults(); renderViz();
+  debounceSave();
+  /* Annulation possible pendant 8 secondes */
+  const label = deleted.isBord ? 'Bord' : (deleted.isBathy ? 'Verticale bathy' : 'Verticale');
+  const xAff = (deleted.abscisse !== '' && deleted.abscisse !== null) ? ` (x=${deleted.abscisse} m)` : '';
+  toast(`${label}${xAff} supprimée`, 'warn', {
+    actionLabel: 'Annuler',
+    duration: 8000,
+    onAction: () => {
+      state.verticales.splice(idx, 0, deleted);
+      renderVerticales(); renderResults(); renderViz();
+      debounceSave();
+      toast('Verticale restaurée.', 'ok');
+    },
+  });
+}
+function updVert(id, key, value) {
+  const v = state.verticales.find(x => x.id === id);
+  if (!v) return;
+  v[key] = value;
+  if (key === 'profondeur' && v.pointsMode === 'auto') {
+    const newPoints = autoPointsForDepth(value);
+    if (v.points && v.points.length === newPoints.length) {
+      newPoints.forEach((p, i) => { p.v = v.points[i].v; });
+    }
+    v.points = newPoints;
+    // Reconstruction ciblée de la zone des points uniquement, pour conserver le focus
+    rebuildPointsListInDom(id);
+  } else if (key === 'profondeur') {
+    updatePointMetersInDom(id);
+  }
+  renderResults(); renderViz();
+  debounceSave();
+}
+
+function rebuildPointsListInDom(vid) {
+  const v = state.verticales.find(x => x.id === vid);
+  if (!v || v.isBord) return;
+  const detail = document.querySelector('.vert-card.is-active .vert-detail');
+  if (!detail) return;
+  const list = detail.querySelector('.points-list');
+  if (!list) return;
+  const D = parseFloat(v.profondeur) || 0;
+  const isCustom = v.pointsMode === 'custom';
+  list.innerHTML = (v.points || []).map((p, idx) => {
+    const zRel = parseFloat(p.z_rel);
+    const hMeters = !isNaN(zRel) && D > 0 ? (zRel * D).toFixed(2).replace('.', ',') : '—';
+    const positionLabel = !isNaN(zRel) ? fmtZ(zRel) + ' H' : '—';
+    if (isCustom) {
+      return `
+        <div class="point-row">
+          <input type="number" step="0.01" inputmode="decimal" class="pos-input" placeholder="z" value="${p.z_rel ?? ''}" oninput="updPoint('${v.id}', ${idx}, 'z_rel', this.value)">
+          <span class="h-label">${hMeters}</span>
+          <input type="number" step="0.001" inputmode="decimal" placeholder="v" value="${p.v ?? ''}" oninput="updPoint('${v.id}', ${idx}, 'v', this.value)">
+          <button class="ico-btn" onclick="rmPoint('${v.id}', ${idx})">✕</button>
+        </div>
+      `;
+    }
+    return `
+      <div class="point-row">
+        <span class="pos-label">${positionLabel}</span>
+        <span class="h-label">${hMeters}</span>
+        <input type="number" step="0.001" inputmode="decimal" placeholder="v" value="${p.v ?? ''}" oninput="updPoint('${v.id}', ${idx}, 'v', this.value)">
+        <span></span>
+      </div>
+    `;
+  }).join('');
+}
+function updatePointMetersInDom(vid) {
+  const v = state.verticales.find(x => x.id === vid);
+  if (!v) return;
+  const D = parseFloat(v.profondeur) || 0;
+  const detail = document.querySelector('.vert-card.is-active .vert-detail');
+  if (!detail) return;
+  const rows = detail.querySelectorAll('.point-row');
+  v.points.forEach((p, idx) => {
+    if (!rows[idx]) return;
+    const zRel = parseFloat(p.z_rel);
+    const hMeters = !isNaN(zRel) && D > 0 ? (zRel * D).toFixed(2).replace('.', ',') : '—';
+    const positionLabel = !isNaN(zRel) ? fmtZ(zRel) + ' H' : '—';
+    const posEl = rows[idx].querySelector('.pos-label');
+    const hEl = rows[idx].querySelector('.h-label');
+    if (posEl) posEl.textContent = positionLabel;
+    if (hEl) hEl.textContent = hMeters;
+  });
+}
+function changeMode(id, mode) {
+  const v = state.verticales.find(x => x.id === id);
+  if (!v) return;
+  v.pointsMode = mode;
+  if (mode !== 'custom') v.points = pointsForMode(mode, v.profondeur);
+  renderVerticales(); renderResults(); renderViz();
+  debounceSave();
+}
+function toggleBord(id, checked) {
+  const v = state.verticales.find(x => x.id === id);
+  if (!v) return;
+  v.isBord = checked;
+  if (checked) {
+    v.points = [];
+    if (v.coeffRive === null || v.coeffRive === undefined) v.coeffRive = 0.67;
+    v.isBathy = false;
+  } else {
+    v.coeffRive = null;
+    if (!v.points || v.points.length === 0) v.points = autoPointsForDepth(v.profondeur);
+  }
+  renderVerticales(); renderResults(); renderViz();
+  debounceSave();
+}
+function toggleBathy(id, checked) {
+  const v = state.verticales.find(x => x.id === id);
+  if (!v) return;
+  v.isBathy = checked;
+  if (checked) {
+    v.points = [];
+    v.isBord = false;
+    v.coeffRive = null;
+  } else if (!v.points || v.points.length === 0) {
+    v.points = autoPointsForDepth(v.profondeur);
+  }
+  renderVerticales(); renderResults(); renderViz();
+  debounceSave();
+}
+function setCoeffRive(id, value) {
+  const v = state.verticales.find(x => x.id === id);
+  if (!v) return;
+  v.coeffRive = parseFloat(value) || 0.67;
+  renderResults(); renderViz();
+  debounceSave();
+}
+function updPoint(vid, idx, key, value) {
+  const v = state.verticales.find(x => x.id === vid);
+  if (!v || !v.points[idx]) return;
+  v.points[idx][key] = value;
+  if (key === 'z_rel' && v.pointsMode !== 'custom') v.pointsMode = 'custom';
+  renderResults(); renderViz();
+  if (key === 'z_rel') updatePointMetersInDom(vid);
+  debounceSave();
+}
+function addPoint(vid) {
+  const v = state.verticales.find(x => x.id === vid);
+  if (!v) return;
+  v.points.push({ z_rel: 0.5, v: '' });
+  v.pointsMode = 'custom';
+  renderVerticales(); renderResults(); renderViz();
+  debounceSave();
+}
+function rmPoint(vid, idx) {
+  const v = state.verticales.find(x => x.id === vid);
+  if (!v) return;
+  v.points.splice(idx, 1);
+  v.pointsMode = 'custom';
+  renderVerticales(); renderResults(); renderViz();
+  debounceSave();
+}
+function confirmReset() {
+  showModal('Réinitialiser ?', 'Le jaugeage en cours sera vidé. L\'archive est conservée.', () => {
+    state.meta = defaultMeta();
+    state.verticales = [];
+    state.expandedVertId = null;
+    renderAll();
+    saveState();
+    toast('Jaugeage réinitialisé.', 'ok');
+  });
+}
+
+/* EXPORT / IMPORT */
+function exportJSON() {
+  download(JSON.stringify({ meta: state.meta, verticales: state.verticales, exportedAt: new Date().toISOString() }, null, 2),
+    fileBaseName() + '.json', 'application/json;charset=utf-8;');
+}
+function exportCSV() {
+  /* Trois sections séparées par lignes blanches :
+     1. Métadonnées
+     2. Synthèse résultats
+     3. Détail par verticale (avec points de mesure) */
+  const r = computeAll();
+  const sep = ';';
+  const lines = [];
+  // — Métadonnées —
+  lines.push('# METADONNEES');
+  lines.push(['Date', state.meta.date || ''].join(sep));
+  lines.push(['Heure', state.meta.heure || ''].join(sep));
+  lines.push(['Cours d\'eau', state.meta.cours || ''].join(sep));
+  lines.push(['Station', state.meta.station || ''].join(sep));
+  lines.push(['Opérateur', state.meta.operateur || ''].join(sep));
+  lines.push(['Matériel', state.meta.materiel || ''].join(sep));
+  lines.push(['Echelle (m)', state.meta.echelle || ''].join(sep));
+  lines.push(['Notes', (state.meta.notes || '').replace(/[\r\n]+/g, ' ')].join(sep));
+  lines.push('');
+  // — Synthèse —
+  lines.push('# SYNTHESE');
+  lines.push(['Débit total (m³/s)', r.Q.toFixed(4)].join(sep));
+  if (r.uncertainty) {
+    lines.push(['Incertitude (95 %)', r.uncertainty.u_Q.toFixed(2) + ' %'].join(sep));
+    lines.push(['Incertitude (m³/s)', (r.Q * r.uncertainty.u_Q / 100).toFixed(4)].join(sep));
+  }
+  lines.push(['Section mouillée (m²)', r.S.toFixed(3)].join(sep));
+  lines.push(['Vitesse moyenne (m/s)', r.Vmoy.toFixed(3)].join(sep));
+  lines.push(['Profondeur moyenne (m)', r.Pmoy.toFixed(2)].join(sep));
+  lines.push(['Largeur totale (m)', r.L.toFixed(2)].join(sep));
+  lines.push(['Nombre de verticales', r.verts.length].join(sep));
+  lines.push('');
+  // — Détail par verticale —
+  lines.push('# DETAIL VERTICALES');
+  lines.push(['#', 'Type', 'Distance au bord (m)', 'Profondeur (m)', 'V_moy (m/s)', 'Surface partielle (m²)', 'Débit partiel (m³/s)', '% du débit', 'Coeff. rive α'].join(sep));
+  r.verts.forEach((v, i) => {
+    const part = r.partials[i];
+    const pctQ = r.Q > 0 ? (Math.abs(part.Q) / r.Q * 100).toFixed(1) : '';
+    const type = v.isBord ? 'Bord' : (v.isBathy ? 'Bathymétrique' : 'Mesurée');
+    lines.push([
+      i + 1, type, v.abscisse, v.profondeur,
+      (v.V_moy ?? 0).toFixed(4),
+      part.S.toFixed(4), part.Q.toFixed(4),
+      pctQ, v.isBord ? (v.coeffRive ?? '') : ''
+    ].join(sep));
+  });
+  lines.push('');
+  // — Détail des points par verticale complète —
+  lines.push('# DETAIL POINTS PAR VERTICALE');
+  lines.push(['# Verticale', 'Distance au bord (m)', 'Profondeur (m)', 'z_rel (depuis fond)', 'Hauteur depuis fond (m)', 'Vitesse (m/s)'].join(sep));
+  r.verts.forEach((v, i) => {
+    if (v.isBord || v.isBathy) return;
+    (v.points || []).forEach(p => {
+      const z_rel = parseFloat(p.z_rel);
+      const h_fond = !isNaN(z_rel) ? (z_rel * v.profondeur).toFixed(3) : '';
+      lines.push([i + 1, v.abscisse, v.profondeur, z_rel, h_fond, p.v ?? ''].join(sep));
+    });
+  });
+  const csv = '\uFEFF' + lines.join('\r\n');  // BOM pour ouverture correcte dans Excel français
+  download(csv, fileBaseName() + '.csv', 'text/csv;charset=utf-8;');
+}
+function importJSON(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.meta || !Array.isArray(data.verticales)) throw new Error('Format invalide');
+      state.meta = { ...defaultMeta(), ...data.meta };
+      state.verticales = normalizeVerticales(data.verticales);
+      state.expandedVertId = null;
+      renderAll();
+      saveState();
+      switchTab('saisie');
+      toast('Import réussi.', 'ok');
+    } catch (err) {
+      toast('Erreur import : ' + err.message, 'err');
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+function exportArchive() {
+  const arr = loadArchive();
+  if (arr.length === 0) { toast('Archive vide.', 'warn'); return; }
+  const stamp = new Date().toISOString().slice(0,10);
+  download(JSON.stringify({ archive: arr, exportedAt: new Date().toISOString(), version: 'v2' }, null, 2),
+    `jaugeage_archive_${stamp}.json`, 'application/json;charset=utf-8;');
+}
+function importArchive(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      let archiveToImport = null;
+      if (data && Array.isArray(data.archive)) {
+        archiveToImport = data.archive;
+      } else if (Array.isArray(data)) {
+        archiveToImport = data;
+      } else if (data && data.meta && Array.isArray(data.verticales)) {
+        // Cas d'un export "jaugeage en cours" → on en fait un jaugeage à ajouter
+        archiveToImport = [{
+          id: 'jg' + Date.now(),
+          ts: data.exportedAt ? Date.parse(data.exportedAt) || Date.now() : Date.now(),
+          meta: data.meta,
+          verticales: data.verticales,
+          Q: 0, S: 0, Vmoy: 0
+        }];
+      } else {
+        throw new Error('Format non reconnu (attendu : export d\'archive ou de jaugeage)');
+      }
+      // Normalisation des verticales pour chaque jaugeage importé
+      archiveToImport = archiveToImport.map(item => ({
+        ...item,
+        verticales: Array.isArray(item.verticales) ? normalizeVerticales(item.verticales) : []
+      }));
+      showModalChoice('Import archive',
+        `Importer ${archiveToImport.length} jaugeage(s) ?<br><br>« Fusionner » conserve l'archive existante. « Remplacer » écrase tout.`,
+        [
+          { label: 'Annuler', class: 'ghost', action: () => {} },
+          { label: 'Remplacer', class: 'danger', action: () => {
+            saveArchive(archiveToImport); renderArchive(); toast('Archive remplacée.', 'ok');
+          }},
+          { label: 'Fusionner', class: 'primary', action: () => {
+            const existing = loadArchive();
+            saveArchive([...archiveToImport, ...existing]);
+            renderArchive(); toast('Archive fusionnée.', 'ok');
+          }}
+        ]);
+    } catch (err) {
+      toast('Erreur import : ' + err.message, 'err');
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+function fileBaseName() {
+  const m = state.meta;
+  const slug = (s) => (s||'').replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 30);
+  return `jaugeage_${m.date||'date'}_${slug(m.cours)||'sans_cours'}_${slug(m.station)||'sans_station'}`;
+}
+function download(content, filename, type) {
+  const blob = new Blob(['\uFEFF' + content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 100);
+  toast('Fichier généré.', 'ok');
+}
+
+/* HELPERS */
+function fmt(n, dec) {
+  if (n === '' || n === null || n === undefined) return '—';
+  const f = parseFloat(n);
+  if (isNaN(f)) return '—';
+  return f.toFixed(dec).replace('.', ',');
+}
+function fmtZ(z) {
+  const f = parseFloat(z);
+  if (isNaN(f)) return '—';
+  let s = f.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
+  return s.replace('.', ',');
+}
+function escapeHtml(s) {
+  return String(s||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+function toggleCard(id) { document.getElementById(id).classList.toggle('collapsed'); }
+function switchTab(name) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  document.querySelectorAll('.tab-nav button').forEach(b => b.classList.remove('active'));
+  document.querySelector('.tab-nav button[data-tab="' + name + '"]').classList.add('active');
+  if (name === 'donnees') { renderArchive(); renderCurrentSummary(); }
+  window.scrollTo(0, 0);
+}
+let toastTimer;
+function toast(msg, type = 'ok', opts = {}) {
+  const t = document.getElementById('toast');
+  t.innerHTML = '';
+  const span = document.createElement('span');
+  span.innerHTML = msg;
+  t.appendChild(span);
+  if (opts.actionLabel && typeof opts.onAction === 'function') {
+    const btn = document.createElement('button');
+    btn.className = 'toast-action';
+    btn.textContent = opts.actionLabel;
+    btn.onclick = () => {
+      opts.onAction();
+      t.classList.remove('show');
+    };
+    t.appendChild(btn);
+  }
+  t.className = 'toast show ' + type;
+  clearTimeout(toastTimer);
+  const duration = opts.duration ?? 2400;
+  toastTimer = setTimeout(() => t.classList.remove('show'), duration);
+}
+function showModal(title, body, onOk) {
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalBody').innerHTML = body;
+  // Restaure footer standard
+  document.getElementById('modalFooter').innerHTML = `
+    <button class="btn ghost" onclick="closeModal()">Annuler</button>
+    <button class="btn primary" id="modalOk">OK</button>
+  `;
+  document.getElementById('modalOk').onclick = () => { onOk && onOk(); closeModal(); };
+  document.getElementById('modalBg').classList.remove('hidden');
+}
+function showModalChoice(title, body, choices) {
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalBody').innerHTML = body;
+  const footer = document.getElementById('modalFooter');
+  footer.innerHTML = '';
+  choices.forEach(c => {
+    const btn = document.createElement('button');
+    btn.className = 'btn ' + (c.class || '');
+    btn.textContent = c.label;
+    btn.onclick = () => { c.action(); closeModal(); };
+    footer.appendChild(btn);
+  });
+  document.getElementById('modalBg').classList.remove('hidden');
+}
+function closeModal() {
+  document.getElementById('modalBg').classList.add('hidden');
+}
+
+/* BINDINGS */
+function bindMeta() {
+  ['m_date','m_heure','m_cours','m_station','m_operateur','m_materiel','m_echelle','m_notes']
+    .forEach(id => {
+      const el = document.getElementById(id);
+      const key = id.replace('m_','');
+      el.addEventListener('input', () => {
+        state.meta[key] = el.value;
+        debounceSave();
+        if (document.getElementById('tab-donnees').classList.contains('active')) renderCurrentSummary();
+      });
+    });
+}
+
+/* INIT */
+try {
+  loadState();
+  bindMeta();
+  renderAll();
+  setSaveStatus('saved');
+} catch (initErr) {
+  document.body.innerHTML = '<div style="padding:20px;font-family:system-ui;color:#e6e8ea;background:#0b1014;min-height:100vh"><h2 style="color:#d96666">Erreur de chargement</h2><pre style="white-space:pre-wrap;background:#1a232c;padding:12px;border-radius:4px;font-size:11px;overflow:auto">' + (initErr.message || initErr) + '\n\n' + (initErr.stack || '') + '</pre><button onclick="localStorage.removeItem(\'jaugeage_current_v2\');location.reload()" style="margin-top:12px;padding:10px 16px;background:#56c2b1;color:#0b1014;border:none;border-radius:4px;font-weight:600">Réinitialiser et recharger</button></div>';
+  console.error('Init error:', initErr);
+}
+
+window.addEventListener('beforeunload', (e) => {
+  if (saveStatus === 'saving') { e.preventDefault(); e.returnValue = ''; }
+});
+
+// Service Worker — activation différée pour ne pas bloquer le premier rendu
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      navigator.serviceWorker.register('./sw.js')
+        .then(reg => console.log('SW enregistré, scope:', reg.scope))
+        .catch(err => console.warn('SW échec:', err));
+    }, 1000);
+  });
+}
+
+// Le manifest et le service worker sont des fichiers externes (manifest.json, sw.js)
+// déployés à côté de index.html pour fiabilité maximale.
+</script>
+</body>
+</html>
