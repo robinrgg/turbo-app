@@ -66,15 +66,30 @@ select{appearance:none;-webkit-appearance:none;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%238a96a3' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
   background-repeat:no-repeat;background-position:right 10px center;padding-right:28px}
 
-/* Tronçon */
-.troncon{background:var(--surf2);border:1px solid var(--border);border-radius:var(--r);padding:12px;margin-bottom:12px}
-.troncon>.th{display:flex;align-items:center;gap:8px;margin-bottom:10px}
-.troncon>.th .n{font-weight:700;font-size:.95rem;flex:1}
+/* Section repliable */
+.fold>summary{list-style:none;cursor:pointer;display:flex;align-items:center}
+.fold>summary::-webkit-details-marker{display:none}
+.fold>summary h2{flex:1}
+.fold>summary .chev{color:var(--dim);padding:0 14px;transition:transform .2s;font-size:.9rem}
+.fold[open]>summary .chev{transform:rotate(90deg)}
+
+/* Tronçons : 1 colonne sur téléphone, 2 colonnes sur écran large */
+#troncons{display:grid;gap:12px;grid-template-columns:1fr}
+@media(min-width:640px){#troncons{grid-template-columns:1fr 1fr}}
+
+/* Tronçon (compact) */
+.troncon{background:var(--surf2);border:1px solid var(--border);border-radius:var(--r);padding:10px}
+.troncon>.th{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.troncon>.th .n{font-weight:700;font-size:.9rem;flex:1}
 .troncon>.th .n b{color:var(--accent)}
-.visee-h{font-size:.72rem;text-transform:uppercase;letter-spacing:.5px;color:var(--dim);
-  margin:10px 0 6px;display:flex;align-items:center;gap:8px}
-.dh{margin-top:8px;font-family:ui-monospace,monospace;font-size:.8rem;color:var(--txt);
-  background:var(--surf);border:1px solid var(--border);border-radius:var(--r-sm);padding:7px 10px}
+.troncon .field label{font-size:.68rem}
+.troncon input,.troncon select{min-height:38px;padding:6px 9px;font-size:16px}
+.grid-2{display:grid;gap:8px;grid-template-columns:1fr 1fr}
+.visee-row{display:grid;gap:8px;grid-template-columns:repeat(3,1fr)}
+.visee-h{font-size:.68rem;text-transform:uppercase;letter-spacing:.5px;color:var(--dim);
+  margin:8px 0 4px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.dh{margin-top:6px;font-family:ui-monospace,monospace;font-size:.76rem;color:var(--txt);
+  background:var(--surf);border:1px solid var(--border);border-radius:var(--r-sm);padding:6px 9px}
 
 /* Boutons */
 button{font:inherit;cursor:pointer;border-radius:var(--r-sm);border:1px solid transparent;
@@ -131,8 +146,8 @@ pre.json{background:#0d1319;border:1px solid var(--border);border-radius:var(--r
   </div>
 
   <!-- Informations -->
-  <div class="section">
-    <h2>Informations</h2>
+  <details class="section fold" id="infos">
+    <summary><h2>Informations</h2><span class="chev">▸</span></summary>
     <div class="body">
       <div class="grid">
         <div class="field"><label>Date</label><input type="date" id="m_date"></div>
@@ -143,7 +158,7 @@ pre.json{background:#0d1319;border:1px solid var(--border);border-radius:var(--r
       </div>
       <div class="field full" style="margin-top:10px"><label>Remarques</label><textarea id="m_notes" rows="2"></textarea></div>
     </div>
-  </div>
+  </details>
 
   <!-- Tronçons -->
   <div class="section">
@@ -220,7 +235,7 @@ const nn = v => v==null?'—':v;
 // ---- État ----
 let state = load();
 function nouveauTroncon(){ return { facies:'', distance_m:null, aval:{fh:null,fm:null,fb:null}, amont:{fh:null,fm:null,fb:null} }; }
-function etatVierge(){ return { meta:{date:'',cours:'',station:'',operateur:'',materiel:'',notes:''}, troncons:[ nouveauTroncon() ] }; }
+function etatVierge(){ return { meta:{date:'',cours:'',station:'',operateur:'',materiel:'',notes:''}, ui:{infosOpen:true}, troncons:[ nouveauTroncon() ] }; }
 
 function load(){
   try{ const raw=localStorage.getItem(STORAGE_KEY); if(raw){ const o=JSON.parse(raw); if(o&&o.troncons) return o; } }catch(e){}
@@ -263,7 +278,7 @@ function renderTroncons(){
     th.appendChild(n); th.appendChild(rm); card.appendChild(th);
 
     // Faciès + distance
-    const g=document.createElement('div'); g.className='grid';
+    const g=document.createElement('div'); g.className='grid-2';
     g.appendChild(champSelect('Faciès', FACIES, tr.facies, v=>{ tr.facies=v; scheduleSave(); }));
     g.appendChild(champNum('Distance (m)', tr.distance_m, v=>{ tr.distance_m=v; renderCalc(); scheduleSave(); }));
     card.appendChild(g);
@@ -306,7 +321,7 @@ function renderTroncons(){
 
 // Ligne de saisie d'une visée : Fh / Fm / Fb (cm) + contrôle stadimétrique sur Fm
 function ligneVisee(vis){
-  const row=document.createElement('div'); row.className='grid';
+  const row=document.createElement('div'); row.className='visee-row';
   const refs={};
   ['fh','fm','fb'].forEach(k=>{
     const f=document.createElement('div'); f.className='field';
@@ -473,6 +488,7 @@ function importer(file){
     const o=JSON.parse(r.result);
     if(!o||!Array.isArray(o.troncons)) throw new Error('format');
     state={ meta:Object.assign(etatVierge().meta,o.meta||{}),
+      ui:Object.assign({infosOpen:true}, o.ui||{}),
       troncons:o.troncons.map(t=>({ facies:t.facies||'', distance_m:t.distance_m??null,
         aval:{fh:t.aval?.fh??null,fm:t.aval?.fm??null,fb:t.aval?.fb??null},
         amont:{fh:t.amont?.fh??null,fm:t.amont?.fm??null,fb:t.amont?.fb??null} })) };
@@ -490,8 +506,16 @@ function toast(msg){
 // ---- Rendu global ----
 function renderAll(){ renderTroncons(); renderCalc(); refreshPreview(); }
 
+// ---- Repli persistant de l'encadré Informations ----
+function initInfos(){
+  state.ui = state.ui || {infosOpen:true};
+  const d=document.getElementById('infos');
+  d.open = state.ui.infosOpen !== false;
+  d.addEventListener('toggle',()=>{ state.ui=state.ui||{}; state.ui.infosOpen=d.open; scheduleSave(); });
+}
+
 // ---- Init ----
-bindMeta(); renderAll(); setSave('saved');
+bindMeta(); initInfos(); renderAll(); setSave('saved');
 
 document.getElementById('add').onclick=()=>{ state.troncons.push(nouveauTroncon()); renderAll(); scheduleSave(); };
 document.getElementById('exp').onclick=exporter;
