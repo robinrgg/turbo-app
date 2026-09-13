@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="./icon.svg">
 <link rel="stylesheet" href="../../shared/tokens.css">
 <style>
-:root{ --accent:#6f7fd6; --accent-dim:#4f5fb0; }
+:root{ --accent:#5aa9f0; --accent-dim:#3f7fc0; --ttl:#eaeef3; --sub:#a3aebb; }
 *{ box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
 html,body{ background:var(--bg); color:var(--text); }
 body{ font-family:var(--font-sans); min-height:100vh; min-height:100dvh;
@@ -26,7 +26,7 @@ header.app .hbtn{ background:var(--surface-2); border:1px solid var(--border-str
 header.app .hbtn[hidden]{ display:none; }
 header.app .mark{ width:32px; height:32px; border-radius:8px; overflow:hidden; flex:0 0 auto; }
 header.app .mark img{ width:100%; height:100%; display:block; }
-header.app h1{ flex:1; font-size:1rem; font-weight:800; letter-spacing:.3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+header.app h1{ flex:1; font-size:1rem; font-weight:800; letter-spacing:.3px; color:var(--ttl); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 header.app h1 .accent{ color:var(--accent); }
 header.app .dot{ width:8px; height:8px; border-radius:50%; background:transparent; flex:0 0 auto; transition:background .3s; }
 header.app .dot.on{ background:var(--ok); }
@@ -50,7 +50,7 @@ main{ max-width:900px; margin:0 auto; padding:14px 12px 40px; }
 
 /* ---- Accueil ---- */
 .home-actions{ display:flex; flex-direction:column; gap:8px; margin-bottom:16px; }
-h2.sec{ font-size:.72rem; text-transform:uppercase; letter-spacing:.08em; color:var(--text-dim); margin:6px 2px 8px; }
+h2.sec{ font-size:.72rem; text-transform:uppercase; letter-spacing:.08em; color:var(--ttl); margin:6px 2px 8px; }
 .st-list{ list-style:none; display:flex; flex-direction:column; gap:8px; }
 .st-card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:12px; cursor:pointer;
   display:flex; align-items:center; gap:10px; transition:border-color .15s; }
@@ -67,20 +67,20 @@ h2.sec{ font-size:.72rem; text-transform:uppercase; letter-spacing:.08em; color:
 .note{ font-size:.7rem; color:var(--text-mute); line-height:1.5; margin-top:14px; text-align:center; }
 
 /* ---- Fiche station : sommaire ---- */
-.st-title{ font-size:1.05rem; font-weight:800; margin-bottom:2px; }
-.st-sub{ font-size:.75rem; color:var(--text-mute); margin-bottom:14px; }
+.st-title{ font-size:1.05rem; font-weight:800; color:var(--ttl); margin-bottom:2px; }
+.st-sub{ font-size:.75rem; color:var(--sub); margin-bottom:14px; }
 .nav-grid{ display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-bottom:14px; }
 .nav-card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:14px 12px;
   display:flex; flex-direction:column; align-items:flex-start; gap:4px; cursor:pointer; min-height:80px; transition:border-color .15s; text-align:left; }
 .nav-card:active{ border-color:var(--accent); }
 .nav-card .ic{ font-size:22px; }
-.nav-card .lb{ font-weight:700; font-size:.9rem; }
+.nav-card .lb{ font-weight:700; font-size:.9rem; color:var(--ttl); }
 .nav-card small{ font-family:var(--font-mono); font-size:.66rem; color:var(--text-dim); }
 
 /* ---- Cartes / champs ---- */
 section.card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); margin-bottom:12px; overflow:hidden; }
 section.card>.hd{ padding:10px 12px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:8px; background:var(--surface-2); }
-section.card>.hd .ttl{ flex:1; font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--text-dim); }
+section.card>.hd .ttl{ flex:1; font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--ttl); }
 section.card>.hd .ttl .bar{ display:inline-block; width:3px; height:11px; background:var(--accent); margin-right:7px; vertical-align:middle; border-radius:2px; }
 section.card>.bd{ padding:12px; }
 .field{ display:flex; flex-direction:column; gap:3px; margin-bottom:9px; }
@@ -96,8 +96,8 @@ section.card>.bd{ padding:12px; }
 .row .field{ margin-bottom:0; }
 .hint{ font-size:.68rem; color:var(--text-mute); line-height:1.45; margin-top:2px; }
 .derived{ font-family:var(--font-mono); font-size:.8rem; color:var(--accent); }
-.steep-note{ font-size:.7rem; color:var(--text-dim); line-height:1.5; background:rgba(111,127,214,.09);
-  border:1px solid rgba(111,127,214,.28); border-radius:var(--radius-sm); padding:8px 10px; margin-bottom:10px; }
+.steep-note{ font-size:.7rem; color:var(--text-dim); line-height:1.5; background:rgba(90,169,240,.09);
+  border:1px solid rgba(90,169,240,.30); border-radius:var(--radius-sm); padding:8px 10px; margin-bottom:10px; }
 .steep-note b{ color:var(--accent); }
 
 /* ---- Transects ---- */
@@ -223,13 +223,13 @@ const LS_KEY="aquascop.habitat-stat.v2";
 const $=id=>document.getElementById(id);
 
 /* ---------- Modèle ---------- */
-function newCampaign(label){ return { label, date:"",operateur:"",debit:"",substrat:false, transects:[] }; }
+function newCampaign(label){ return { label, date:"",operateur:"",debit:"",substrat:false, lm:"", transects:[] }; }
 function newTransect(){ return { largeur:"", points:[], collapsed:false }; }
 function newPoint(){ return { h:"", s:"" }; }
 function newStation(){
   return { id:"st_"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),
     updated:Date.now(),
-    station:{ code:"",ce:"",com:"",x:"",y:"",op:"",date:"", long:"",pb:"",lm:"",nbt:"15", q50:"",qmin:"",qmax:"", pente:"",chutes:"" },
+    station:{ code:"",ce:"",com:"",x:"",y:"",op:"",date:"", long:"",pb:"",nbt:"15", q50:"",qmin:"",qmax:"", pente:"",chutes:"" },
     camp1:newCampaign("Campagne Q1"), camp2:newCampaign("Campagne Q2") };
 }
 
@@ -253,8 +253,8 @@ function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,m=>({"&":"&amp;",
 function fmt(n,d){ return n==null?"—":Number(n).toFixed(d==null?2:d); }
 function rnd(x,d){ return x==null?null:+Number(x).toFixed(d); }
 function toast(m,t){ const e=$("toast"); e.textContent=m; e.className="toast show "+(t||""); setTimeout(()=>e.className="toast",1800); }
-function spacing(){ const lm=num(cur&&cur.station.lm); return (lm&&lm>0)? lm/7 : null; }
-function suggestPts(w){ const d=spacing(); if(!d||!w||w<=0) return 0; return Math.max(3,Math.round(w/d)); }
+function spacing(c){ const lm=num(c&&c.lm); return (lm&&lm>0)? lm/7 : null; }
+function suggestPts(w,c){ const d=spacing(c); if(!d||!w||w<=0) return 0; return Math.max(3,Math.round(w/d)); }
 
 /* ---------- Calculs ---------- */
 function computeCamp(c){
@@ -315,7 +315,7 @@ function renderSummary(){
   const s=cur.station, c1=computeCamp(cur.camp1), c2=computeCamp(cur.camp2);
   $("fsTitle").textContent=s.code||"(station sans code)";
   $("fsSub").textContent=[s.ce,s.com,s.date,s.op].filter(Boolean).join(" · ")||"—";
-  const geoOK=num(s.long)&&num(s.lm)&&num(s.nbt);
+  const geoOK=num(s.long)&&num(s.nbt);
   $("pgInfo").textContent=geoOK?"géométrie ✓":"à compléter";
   $("pgC1").textContent=c1.nPts?(c1.nPts+" pts"):"vide";
   $("pgC2").textContent=c2.nPts?(c2.nPts+" pts"):"vide";
@@ -343,9 +343,7 @@ function renderInfo(){
     <div class="row c2">
       <div class="field"><label>Longueur station (m)</label><input data-s="long" class="mono" value="${esc(s.long)}" inputmode="decimal"></div>
       <div class="field"><label>Largeur pleins bords (m)</label><input data-s="pb" class="mono" value="${esc(s.pb)}" inputmode="decimal"></div></div>
-    <div class="row c2">
-      <div class="field"><label>Largeur mouillée moy. estimée (m)</label><input data-s="lm" class="mono" value="${esc(s.lm)}" inputmode="decimal"></div>
-      <div class="field"><label>Nombre de transects</label><input data-s="nbt" class="mono" value="${esc(s.nbt)}" inputmode="numeric"></div></div>
+    <div class="field"><label>Nombre de transects</label><input data-s="nbt" class="mono" value="${esc(s.nbt)}" inputmode="numeric"></div>
     <div class="hint" id="geoDerived"></div>
   </div></section>
 
@@ -372,23 +370,23 @@ function renderInfo(){
   refreshGeo();
 }
 function refreshGeo(){
-  const s=cur.station, L=num(s.long),pb=num(s.pb),nbt=num(s.nbt),d=spacing();
+  const s=cur.station, L=num(s.long),pb=num(s.pb),nbt=num(s.nbt);
   const it=(L&&nbt&&nbt>1)?L/(nbt-1):null; const box=$("geoDerived"); if(!box) return;
-  let m=[`Inter-transect : <span class="derived">${it?fmt(it,2)+" m":"—"}</span>`,
-         `Inter-point d = L̄/7 : <span class="derived">${d?fmt(d,2)+" m":"—"}</span>`];
+  let m=[`Inter-transect : <span class="derived">${it?fmt(it,2)+" m":"—"}</span>`];
   if(L&&pb){ const r=L/pb; m.push(`Longueur = <span class="derived">${fmt(r,1)}×</span> Lpb ${r<15?'<span style="color:var(--warn)">(&lt;15×)</span>':'<span style="color:var(--ok)">(≥15× ✓)</span>'}`); }
   box.innerHTML=m.join(" &nbsp;·&nbsp; ");
 }
 
 /* ---------- Sous-écran : campagne ---------- */
 function renderCamp(which){
-  const c=cur[which], el=$("scr-"+which), cc=computeCamp(c), d=spacing();
+  const c=cur[which], el=$("scr-"+which), cc=computeCamp(c), d=spacing(c);
   el.innerHTML=`
   <section class="card"><div class="hd"><span class="ttl"><span class="bar"></span>${c.label}</span></div><div class="bd">
     <div class="row c2">
       <div class="field"><label>Débit mesuré (m³/s)</label><input class="mono" data-f="debit" value="${esc(c.debit)}" inputmode="decimal"></div>
       <div class="field"><label>Date</label><input type="date" data-f="date" value="${esc(c.date)}"></div></div>
     <div class="field"><label>Opérateur</label><input data-f="operateur" value="${esc(c.operateur)}"></div>
+    <div class="field"><label>Largeur mouillée moyenne (m) — fixe l'espacement inter-point d = L̄/7</label><input class="mono" data-f="lm" value="${esc(c.lm)}" inputmode="decimal"></div>
     <label style="display:flex;align-items:center;gap:9px;font-size:.85rem;padding:6px 0;cursor:pointer">
       <input type="checkbox" data-f="substrat" ${c.substrat?"checked":""} style="width:20px;height:20px;min-height:0">
       Substrat (axe b) relevé sur cette campagne</label>
@@ -400,14 +398,13 @@ function renderCamp(which){
     <div class="kv"><span class="k">Hauteur moy. (cm / m)</span><span class="v">${fmt(cc.Hcm,1)} / ${fmt(cc.Hm,3)}</span></div>
     <div class="kv"><span class="k">Nb points / transects</span><span class="v">${cc.nPts} / ${c.transects.length}</span></div>
     ${c.substrat?`<div class="kv"><span class="k">Axe b moyen (cm)</span><span class="v">${fmt(cc.meanSubCm,2)} (n=${cc.sub.length})</span></div>`:""}
-    <div class="hint" style="margin-top:6px">d = ${d?fmt(d,2)+" m":"— (renseigner largeur moy. estimée en Station)"}. Cible : ~100 hauteurs, ≥15 transects.</div>
+    <div class="hint" style="margin-top:6px">d = ${d?fmt(d,2)+" m":"— (renseigner la largeur mouillée moyenne ci-dessus)"}. Cible : ~100 hauteurs, ≥15 transects.</div>
   </div></section>
 
   <section class="card"><div class="hd"><span class="ttl"><span class="bar"></span>Transects</span></div><div class="bd">
     <div id="tlist">${c.transects.map((t,i)=>transectHTML(which,t,i)).join("")||'<div class="empty">Aucun transect.</div>'}</div>
     <div class="btn-row" style="margin-top:8px">
       <button class="btn sm" data-act="addT">+ Transect</button>
-      <button class="btn ghost sm" data-act="genT">Générer ${num(cur.station.nbt)||15} transects</button>
     </div>
   </div></section>`;
 
@@ -415,20 +412,17 @@ function renderCamp(which){
     const f=inp.getAttribute('data-f');
     inp.addEventListener(inp.type==='checkbox'?'change':'input',()=>{
       c[f]= inp.type==='checkbox'? inp.checked : inp.value; touch();
-      if(f==='substrat') renderCamp(which);
+      if(f==='substrat'||f==='lm') renderCamp(which);
     });
   });
   el.querySelectorAll('[data-act]').forEach(b=>b.addEventListener('click',()=>{
     const a=b.getAttribute('data-act');
     if(a==='addT'){ c.transects.push(newTransect()); touch(); renderCamp(which); }
-    if(a==='genT'){ const nb=num(cur.station.nbt)||15;
-      if(c.transects.length && !confirm(`Remplacer les ${c.transects.length} transect(s) par ${nb} transects vides ?`)) return;
-      c.transects=[]; for(let i=0;i<nb;i++) c.transects.push(newTransect()); touch(); renderCamp(which); }
   }));
   bindTransects(which,el);
 }
 function transectHTML(which,t,i){
-  const w=num(t.largeur), sug=suggestPts(w), c=cur[which], sub=c.substrat, d=spacing();
+  const c=cur[which], w=num(t.largeur), sug=suggestPts(w,c), sub=c.substrat, d=spacing(c);
   const cols=sub?"34px 60px 1fr 1fr 30px":"34px 60px 1fr 30px";
   const head=sub?`<span>#</span><span>pos m</span><span>h (cm)</span><span>axe b mm</span><span></span>`
                 :`<span>#</span><span>pos m</span><span>h (cm)</span><span></span>`;
@@ -450,7 +444,7 @@ function transectHTML(which,t,i){
         <div class="field"><label>&nbsp;</label><button class="btn ghost sm" data-regen="${i}">↺ Régénérer ${sug||"?"} pts</button></div></div>
       <div class="pt-head" style="grid-template-columns:${cols}">${head}</div>
       <div>${rows||'<div class="hint">Renseigner la largeur puis générer les points.</div>'}</div>
-      <div class="btn-row" style="margin-top:6px"><button class="btn ghost sm" data-addp="${i}">+ Point</button></div>
+      <div class="btn-row" style="margin-top:6px"><button class="btn ghost sm" data-addp="${i}">+ Point</button><button class="btn danger ghost sm" data-delt="${i}" style="margin-left:auto">Supprimer le transect</button></div>
     </div></div>`;
 }
 function bindTransects(which,el){
@@ -460,14 +454,18 @@ function bindTransects(which,el){
   el.querySelectorAll('[data-tw]').forEach(inp=>{
     inp.addEventListener('input',()=>{ c.transects[+inp.getAttribute('data-tw')].largeur=inp.value; touch(); });
     inp.addEventListener('blur',()=>{ const i=+inp.getAttribute('data-tw'), t=c.transects[i];
-      if(t.points.length===0){ const n=suggestPts(num(t.largeur)); for(let k=0;k<n;k++) t.points.push(newPoint()); touch(); }
+      if(t.points.length===0){ const n=suggestPts(num(t.largeur),c); for(let k=0;k<n;k++) t.points.push(newPoint()); touch(); }
       renderCamp(which); });
   });
   el.querySelectorAll('[data-regen]').forEach(b=>b.addEventListener('click',()=>{
-    const i=+b.getAttribute('data-regen'), t=c.transects[i], n=suggestPts(num(t.largeur));
-    if(!n){ toast("Renseigner largeur + largeur moy. station","err"); return; }
+    const i=+b.getAttribute('data-regen'), t=c.transects[i], n=suggestPts(num(t.largeur),c);
+    if(!n){ toast("Renseigner largeur + largeur mouillée moyenne","err"); return; }
     if(t.points.some(p=>p.h!==""||p.s!=="") && !confirm(`Régénérer ${n} points vides (valeurs perdues) ?`)) return;
     t.points=[]; for(let k=0;k<n;k++) t.points.push(newPoint()); touch(); renderCamp(which); }));
+  el.querySelectorAll('[data-delt]').forEach(b=>b.addEventListener('click',()=>{
+    const i=+b.getAttribute('data-delt'), t=c.transects[i];
+    if(t.points.some(p=>p.h!==""||p.s!=="") && !confirm("Supprimer ce transect et ses points ?")) return;
+    c.transects.splice(i,1); touch(); renderCamp(which); }));
   el.querySelectorAll('[data-addp]').forEach(b=>b.addEventListener('click',()=>{ c.transects[+b.getAttribute('data-addp')].points.push(newPoint()); touch(); renderCamp(which); }));
   el.querySelectorAll('[data-delp]').forEach(b=>b.addEventListener('click',()=>{ c.transects[+b.getAttribute('data-delp')].points.splice(+b.getAttribute('data-delj'),1); touch(); renderCamp(which); }));
   el.querySelectorAll('[data-p]').forEach(inp=>inp.addEventListener('input',()=>{ c.transects[+inp.getAttribute('data-t')].points[+inp.getAttribute('data-j')][inp.getAttribute('data-p')]=inp.value; touch(); }));
@@ -518,14 +516,14 @@ function download(name,txt){ const b=new Blob([txt],{type:"application/json;char
   const a=document.createElement("a"); a.href=u; a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(u); a.remove(); },200); }
 function codeName(){ return (cur.station.code||"station").replace(/[^\w\-]+/g,"_"); }
 function campObj(camp,cc){ return { label:camp.label||"",date:camp.date||"",operateur:camp.operateur||"",
-  debit_m3s:cc.Q, substrat:!!camp.substrat, W_moy_m:rnd(cc.Wm,3),H_moy_cm:rnd(cc.Hcm,1),H_moy_m:rnd(cc.Hm,4),nb_points:cc.nPts,
+  debit_m3s:cc.Q, largeur_moy_est_m:num(camp.lm), substrat:!!camp.substrat, W_moy_m:rnd(cc.Wm,3),H_moy_cm:rnd(cc.Hcm,1),H_moy_m:rnd(cc.Hm,4),nb_points:cc.nPts,
   transects:(camp.transects||[]).map(t=>({ largeur_m:num(t.largeur), points:(t.points||[]).map(p=>({ h_cm:num(p.h), axe_b_mm: camp.substrat?num(p.s):null })) })) }; }
 function buildModelJSON(op){
   const st=op.station, c1=computeCamp(op.camp1), c2=computeCamp(op.camp2);
   const subCamp=c1.hasSub?{src:"Q1",c:c1}:(c2.hasSub?{src:"Q2",c:c2}:null);
   return { format:"aquascop.habitat-stat", version:2, exported:new Date().toISOString(),
     station:{ code:st.code,cours_eau:st.ce,commune:st.com,x:st.x,y:st.y,operateur:st.op,date:st.date,
-      longueur_m:num(st.long),largeur_pleins_bords_m:num(st.pb),largeur_moy_est_m:num(st.lm),nb_transects:num(st.nbt) },
+      longueur_m:num(st.long),largeur_pleins_bords_m:num(st.pb),nb_transects:num(st.nbt) },
     hydrologie:{ q50_m3s:num(st.q50),q_min_m3s:num(st.qmin),q_max_m3s:num(st.qmax) },
     campagnes:{ Q1:campObj(op.camp1,c1), Q2:campObj(op.camp2,c2) },
     model_inputs:{
@@ -542,13 +540,13 @@ function buildModelJSON(op){
 
 /* ---------- Import (normalisation) ---------- */
 function campFromModel(cm,label){ const c=newCampaign(label); if(!cm) return c;
-  c.date=cm.date||""; c.operateur=cm.operateur||""; c.debit=cm.debit_m3s!=null?String(cm.debit_m3s):""; c.substrat=!!cm.substrat;
+  c.date=cm.date||""; c.operateur=cm.operateur||""; c.debit=cm.debit_m3s!=null?String(cm.debit_m3s):""; c.lm=cm.largeur_moy_est_m!=null?String(cm.largeur_moy_est_m):""; c.substrat=!!cm.substrat;
   c.transects=(cm.transects||[]).map(t=>({ largeur:t.largeur_m!=null?String(t.largeur_m):"", collapsed:true,
     points:(t.points||[]).map(p=>({ h:p.h_cm!=null?String(p.h_cm):"", s:p.axe_b_mm!=null?String(p.axe_b_mm):"" })) })); return c; }
 function stationFromModel(st){ const o=newStation();
   Object.assign(o.station,{ code:st.code||"",ce:st.cours_eau||"",com:st.commune||"",x:st.x||"",y:st.y||"",op:st.operateur||"",date:st.date||"",
     long:st.longueur_m!=null?String(st.longueur_m):"", pb:st.largeur_pleins_bords_m!=null?String(st.largeur_pleins_bords_m):"",
-    lm:st.largeur_moy_est_m!=null?String(st.largeur_moy_est_m):"", nbt:st.nb_transects!=null?String(st.nb_transects):"15" }); return o; }
+    nbt:st.nb_transects!=null?String(st.nb_transects):"15" }); return o; }
 /* normalise un fichier importé -> {station:{internal}, camp1, camp2} */
 function normalize(obj){
   if(obj&&obj.format==="aquascop.habitat-stat"){
