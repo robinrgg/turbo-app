@@ -56,5 +56,14 @@ self.APPS = [
     accent:  "#d98e3c",
     icone:   "./apps/profil-long/icon.svg",
     offline: true
-  }   
+  },
+  {
+  slug:    "habitat-stat",
+  nom:     "Estimhab / Stathab",
+  desc:    "Saisie habitat statistique",
+  accent:  "#6f7fd6",
+  icone:   "./apps/habitat-stat/icon.svg",
+  offline: true
+  } 
+    
 ];
