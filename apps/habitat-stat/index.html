@@ -132,6 +132,11 @@ section.card>.bd{ padding:12px; }
 .role-grid{ display:grid; grid-template-columns:auto 1fr; gap:8px 10px; align-items:center; margin-bottom:8px; }
 .role-grid .rl{ font-family:var(--font-mono); font-weight:700; color:var(--accent); font-size:.85rem; }
 
+.modal-bg{ position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:200; display:flex; align-items:center; justify-content:center; padding:20px; }
+.modal-bg[hidden]{ display:none; }
+.modal{ background:var(--surface); border:1px solid var(--border-strong); border-radius:var(--radius); max-width:360px; width:100%; overflow:hidden; }
+.modal .mhd{ padding:16px 16px 8px; font-size:.9rem; line-height:1.5; color:var(--ttl); }
+.modal .mft{ padding:12px 16px 14px; display:flex; gap:8px; justify-content:flex-end; }
 .toast{ position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:var(--surface-2); color:var(--text);
   border:1px solid var(--border-strong); padding:10px 16px; border-radius:var(--radius); z-index:100; opacity:0; pointer-events:none;
   transition:opacity .2s; font-size:.82rem; max-width:90%; text-align:center; }
@@ -208,6 +213,10 @@ input[type=file]{ display:none; }
 </main>
 
 <input type="file" id="fileInput" accept=".json,application/json">
+<div class="modal-bg" id="modalBg" hidden><div class="modal">
+  <div class="mhd" id="modalMsg"></div>
+  <div class="mft"><button class="btn ghost sm" id="modalCancel">Annuler</button><button class="btn danger sm" id="modalOk">Supprimer</button></div>
+</div></div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -223,13 +232,14 @@ const LS_KEY="aquascop.habitat-stat.v2";
 const $=id=>document.getElementById(id);
 
 /* ---------- Modèle ---------- */
-function newCampaign(label){ return { label, date:"",operateur:"",debit:"",substrat:false, lm:"", transects:[] }; }
+function newCampaign(label){ return { label, date:todayISO(),operateur:"",debit:"",substrat:false, lm:"", transects:[] }; }
 function newTransect(){ return { largeur:"", points:[], collapsed:false }; }
 function newPoint(){ return { h:"", s:"" }; }
+function todayISO(){ const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
 function newStation(){
   return { id:"st_"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),
     updated:Date.now(),
-    station:{ code:"",ce:"",com:"",x:"",y:"",op:"",date:"", long:"",pb:"",nbt:"15", q50:"",qmin:"",qmax:"", pente:"",chutes:"" },
+    station:{ code:"",ce:"",com:"",x:"",y:"",op:"",date:todayISO(), long:"",pb:"",nbt:"15", q50:"",qmin:"",qmax:"", pente:"",chutes:"" },
     camp1:newCampaign("Campagne Q1"), camp2:newCampaign("Campagne Q2") };
 }
 
@@ -253,6 +263,9 @@ function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,m=>({"&":"&amp;",
 function fmt(n,d){ return n==null?"—":Number(n).toFixed(d==null?2:d); }
 function rnd(x,d){ return x==null?null:+Number(x).toFixed(d); }
 function toast(m,t){ const e=$("toast"); e.textContent=m; e.className="toast show "+(t||""); setTimeout(()=>e.className="toast",1800); }
+function confirmDialog(msg,onOK,okLabel){ const bg=$("modalBg"); $("modalMsg").textContent=msg; $("modalOk").textContent=okLabel||"Supprimer"; bg.hidden=false;
+  const close=()=>{ bg.hidden=true; $("modalOk").onclick=null; $("modalCancel").onclick=null; bg.onclick=null; };
+  $("modalOk").onclick=()=>{ close(); onOK(); }; $("modalCancel").onclick=close; bg.onclick=e=>{ if(e.target===bg) close(); }; }
 function spacing(c){ const lm=num(c&&c.lm); return (lm&&lm>0)? lm/7 : null; }
 function suggestPts(w,c){ const d=spacing(c); if(!d||!w||w<=0) return 0; return Math.max(3,Math.round(w/d)); }
 
@@ -394,10 +407,10 @@ function renderCamp(which){
   </div></section>
 
   <section class="card"><div class="hd"><span class="ttl"><span class="bar"></span>Synthèse</span></div><div class="bd">
-    <div class="kv"><span class="k">Largeur mouillée moy. (m)</span><span class="v">${fmt(cc.Wm)}</span></div>
-    <div class="kv"><span class="k">Hauteur moy. (cm / m)</span><span class="v">${fmt(cc.Hcm,1)} / ${fmt(cc.Hm,3)}</span></div>
-    <div class="kv"><span class="k">Nb points / transects</span><span class="v">${cc.nPts} / ${c.transects.length}</span></div>
-    ${c.substrat?`<div class="kv"><span class="k">Axe b moyen (cm)</span><span class="v">${fmt(cc.meanSubCm,2)} (n=${cc.sub.length})</span></div>`:""}
+    <div class="kv"><span class="k">Largeur mouillée moy. (m)</span><span class="v" id="syn-w">${fmt(cc.Wm)}</span></div>
+    <div class="kv"><span class="k">Hauteur moy. (cm)</span><span class="v" id="syn-h">${fmt(cc.Hcm,1)}</span></div>
+    <div class="kv"><span class="k">Nombre de points</span><span class="v" id="syn-n">${cc.nPts}</span></div>
+    ${c.substrat?`<div class="kv"><span class="k">Axe b moyen (cm)</span><span class="v" id="syn-sub">${fmt(cc.meanSubCm,2)} (n=${cc.sub.length})</span></div>`:""}
     <div class="hint" style="margin-top:6px">d = ${d?fmt(d,2)+" m":"— (renseigner la largeur mouillée moyenne ci-dessus)"}. Cible : ~100 hauteurs, ≥15 transects.</div>
   </div></section>
 
@@ -421,6 +434,9 @@ function renderCamp(which){
   }));
   bindTransects(which,el);
 }
+function updateSynth(which){ const c=cur[which], cc=computeCamp(c), set=(id,v)=>{ const e=$(id); if(e) e.textContent=v; };
+  set("syn-w",fmt(cc.Wm)); set("syn-h",fmt(cc.Hcm,1)); set("syn-n",cc.nPts);
+  if(c.substrat) set("syn-sub",fmt(cc.meanSubCm,2)+" (n="+cc.sub.length+")"); }
 function transectHTML(which,t,i){
   const c=cur[which], w=num(t.largeur), sug=suggestPts(w,c), sub=c.substrat, d=spacing(c);
   const cols=sub?"34px 60px 1fr 1fr 30px":"34px 60px 1fr 30px";
@@ -452,7 +468,7 @@ function bindTransects(which,el){
   el.querySelectorAll('[data-toggle]').forEach(h=>h.addEventListener('click',()=>{
     const i=+h.getAttribute('data-toggle'); c.transects[i].collapsed=!c.transects[i].collapsed; touch(); h.parentElement.classList.toggle('collapsed'); }));
   el.querySelectorAll('[data-tw]').forEach(inp=>{
-    inp.addEventListener('input',()=>{ c.transects[+inp.getAttribute('data-tw')].largeur=inp.value; touch(); });
+    inp.addEventListener('input',()=>{ c.transects[+inp.getAttribute('data-tw')].largeur=inp.value; touch(); updateSynth(which); });
     inp.addEventListener('blur',()=>{ const i=+inp.getAttribute('data-tw'), t=c.transects[i];
       if(t.points.length===0){ const n=suggestPts(num(t.largeur),c); for(let k=0;k<n;k++) t.points.push(newPoint()); touch(); }
       renderCamp(which); });
@@ -463,12 +479,11 @@ function bindTransects(which,el){
     if(t.points.some(p=>p.h!==""||p.s!=="") && !confirm(`Régénérer ${n} points vides (valeurs perdues) ?`)) return;
     t.points=[]; for(let k=0;k<n;k++) t.points.push(newPoint()); touch(); renderCamp(which); }));
   el.querySelectorAll('[data-delt]').forEach(b=>b.addEventListener('click',()=>{
-    const i=+b.getAttribute('data-delt'), t=c.transects[i];
-    if(t.points.some(p=>p.h!==""||p.s!=="") && !confirm("Supprimer ce transect et ses points ?")) return;
-    c.transects.splice(i,1); touch(); renderCamp(which); }));
+    const i=+b.getAttribute('data-delt');
+    confirmDialog(`Supprimer le transect ${i+1} et ses points ?`, ()=>{ c.transects.splice(i,1); touch(); renderCamp(which); }); }));
   el.querySelectorAll('[data-addp]').forEach(b=>b.addEventListener('click',()=>{ c.transects[+b.getAttribute('data-addp')].points.push(newPoint()); touch(); renderCamp(which); }));
   el.querySelectorAll('[data-delp]').forEach(b=>b.addEventListener('click',()=>{ c.transects[+b.getAttribute('data-delp')].points.splice(+b.getAttribute('data-delj'),1); touch(); renderCamp(which); }));
-  el.querySelectorAll('[data-p]').forEach(inp=>inp.addEventListener('input',()=>{ c.transects[+inp.getAttribute('data-t')].points[+inp.getAttribute('data-j')][inp.getAttribute('data-p')]=inp.value; touch(); }));
+  el.querySelectorAll('[data-p]').forEach(inp=>inp.addEventListener('input',()=>{ c.transects[+inp.getAttribute('data-t')].points[+inp.getAttribute('data-j')][inp.getAttribute('data-p')]=inp.value; touch(); updateSynth(which); }));
 }
 
 /* ---------- Sous-écran : export ---------- */
@@ -614,7 +629,7 @@ $("btnFusion").onclick=()=>{ fus={A:null,B:null}; go("fusion"); };
 $("btnFileA").onclick=()=>loadFusionFile("A");
 $("btnFileB").onclick=()=>loadFusionFile("B");
 $("btnDoFusion").onclick=doFusion;
-$("btnDelStation").onclick=()=>{ if(confirm("Supprimer définitivement cette station ?")){ Store.del(cur.id); cur=null; go("home"); } };
+$("btnDelStation").onclick=()=>{ confirmDialog("Supprimer définitivement cette station ?", ()=>{ Store.del(cur.id); cur=null; go("home"); }); };
 document.querySelectorAll('#scr-station [data-go]').forEach(b=>b.addEventListener('click',()=>go(b.getAttribute('data-go'))));
 
 /* ---------- Init ---------- */
