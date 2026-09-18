@@ -395,16 +395,15 @@ function computeCarry(c){
   const d=spacing(c);
   const out=c.transects.map(()=>[]);
   if(!d) return out;
-  let s=d/4;                                  // amorce arbitraire du 1er transect
+  let s=d/2;                                  // amorce : 1er point centré
   c.transects.forEach((t,i)=>{
     const w=num(t.largeur);
     if(w==null||w<=0) return;                 // largeur absente : report inchangé
-    const start=(s>=w)? w/2 : s;              // transect plus étroit que le report -> 1 point centré
     const pos=[];
-    for(let p=start; p<=w+1e-9; p+=d) pos.push(+p.toFixed(2));
+    for(let p=s; p<=w+1e-9; p+=d) pos.push(+p.toFixed(2));
+    if(pos.length===0) pos.push(+(w/2).toFixed(2));   // transect plus étroit que le pas
     out[i]=pos;
-    const last=pos.length?pos[pos.length-1]:0;
-    s=+(w-last).toFixed(4);                   // reliquat de berge reporté au transect suivant
+    s=+(((s - w) % d + d) % d).toFixed(4);    // report continu : pas - reliquat de berge
   });
   return out;
 }
