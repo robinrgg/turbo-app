@@ -361,7 +361,7 @@ function renderInfo(){
   </div></section>
 
   <section class="card"><div class="hd"><span class="ttl"><span class="bar"></span>Hydrologie</span></div><div class="bd">
-    <div class="field"><label>Q50 naturel — module médian (m³/s) <span class="star">†</span></label><input data-s="q50" class="mono" value="${esc(s.q50)}" inputmode="decimal"></div>
+    <div class="field"><label>Q50 naturel (m³/s) <span class="star">†</span></label><input data-s="q50" class="mono" value="${esc(s.q50)}" inputmode="decimal"></div>
     <div class="row c2">
       <div class="field"><label>Gamme — Q min (m³/s)</label><input data-s="qmin" class="mono" value="${esc(s.qmin)}" inputmode="decimal"></div>
       <div class="field"><label>Q max (m³/s)</label><input data-s="qmax" class="mono" value="${esc(s.qmax)}" inputmode="decimal"></div></div>
@@ -391,8 +391,40 @@ function refreshGeo(){
 }
 
 /* ---------- Sous-écran : campagne ---------- */
+function computeCarry(c){
+  const d=spacing(c);
+  const out=c.transects.map(()=>[]);
+  if(!d) return out;
+  let s=d/4;                                  // amorce arbitraire du 1er transect
+  c.transects.forEach((t,i)=>{
+    const w=num(t.largeur);
+    if(w==null||w<=0) return;                 // largeur absente : report inchangé
+    const start=(s>=w)? w/2 : s;              // transect plus étroit que le report -> 1 point centré
+    const pos=[];
+    for(let p=start; p<=w+1e-9; p+=d) pos.push(+p.toFixed(2));
+    out[i]=pos;
+    const last=pos.length?pos[pos.length-1]:0;
+    s=+(w-last).toFixed(4);                   // reliquat de berge reporté au transect suivant
+  });
+  return out;
+}
+function syncPoints(c){
+  const pos=computeCarry(c);
+  pos.forEach((ps,i)=>{
+    const t=c.transects[i];
+    while(t.points.length<ps.length) t.points.push(newPoint());
+    while(t.points.length>ps.length){         // ne rogne que les points vides en trop
+      const last=t.points[t.points.length-1];
+      if(last.h!==""||last.s!=="") break;
+      t.points.pop();
+    }
+  });
+  return pos;
+}
 function renderCamp(which){
-  const c=cur[which], el=$("scr-"+which), cc=computeCamp(c), d=spacing(c);
+  const c=cur[which], el=$("scr-"+which);
+  const positions=syncPoints(c);
+  const cc=computeCamp(c), d=spacing(c);
   el.innerHTML=`
   <section class="card"><div class="hd"><span class="ttl"><span class="bar"></span>${c.label}</span></div><div class="bd">
     <div class="row c2">
@@ -410,12 +442,12 @@ function renderCamp(which){
     <div class="kv"><span class="k">Largeur mouillée moy. (m)</span><span class="v" id="syn-w">${fmt(cc.Wm)}</span></div>
     <div class="kv"><span class="k">Hauteur moy. (cm)</span><span class="v" id="syn-h">${fmt(cc.Hcm,1)}</span></div>
     <div class="kv"><span class="k">Nombre de points</span><span class="v" id="syn-n">${cc.nPts}</span></div>
-    ${c.substrat?`<div class="kv"><span class="k">Axe b moyen (cm)</span><span class="v" id="syn-sub">${fmt(cc.meanSubCm,2)} (n=${cc.sub.length})</span></div>`:""}
+    ${c.substrat?`<div class="kv"><span class="k">Axe b moyen (cm)</span><span class="v" id="syn-sub">${fmt(cc.meanSubCm,2)}</span></div>`:""}
     <div class="hint" style="margin-top:6px">d = ${d?fmt(d,2)+" m":"— (renseigner la largeur mouillée moyenne ci-dessus)"}. Cible : ~100 hauteurs, ≥15 transects.</div>
   </div></section>
 
   <section class="card"><div class="hd"><span class="ttl"><span class="bar"></span>Transects</span></div><div class="bd">
-    <div id="tlist">${c.transects.map((t,i)=>transectHTML(which,t,i)).join("")||'<div class="empty">Aucun transect.</div>'}</div>
+    <div id="tlist">${c.transects.map((t,i)=>transectHTML(which,t,i,positions[i])).join("")||'<div class="empty">Aucun transect.</div>'}</div>
     <div class="btn-row" style="margin-top:8px">
       <button class="btn sm" data-act="addT">+ Transect</button>
     </div>
@@ -436,31 +468,29 @@ function renderCamp(which){
 }
 function updateSynth(which){ const c=cur[which], cc=computeCamp(c), set=(id,v)=>{ const e=$(id); if(e) e.textContent=v; };
   set("syn-w",fmt(cc.Wm)); set("syn-h",fmt(cc.Hcm,1)); set("syn-n",cc.nPts);
-  if(c.substrat) set("syn-sub",fmt(cc.meanSubCm,2)+" (n="+cc.sub.length+")"); }
-function transectHTML(which,t,i){
-  const c=cur[which], w=num(t.largeur), sug=suggestPts(w,c), sub=c.substrat, d=spacing(c);
-  const cols=sub?"34px 60px 1fr 1fr 30px":"34px 60px 1fr 30px";
-  const head=sub?`<span>#</span><span>pos m</span><span>h (cm)</span><span>axe b mm</span><span></span>`
-                :`<span>#</span><span>pos m</span><span>h (cm)</span><span></span>`;
+  if(c.substrat) set("syn-sub",fmt(cc.meanSubCm,2)); }
+function transectHTML(which,t,i,pos){
+  const c=cur[which], w=num(t.largeur), sub=c.substrat;
+  const cols=sub?"34px 64px 1fr 1fr":"34px 64px 1fr";
+  const head=sub?`<span>#</span><span>pos m</span><span>h (cm)</span><span>axe b mm</span>`
+                :`<span>#</span><span>pos m</span><span>h (cm)</span>`;
   const rows=(t.points||[]).map((p,j)=>{
-    const pos=d?((j+0.5)*d).toFixed(2):"—";
+    const position=(pos&&pos[j]!=null)?pos[j].toFixed(2):"—";
     return `<div class="pt-row" style="grid-template-columns:${cols}">
-      <span class="idx">${j+1}</span><span class="pos">${pos}</span>
+      <span class="idx">${j+1}</span><span class="pos">${position}</span>
       <input data-p="h" data-t="${i}" data-j="${j}" inputmode="decimal" value="${esc(p.h)}" placeholder="cm">
       ${sub?`<input data-p="s" data-t="${i}" data-j="${j}" inputmode="decimal" value="${esc(p.s)}" placeholder="mm">`:""}
-      <button class="del" data-delp="${i}" data-delj="${j}">✕</button></div>`;
+      </div>`;
   }).join("");
   return `<div class="transect ${t.collapsed?'collapsed':''}">
     <div class="th" data-toggle="${i}"><span class="n">${i+1}</span>
-      <span class="meta">Largeur <b>${w!=null?fmt(w):"—"} m</b> · ${t.points.length} pt${t.points.length>1?"s":""}${sug&&w!=null?` · suggéré ${sug}`:""}</span>
+      <span class="meta">Largeur <b>${w!=null?fmt(w):"—"} m</b> · ${t.points.length} pt${t.points.length>1?"s":""}</span>
       <span class="chev">▾</span></div>
     <div class="tb">
-      <div class="row c2" style="margin-bottom:8px">
-        <div class="field"><label>Largeur mouillée (m)</label><input class="mono" data-tw="${i}" inputmode="decimal" value="${esc(t.largeur)}"></div>
-        <div class="field"><label>&nbsp;</label><button class="btn ghost sm" data-regen="${i}">↺ Régénérer ${sug||"?"} pts</button></div></div>
+      <div class="field" style="margin-bottom:8px"><label>Largeur mouillée (m)</label><input class="mono" data-tw="${i}" inputmode="decimal" value="${esc(t.largeur)}"></div>
       <div class="pt-head" style="grid-template-columns:${cols}">${head}</div>
-      <div>${rows||'<div class="hint">Renseigner la largeur puis générer les points.</div>'}</div>
-      <div class="btn-row" style="margin-top:6px"><button class="btn ghost sm" data-addp="${i}">+ Point</button><button class="btn danger ghost sm" data-delt="${i}" style="margin-left:auto">Supprimer le transect</button></div>
+      <div>${rows||'<div class="hint">Renseigner la largeur : les points se placent automatiquement.</div>'}</div>
+      <div class="btn-row" style="margin-top:6px"><button class="btn danger ghost sm" data-delt="${i}">Supprimer le transect</button></div>
     </div></div>`;
 }
 function bindTransects(which,el){
@@ -469,20 +499,11 @@ function bindTransects(which,el){
     const i=+h.getAttribute('data-toggle'); c.transects[i].collapsed=!c.transects[i].collapsed; touch(); h.parentElement.classList.toggle('collapsed'); }));
   el.querySelectorAll('[data-tw]').forEach(inp=>{
     inp.addEventListener('input',()=>{ c.transects[+inp.getAttribute('data-tw')].largeur=inp.value; touch(); updateSynth(which); });
-    inp.addEventListener('blur',()=>{ const i=+inp.getAttribute('data-tw'), t=c.transects[i];
-      if(t.points.length===0){ const n=suggestPts(num(t.largeur),c); for(let k=0;k<n;k++) t.points.push(newPoint()); touch(); }
-      renderCamp(which); });
+    inp.addEventListener('blur',()=>{ renderCamp(which); });
   });
-  el.querySelectorAll('[data-regen]').forEach(b=>b.addEventListener('click',()=>{
-    const i=+b.getAttribute('data-regen'), t=c.transects[i], n=suggestPts(num(t.largeur),c);
-    if(!n){ toast("Renseigner largeur + largeur mouillée moyenne","err"); return; }
-    if(t.points.some(p=>p.h!==""||p.s!=="") && !confirm(`Régénérer ${n} points vides (valeurs perdues) ?`)) return;
-    t.points=[]; for(let k=0;k<n;k++) t.points.push(newPoint()); touch(); renderCamp(which); }));
   el.querySelectorAll('[data-delt]').forEach(b=>b.addEventListener('click',()=>{
     const i=+b.getAttribute('data-delt');
     confirmDialog(`Supprimer le transect ${i+1} et ses points ?`, ()=>{ c.transects.splice(i,1); touch(); renderCamp(which); }); }));
-  el.querySelectorAll('[data-addp]').forEach(b=>b.addEventListener('click',()=>{ c.transects[+b.getAttribute('data-addp')].points.push(newPoint()); touch(); renderCamp(which); }));
-  el.querySelectorAll('[data-delp]').forEach(b=>b.addEventListener('click',()=>{ c.transects[+b.getAttribute('data-delp')].points.splice(+b.getAttribute('data-delj'),1); touch(); renderCamp(which); }));
   el.querySelectorAll('[data-p]').forEach(inp=>inp.addEventListener('input',()=>{ c.transects[+inp.getAttribute('data-t')].points[+inp.getAttribute('data-j')][inp.getAttribute('data-p')]=inp.value; touch(); updateSynth(which); }));
 }
 
