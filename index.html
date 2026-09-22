@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Turbo App — Aquascop</title>
+<title>Turbo App - Aquascop</title>
 <meta name="theme-color" content="#0b1014">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="Turbo">
 <link rel="manifest" href="./manifest.json">
 <link rel="icon" href="./icon.svg">
-<link rel="apple-touch-icon" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
 <link rel="stylesheet" href="./shared/tokens.css">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -32,12 +32,8 @@ header {
   font-size: 1.5rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;
   display: flex; align-items: center; gap: 11px;
 }
-.brand .mark {
-  width: 34px; height: 34px; border-radius: 9px;
-  background: linear-gradient(135deg, var(--accent), var(--accent-dim));
-  display: inline-flex; align-items: center; justify-content: center;
-  font-size: 18px;
-}
+/* Logo truite (SVG en ligne, fond transparent) */
+.brand .mark { display: block; height: 27px; width: auto; flex-shrink: 0; }
 .brand .accent { color: var(--accent); }
 .sub {
   font-family: var(--font-mono); font-size: .72rem; color: var(--text-mute);
@@ -98,8 +94,8 @@ footer {
 <body>
 
 <header>
-  <div class="brand"><span class="mark">⚡</span><span>Turbo<span class="accent">App</span></span></div>
-  <div class="sub">Aquascop — Outils terrain</div>
+  <div class="brand"><svg class="mark" viewBox="0 150 512 216" width="64" height="27" aria-hidden="true"><defs><linearGradient id="tg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#56c2b1"/><stop offset="1" stop-color="#3a8a7e"/></linearGradient></defs><path d="M-72,220 H48" stroke="#56c2b1" stroke-width="14" stroke-linecap="round" opacity=".9"/><path d="M-112,256 H48" stroke="#3a8a7e" stroke-width="18" stroke-linecap="round" opacity=".9"/><path d="M-72,292 H48" stroke="#56c2b1" stroke-width="14" stroke-linecap="round" opacity=".9"/><path d="M-32,326 H48" stroke="#2a5e57" stroke-width="10" stroke-linecap="round" opacity=".9"/><path d="M470,262 C455,228 408,202 340,196 C270,190 205,206 160,228 C140,238 125,246 112,250 L112,274 C126,280 145,290 170,298 C220,314 290,322 350,316 C412,310 458,290 470,262 Z" fill="url(#tg)"/><path d="M268,200 L292,152 Q318,160 330,196 Z" fill="#3a8a7e"/><path d="M188,222 Q196,196 214,212 Z" fill="#3a8a7e"/><path d="M210,302 L204,338 Q226,336 244,310 Z" fill="#3a8a7e"/><path d="M290,314 L284,346 Q304,340 318,314 Z" fill="#3a8a7e"/><path d="M122,254 L60,196 Q84,262 60,330 L122,272 Z" fill="url(#tg)"/><path d="M384,286 Q360,318 344,332 Q376,326 398,298 Z" fill="#2f756a"/><path d="M392,214 Q404,254 388,300" fill="none" stroke="#2f756a" stroke-width="6" stroke-linecap="round"/><circle cx="250" cy="232" r="7" fill="#d9524a" stroke="#e6e8ea" stroke-width="3"/><circle cx="300" cy="226" r="6" fill="#d9524a" stroke="#e6e8ea" stroke-width="3"/><circle cx="346" cy="240" r="7" fill="#d9524a" stroke="#e6e8ea" stroke-width="3"/><circle cx="218" cy="256" r="6" fill="#d9524a" stroke="#e6e8ea" stroke-width="3"/><circle cx="278" cy="262" r="6" fill="#d9524a" stroke="#e6e8ea" stroke-width="3"/><circle cx="330" cy="272" r="5" fill="#d9524a" stroke="#e6e8ea" stroke-width="3"/><circle cx="184" cy="244" r="5" fill="#d9524a" stroke="#e6e8ea" stroke-width="3"/><circle cx="236" cy="216" r="4.5" fill="#1f4f48"/><circle cx="320" cy="214" r="4.5" fill="#1f4f48"/><circle cx="368" cy="226" r="4.5" fill="#1f4f48"/><circle cx="262" cy="246" r="4.5" fill="#1f4f48"/><circle cx="428" cy="244" r="11" fill="#0b1014"/><circle cx="431" cy="241" r="3.5" fill="#e6e8ea"/><path d="M470,264 L446,270" stroke="#0b1014" stroke-width="5" stroke-linecap="round"/></svg><span>Turbo<span class="accent">App</span></span></div>
+  <div class="sub">Aquascop - Outils terrain</div>
 </header>
 
 <main>
@@ -108,7 +104,7 @@ footer {
 
 <footer>
   <span id="net"><span class="dot"></span><span id="net-label">En ligne</span></span>
-  <span id="version">v—</span>
+  <span id="version">v-</span>
 </footer>
 
 <script src="./apps.js"></script>
