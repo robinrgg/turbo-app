@@ -2,7 +2,7 @@
 // FICHIER GÉNÉRÉ — NE PAS ÉDITER À LA MAIN.
 // Régénérer avec :  python build_sw_assets.py
 // ============================================================
-self.PRECACHE_VERSION = "turbo-20260913-1640";
+self.PRECACHE_VERSION = "turbo-20260922-1919";
 self.PRECACHE = [
   "./",
   "./index.html",
@@ -32,6 +32,7 @@ self.PRECACHE = [
   "./apps/checklist/icon-192.png",
   "./apps/checklist/icon-512.png",
   "./apps/checklist/icon-maskable.png",
+  "./apps/checklist/icon.svg",
   "./apps/checklist/index.html",
   "./apps/checklist/manifest.json",
   "./apps/profil-long/icon.svg",
