@@ -484,7 +484,7 @@ function renderProfil(){
   const svg=$('profil'); const {pts}=computeSynthese(); svg.innerHTML='';
   if(pts.length<2){ svg.innerHTML='<text x="350" y="100" text-anchor="middle" fill="#5e6b78" font-size="13" font-family="system-ui">Saisir au moins un tronçon complet</text>'; return; }
   const W=700,H=200,pad={l:52,r:18,t:16,b:30}, iW=W-pad.l-pad.r, iH=H-pad.t-pad.b;
-  const xs=pts.map(p=>p.x), alts=pts.map(p=>-p.y); const xMax=Math.max(...xs)||1;
+  const xs=pts.map(p=>p.x), alts=pts.map(p=>p.y); const xMax=Math.max(...xs)||1;
   let aMin=Math.min(...alts), aMax=Math.max(...alts); if(aMin===aMax){ aMin-=0.1; aMax+=0.1; }
   const aPad=(aMax-aMin)*0.12, y0=aMin-aPad, y1=aMax+aPad;
   const X=x=>pad.l + x/(xMax||1)*iW, Y=a=>pad.t + (y1-a)/(y1-y0)*iH;
@@ -494,9 +494,9 @@ function renderProfil(){
     const t=mk('text',{x:pad.l-6,y:Y(a)+3,'text-anchor':'end',fill:'#5e6b78','font-size':10,'font-family':'ui-monospace,monospace'}); t.textContent=a.toFixed(2); svg.appendChild(t); }
   const tx=mk('text',{x:(pad.l+W-pad.r)/2,y:H-6,'text-anchor':'middle',fill:'#5e6b78','font-size':10,'font-family':'system-ui'});
   tx.textContent='distance cumulée (m) — 0 = aval'; svg.appendChild(tx);
-  const d=pts.map((p,i)=>(i?'L':'M')+X(p.x).toFixed(1)+' '+Y(-p.y).toFixed(1)).join(' ');
+  const d=pts.map((p,i)=>(i?'L':'M')+X(p.x).toFixed(1)+' '+Y(p.y).toFixed(1)).join(' ');
   svg.appendChild(mk('path',{d,fill:'none',stroke:'#d98e3c','stroke-width':2.5,'stroke-linejoin':'round','stroke-linecap':'round'}));
-  pts.forEach(p=>svg.appendChild(mk('circle',{cx:X(p.x),cy:Y(-p.y),r:3.2,fill:'#f0b878'})));
+  pts.forEach(p=>svg.appendChild(mk('circle',{cx:X(p.x),cy:Y(p.y),r:3.2,fill:'#f0b878'})));
 }
 
 /* ---------- Export / import ---------- */
