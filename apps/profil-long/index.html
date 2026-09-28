@@ -261,7 +261,7 @@ function todayISO(){ const d=new Date(); return d.getFullYear()+'-'+String(d.get
 function toast(m){ const e=$('toast'); e.textContent=m; e.className='toast show'; clearTimeout(toast._t); toast._t=setTimeout(()=>e.className='toast',2000); }
 
 /* ---------- Modèle ---------- */
-function newTroncon(){ return { facies:'', distance_m:null, aval:{fh:null,fm:null,fb:null}, amont:{fh:null,fm:null,fb:null} }; }
+function newTroncon(){ return { facies:'', distance_m:null, hauteur_eau_cm:null, aval:{fh:null,fm:null,fb:null}, amont:{fh:null,fm:null,fb:null} }; }
 function newStation(){
   return { id:'pl_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),
     updated:Date.now(),
@@ -293,7 +293,7 @@ function migrateOld(){
     const st=newStation();
     st.meta=Object.assign(st.meta, o.meta||{});
     st.ui=Object.assign(st.ui, o.ui||{});
-    st.troncons=o.troncons.map(t=>({ facies:t.facies||'', distance_m:t.distance_m??null,
+    st.troncons=o.troncons.map(t=>({ facies:t.facies||'', distance_m:t.distance_m??null, hauteur_eau_cm:t.hauteur_eau_cm??null,
       aval:{fh:t.aval&&t.aval.fh!=null?t.aval.fh:null,fm:t.aval&&t.aval.fm!=null?t.aval.fm:null,fb:t.aval&&t.aval.fb!=null?t.aval.fb:null},
       amont:{fh:t.amont&&t.amont.fh!=null?t.amont.fh:null,fm:t.amont&&t.amont.fm!=null?t.amont.fm:null,fb:t.amont&&t.amont.fb!=null?t.amont.fb:null} }));
     if(!st.troncons.length) st.troncons.push(newTroncon());
@@ -373,6 +373,7 @@ function renderTroncons(){
     const g=document.createElement('div'); g.className='grid-2';
     g.appendChild(champSelect('Faciès', FACIES, tr.facies, v=>{ tr.facies=v; touch(); }));
     g.appendChild(champNum('Distance (m)', tr.distance_m, v=>{ tr.distance_m=v; renderCalc(); touch(); }));
+    g.appendChild(champNum("Hauteur d'eau (cm)", tr.hauteur_eau_cm, v=>{ tr.hauteur_eau_cm=v; touch(); }));
     card.appendChild(g);
 
     const avalH=document.createElement('div'); avalH.className='visee-h';
@@ -504,7 +505,7 @@ function buildExport(op){
   op=op||cur; const c=computeSynthese(op);
   return { type:'profil_en_long', version:'v2', exporte_le:new Date().toISOString(),
     meta:{...op.meta},
-    troncons: op.troncons.map((tr,i)=>({ n:i+1, facies:tr.facies||null, distance_m:tr.distance_m,
+    troncons: op.troncons.map((tr,i)=>({ n:i+1, facies:tr.facies||null, distance_m:tr.distance_m, hauteur_eau_cm:tr.hauteur_eau_cm??null,
       aval:{...tr.aval}, amont:{...tr.amont},
       dh_m:(tr.aval.fm!=null&&tr.amont.fm!=null)?+((tr.aval.fm-tr.amont.fm)/100).toFixed(4):null })),
     synthese:{ sigma_fm_aval_m:+c.sFmAval.toFixed(4), sigma_fm_amont_m:+c.sFmAmont.toFixed(4),
@@ -523,7 +524,7 @@ function stationFromImport(o){
   const st=newStation();
   st.meta=Object.assign(st.meta, o.meta||{});
   st.ui=Object.assign(st.ui, o.ui||{});
-  st.troncons=(Array.isArray(o.troncons)?o.troncons:[]).map(t=>({ facies:t.facies||'', distance_m:t.distance_m??null,
+  st.troncons=(Array.isArray(o.troncons)?o.troncons:[]).map(t=>({ facies:t.facies||'', distance_m:t.distance_m??null, hauteur_eau_cm:t.hauteur_eau_cm??null,
     aval:{fh:t.aval&&t.aval.fh!=null?t.aval.fh:null,fm:t.aval&&t.aval.fm!=null?t.aval.fm:null,fb:t.aval&&t.aval.fb!=null?t.aval.fb:null},
     amont:{fh:t.amont&&t.amont.fh!=null?t.amont.fh:null,fm:t.amont&&t.amont.fm!=null?t.amont.fm:null,fb:t.amont&&t.amont.fb!=null?t.amont.fb:null} }));
   if(!st.troncons.length) st.troncons.push(newTroncon());
