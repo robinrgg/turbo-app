@@ -1395,22 +1395,60 @@ function buildChart(id, qmjData, module, qmna5, q25, qinstant) {
   const ann={};
   if (moduleOnChart) ann.mod = {
     type:'line',yMin:module,yMax:module,borderColor:'#2ecc71',borderWidth:2,borderDash:[7,4],
-    label:{display:true,content:`Module : ${rnd(module)} m³/s`,position:'start',yAdjust:-12,
+    label:{display:true,content:`Module : ${rnd(module)} m³/s`,position:'start',yAdjust:ctx=>labelOffsets(ctx.chart).mod??-12,
       backgroundColor:'rgba(46,204,113,.15)',color:'#2ecc71',
       font:{size:11,weight:'600',family:'Barlow'},padding:{x:7,y:3},borderRadius:4}
   };
   if (q25!=null) ann.q25 = {
     type:'line',yMin:q25,yMax:q25,borderColor:'#f1c40f',borderWidth:2,borderDash:[7,4],
-    label:{display:true,content:`Q25 : ${rnd(q25)} m³/s`,position:'start',yAdjust:-12,
+    label:{display:true,content:`Q25 : ${rnd(q25)} m³/s`,position:'start',yAdjust:ctx=>labelOffsets(ctx.chart).q25??-12,
       backgroundColor:'rgba(241,196,15,.15)',color:'#f1c40f',
       font:{size:11,weight:'600',family:'Barlow'},padding:{x:7,y:3},borderRadius:4}
   };
   if (qmna5!=null) ann.q5 = {
     type:'line',yMin:qmna5,yMax:qmna5,borderColor:'#e74c3c',borderWidth:2,borderDash:[7,4],
-    label:{display:true,content:`QMNA5 : ${rnd(qmna5)} m³/s`,position:'end',yAdjust:-12,
+    label:{display:true,content:`QMNA5 : ${rnd(qmna5)} m³/s`,position:'end',yAdjust:ctx=>labelOffsets(ctx.chart).q5??-12,
       backgroundColor:'rgba(231,76,60,.15)',color:'#e74c3c',
       font:{size:11,weight:'600',family:'Barlow'},padding:{x:7,y:3},borderRadius:4}
   };
+
+  // Anti-chevauchement des étiquettes : calculé au rendu (et à chaque redimensionnement)
+  // à partir de la position réelle des lignes en pixels.
+  function labelOffsets(chart) {
+    const y = chart.scales.y, area = chart.chartArea;
+    if (!y || !area) return {};
+    const H = 22, GAP = 12, ctx = chart.ctx;
+    ctx.save(); ctx.font = "600 11px Barlow";
+    const items = Object.entries(ann).map(([k,a]) => ({
+      k, side:a.label.position, py:y.getPixelForValue(a.yMin),
+      w:ctx.measureText(a.label.content).width + 14
+    }));
+    ctx.restore();
+    // Si les étiquettes gauche et droite ne tiennent pas côte à côte, on les traite ensemble
+    const maxW = side => Math.max(0, ...items.filter(i=>i.side===side).map(i=>i.w));
+    const together = maxW('start') + maxW('end') + 16 > area.width;
+    const groups = together ? [items] : ['start','end'].map(sd => items.filter(i=>i.side===sd));
+    const out = {};
+    const lines = items.map(i => i.py);
+    for (const g of groups) {
+      if (!g.length) continue;
+      g.sort((a,b) => b.py - a.py);                       // du bas vers le haut
+      let prev = Infinity;
+      const c = g.map(it => {
+        let ci = Math.min(it.py - GAP, prev - H);         // au-dessus de sa ligne et de l'étiquette précédente
+        // Une ligne qui traverserait l'étiquette → on passe au-dessus
+        for (let moved = true; moved; ) {
+          moved = false;
+          for (const ly of lines) if (ly > ci - H/2 - 2 && ly < ci + H/2 + 2) { ci = ly - H/2 - 3; moved = true; }
+        }
+        return prev = ci;
+      });
+      const over = (area.top + H/2) - c[c.length-1];      // déborde en haut → on redescend le bloc
+      if (over > 0) c.forEach((v,i) => { c[i] = v + over; });
+      g.forEach((it,i) => { out[it.k] = c[i] - it.py; });
+    }
+    return out;
+  }
 
   if (module!=null&&!moduleOnChart) {
     const note=document.createElement('div');
