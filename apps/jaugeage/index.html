@@ -1799,19 +1799,22 @@ window.addEventListener('beforeunload', (e) => {
   if (saveStatus === 'saving') { e.preventDefault(); e.returnValue = ''; }
 });
 
-// Service Worker — activation différée pour ne pas bloquer le premier rendu
+// Service worker : le cache et le hors-ligne sont gérés par le SW racine du hub.
+// On retire l'ancien SW propre à Jaugeage s'il est encore installé (ses seuls
+// caches de fichiers 'jg-*' ; les données localStorage ne sont pas touchées).
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
   window.addEventListener('load', () => {
-    setTimeout(() => {
-      navigator.serviceWorker.register('./sw.js')
-        .then(reg => console.log('SW enregistré, scope:', reg.scope))
-        .catch(err => console.warn('SW échec:', err));
-    }, 1000);
+    navigator.serviceWorker.getRegistrations().then(regs => {
+      regs.filter(r => /\/apps\/jaugeage\/$/.test(r.scope)).forEach(r => r.unregister());
+    }).catch(() => {});
+    if ('caches' in window) {
+      caches.keys().then(keys => keys.filter(k => k.startsWith('jg-')).forEach(k => caches.delete(k)))
+        .catch(() => {});
+    }
+    navigator.serviceWorker.register('../../sw.js', { scope: '../../' })
+      .catch(err => console.warn('SW échec:', err));
   });
 }
-
-// Le manifest et le service worker sont des fichiers externes (manifest.json, sw.js)
-// déployés à côté de index.html pour fiabilité maximale.
 </script>
 </body>
 </html>

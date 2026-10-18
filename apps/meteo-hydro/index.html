@@ -1038,15 +1038,38 @@ async function fetchMeteo(lat,lon) {
     timezone:'Europe/Paris',forecast_days:7,wind_speed_unit:'kmh'});
   return await get(`${METEO}?${p}`);
 }
-async function hubGet(url) {
-  const r = await fetch(url);
-  if (r.status!==200&&r.status!==206) throw new Error(`Hub'eau HTTP ${r.status}`);
-  return r.json();
+// Requête avec relances automatiques sur les erreurs passagères (serveur surchargé,
+// passerelle, quota, coupure réseau brève). Distingue « pas de connexion » (réponse
+// synthétique du service worker, en-tête X-Turbo-Offline) d'une erreur du serveur distant.
+var RETRY_STATUS = [429, 502, 503, 504];
+var RETRY_DELAYS_MS = [1500, 4000];
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+async function fetchRetry(url, service, okStatus) {
+  for (let attempt = 0; ; attempt++) {
+    const last = attempt >= RETRY_DELAYS_MS.length;
+    let r;
+    try {
+      r = await fetch(url);
+    } catch (e) {
+      if (navigator.onLine === false || last) throw new Error(`Pas de connexion réseau — ${service} injoignable`);
+      await sleep(RETRY_DELAYS_MS[attempt]); continue;
+    }
+    if (r.headers.get('X-Turbo-Offline')) {
+      if (last) throw new Error(`Pas de connexion réseau — ${service} injoignable`);
+      await sleep(RETRY_DELAYS_MS[attempt]); continue;
+    }
+    if (okStatus(r.status)) return r.json();
+    if (RETRY_STATUS.includes(r.status) && !last) { await sleep(RETRY_DELAYS_MS[attempt]); continue; }
+    throw new Error(RETRY_STATUS.includes(r.status)
+      ? `${service} indisponible (HTTP ${r.status}) — serveur surchargé, réessayer dans quelques minutes`
+      : `${service} HTTP ${r.status}`);
+  }
 }
-async function get(url) {
-  const r = await fetch(url);
-  if (!r.ok) throw new Error(`HTTP ${r.status}`);
-  return r.json();
+function hubGet(url) { return fetchRetry(url, "Hub'eau", st => st === 200 || st === 206); }
+function get(url) {
+  const host = new URL(url).hostname;
+  const service = host.includes('open-meteo') ? 'Open-Meteo' : host.includes('geo.api.gouv') ? 'API Géo' : host;
+  return fetchRetry(url, service, st => st >= 200 && st < 300);
 }
 
 // ═══════════════════════════════════════════════════════════

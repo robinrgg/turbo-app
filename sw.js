@@ -4,8 +4,8 @@
    Un seul SW pour tout le hub (scope = racine du dépôt).
    Trois stratégies de routage :
 
-     1. Hôtes de données temps réel (Hub'Eau, geo.api.gouv.fr)
-        -> RÉSEAU SEUL. Jamais de cache : on ne sert pas de
+     1. Hôtes de données temps réel (Hub'Eau, Open-Meteo,
+        geo.api.gouv.fr) -> RÉSEAU SEUL. Jamais de cache : on ne sert pas de
            débit périmé.
      2. Ressources cross-origin figées (SheetJS, polices,
         Leaflet, Chart.js) -> CACHE-FIRST. Mises en cache au
@@ -29,8 +29,20 @@ const NETWORK_TIMEOUT_MS = 3000;
 // Hôtes servis exclusivement depuis le réseau (données vivantes)
 const LIVE_API_HOSTS = [
   'hubeau.eaufrance.fr',
+  'api.open-meteo.com',
   'geo.api.gouv.fr'
 ];
+
+// Réponse synthétique quand le réseau est injoignable : l'en-tête permet aux
+// apps de distinguer « pas de connexion » d'une vraie erreur du serveur distant.
+const OFFLINE_HEADER = 'X-Turbo-Offline';
+
+// Stratégie de cache pour une URL : 'live' | 'cdn' | 'local'
+function strategyFor(url) {
+  if (LIVE_API_HOSTS.some(h => url.hostname === h || url.hostname.endsWith('.' + h))) return 'live';
+  if (url.origin !== self.location.origin) return 'cdn';
+  return 'local';
+}
 
 // ----- Installation : pré-cache
 self.addEventListener('install', event => {
@@ -57,12 +69,14 @@ self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
 
+  const strategy = strategyFor(url);
+
   // 1) APIs temps réel -> réseau seul
-  if (LIVE_API_HOSTS.some(h => url.hostname === h || url.hostname.endsWith('.' + h))) {
+  if (strategy === 'live') {
     event.respondWith(
       fetch(event.request).catch(() =>
         new Response('Hors ligne — données temps réel indisponibles', {
-          status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+          status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8', [OFFLINE_HEADER]: '1' }
         })
       )
     );
@@ -70,7 +84,7 @@ self.addEventListener('fetch', event => {
   }
 
   // 2) Cross-origin (CDN figés) -> cache-first
-  if (url.origin !== self.location.origin) {
+  if (strategy === 'cdn') {
     event.respondWith(cacheFirst(event.request));
     return;
   }

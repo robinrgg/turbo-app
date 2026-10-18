@@ -9,7 +9,8 @@ des dossiers apps/<slug>/.
 - Ajoute les CDN critiques listés dans CDN (non détectables par scan de dossier).
 - Horodate PRECACHE_VERSION pour forcer la bascule de cache au déploiement.
 
-Usage :  python build_sw_assets.py
+Usage :  python build_sw_assets.py           (régénère le fichier)
+         python build_sw_assets.py --check   (vérifie qu'il est à jour, sans écrire)
 Aucune dépendance externe (stdlib uniquement).
 """
 
@@ -54,7 +55,13 @@ def parse_apps(js_text):
     return apps
 
 
-def main():
+# Fichiers jamais précachés : les anciens SW propres aux apps (remplacés par des
+# SW de retrait) ne doivent pas être servis par le SW racine.
+EXCLUDE_NAMES = {"sw.js"}
+
+
+def compute_assets():
+    """Retourne (assets, offline, online) d'après apps.js et les dossiers d'apps."""
     if not APPS_JS.exists():
         sys.exit("Erreur : apps.js introuvable à côté du script.")
 
@@ -73,7 +80,7 @@ def main():
             print(f"  \u26a0  dossier manquant : apps/{slug}  (ignoré — déplace l'app puis relance)")
             continue
         for f in sorted(app_dir.rglob("*")):
-            if f.is_file() and f.suffix.lower() in EXT:
+            if f.is_file() and f.suffix.lower() in EXT and f.name not in EXCLUDE_NAMES:
                 rel = f.relative_to(ROOT).as_posix()
                 assets.append("./" + rel)
 
@@ -85,6 +92,25 @@ def main():
         if a not in seen:
             seen.add(a)
             uniq.append(a)
+    return uniq, offline, online
+
+
+def read_current():
+    """Liste de précache actuellement écrite dans precache-manifest.js (ou None)."""
+    if not OUT.exists():
+        return None
+    m = re.search(r"self\.PRECACHE\s*=\s*(\[.*?\]);", OUT.read_text(encoding="utf-8"), re.S)
+    return json.loads(m.group(1)) if m else None
+
+
+def main():
+    uniq, offline, online = compute_assets()
+
+    if "--check" in sys.argv[1:]:
+        if read_current() != uniq:
+            sys.exit("\u2717 precache-manifest.js n'est pas à jour : lancer  python build_sw_assets.py")
+        print("\u2713 precache-manifest.js à jour")
+        return
 
     version = "turbo-" + datetime.datetime.now().strftime("%Y%m%d-%H%M")
 

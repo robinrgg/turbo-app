@@ -2,9 +2,9 @@
    CARHYCE Saisie Terrain — Application principale
    ============================================================ */
 
-// Version du code applicatif. À incrémenter en même temps que CACHE_VERSION
-// dans sw.js. Affichée à l'accueil pour vérifier la version en cours sur mobile.
-const APP_VERSION = 'v19';
+// Version du code applicatif, affichée à l'accueil avec la version du cache du hub
+// (service worker racine) pour vérifier la version en cours sur mobile.
+const APP_VERSION = 'v20';
 
 // Parseur de nombre acceptant indifféremment point ou virgule comme séparateur
 function parseNum(v) {
@@ -45,12 +45,8 @@ const App = {
     el.textContent = 'Version ' + APP_VERSION;
     if ('caches' in window) {
       caches.keys().then(keys => {
-        const c = keys.find(k => k.startsWith('carhyce-'));
-        if (c) {
-          const cv = c.replace('carhyce-', '');
-          el.textContent = 'Version ' + APP_VERSION + ' · cache ' + cv;
-          if (cv !== APP_VERSION) el.style.color = '#b26a00';
-        }
+        const c = keys.find(k => k.startsWith('turbo-'));
+        if (c) el.textContent = 'Version ' + APP_VERSION + ' · cache ' + c.replace('turbo-', '');
       }).catch(() => {});
     }
   },
@@ -99,32 +95,20 @@ const App = {
     });
   },
 
+  // Le cache et le hors-ligne sont gérés par le service worker racine du hub.
+  // On retire l'ancien SW propre à CARHYCE s'il est encore installé (ses seuls
+  // caches de fichiers 'carhyce-*' ; les données IndexedDB ne sont pas touchées).
   registerSW() {
-    if (!('serviceWorker' in navigator)) return;
-    let reloading = false;
-    // Si le SW qui contrôle la page change (un nouveau SW vient de prendre le relais),
-    // on recharge automatiquement pour servir la nouvelle version. Le flag empêche
-    // les boucles de reload.
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-      if (reloading) return;
-      reloading = true;
-      window.location.reload();
-    });
-    navigator.serviceWorker.register('sw.js').then(reg => {
-      // Force la vérification d'une mise à jour à chaque démarrage
-      reg.update().catch(() => {});
-      // À chaque détection d'un SW en installation, on l'active dès qu'il est prêt
-      reg.addEventListener('updatefound', () => {
-        const newWorker = reg.installing;
-        if (!newWorker) return;
-        newWorker.addEventListener('statechange', () => {
-          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-            // Demande au nouveau SW de prendre le contrôle immédiatement
-            newWorker.postMessage({ type: 'SKIP_WAITING' });
-          }
-        });
-      });
-    }).catch(err => console.warn('SW registration failed:', err));
+    if (!('serviceWorker' in navigator) || location.protocol !== 'https:') return;
+    navigator.serviceWorker.getRegistrations().then(regs => {
+      regs.filter(r => /\/apps\/carhyce\/$/.test(r.scope)).forEach(r => r.unregister());
+    }).catch(() => {});
+    if ('caches' in window) {
+      caches.keys().then(keys => keys.filter(k => k.startsWith('carhyce-')).forEach(k => caches.delete(k)))
+        .catch(() => {});
+    }
+    navigator.serviceWorker.register('../../sw.js', { scope: '../../' })
+      .catch(err => console.warn('SW registration failed:', err));
   },
 
   // ----------- Routage entre écrans -----------

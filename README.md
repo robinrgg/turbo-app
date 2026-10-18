@@ -36,7 +36,13 @@ turbo-app/
 1. Déposer le dossier de l'app dans `apps/<slug>/` (un `index.html` à sa racine).
 2. Ajouter une entrée dans `apps.js` (le `slug` doit être identique au dossier).
 3. Lancer `python build_sw_assets.py`.
-4. Pousser sur GitHub.
+4. Lancer les tests : `node --test`.
+5. Pousser sur GitHub.
+
+Une app ne doit **pas** enregistrer son propre service worker ni déclarer
+son propre cache : le SW racine gère tout (un test le vérifie). Les fichiers
+`apps/carhyce/sw.js` et `apps/jaugeage/sw.js` sont des SW « de retrait » qui
+désinstallent les anciens SW encore présents sur les appareils : les garder.
 
 `offline: true` → l'app est précachée et fonctionne sans réseau.
 `offline: false` → l'app n'est pas précachée (réseau requis, données temps réel).
@@ -45,12 +51,29 @@ turbo-app/
 
 | Type de requête                                   | Stratégie      |
 |---------------------------------------------------|----------------|
-| Hub'Eau, geo.api.gouv.fr (données vivantes)       | réseau seul    |
+| Hub'Eau, Open-Meteo, geo.api.gouv.fr (temps réel) | réseau seul    |
 | CDN figés (SheetJS, polices, Leaflet, Chart.js)   | cache-first    |
 | Même origine (shell + apps)                       | network-first  |
 
 La version de cache (`PRECACHE_VERSION`) est horodatée à chaque exécution du
 script : un nouveau déploiement invalide automatiquement l'ancien cache.
+
+Hors connexion, une API temps réel reçoit du SW une réponse 503 portant
+l'en-tête `X-Turbo-Offline: 1`, pour distinguer « pas de réseau » d'une
+panne du serveur distant.
+
+## Tests
+
+```
+node --test
+```
+
+Aucune dépendance à installer : le lanceur de tests intégré à Node (≥ 18) teste
+directement les fonctions de calcul des apps (pente, débit ISO 748, débits
+caractéristiques, relances réseau), le routage du service worker et la
+cohérence du registre / du précache. Le test de fumée navigateur (chaque app
+se charge sans erreur JS) s'exécute si Playwright est disponible, sinon il est
+ignoré. GitHub Actions lance l'ensemble à chaque push (`.github/workflows/tests.yml`).
 
 ## Dépendances CDN hors-ligne
 

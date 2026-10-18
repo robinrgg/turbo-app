@@ -1,0 +1,602 @@
+{
+ "type": "profil_en_long",
+ "version": "v2",
+ "exporte_le": "2026-09-28T15:04:52.465Z",
+ "meta": {
+  "date": "2026-09-28",
+  "cours": "",
+  "station": "fixture",
+  "operateur": "",
+  "materiel": "Niveau de chantier",
+  "notes": "Relevé réel anonymisé — sert de référence aux tests"
+ },
+ "troncons": [
+  {
+   "n": 1,
+   "facies": "Plat courant",
+   "distance_m": 6.4,
+   "hauteur_eau_cm": 19,
+   "aval": {
+    "fh": 186,
+    "fm": 194,
+    "fb": 202
+   },
+   "amont": {
+    "fh": 188,
+    "fm": 193,
+    "fb": 198
+   },
+   "dh_m": 0.01
+  },
+  {
+   "n": 2,
+   "facies": "Radier",
+   "distance_m": 11.3,
+   "hauteur_eau_cm": 19,
+   "aval": {
+    "fh": 188,
+    "fm": 193,
+    "fb": 198
+   },
+   "amont": {
+    "fh": 157,
+    "fm": 158,
+    "fb": 159
+   },
+   "dh_m": 0.35
+  },
+  {
+   "n": 3,
+   "facies": "Plat lentique",
+   "distance_m": 6.2,
+   "hauteur_eau_cm": 10,
+   "aval": {
+    "fh": 157,
+    "fm": 158,
+    "fb": 159
+   },
+   "amont": {
+    "fh": 162,
+    "fm": 166,
+    "fb": 170
+   },
+   "dh_m": -0.08
+  },
+  {
+   "n": 4,
+   "facies": "Radier",
+   "distance_m": 5.7,
+   "hauteur_eau_cm": 20,
+   "aval": {
+    "fh": 162,
+    "fm": 166,
+    "fb": 170
+   },
+   "amont": {
+    "fh": 143,
+    "fm": 150,
+    "fb": 157
+   },
+   "dh_m": 0.16
+  },
+  {
+   "n": 5,
+   "facies": "Radier",
+   "distance_m": 16.5,
+   "hauteur_eau_cm": 10,
+   "aval": {
+    "fh": 102,
+    "fm": 108,
+    "fb": 114
+   },
+   "amont": {
+    "fh": 79,
+    "fm": 82,
+    "fb": 85
+   },
+   "dh_m": 0.26
+  },
+  {
+   "n": 6,
+   "facies": "Plat lentique",
+   "distance_m": 6.7,
+   "hauteur_eau_cm": 10,
+   "aval": {
+    "fh": 150,
+    "fm": 155,
+    "fb": 160
+   },
+   "amont": {
+    "fh": 168,
+    "fm": 169,
+    "fb": 170
+   },
+   "dh_m": -0.14
+  },
+  {
+   "n": 7,
+   "facies": "Radier",
+   "distance_m": 9.7,
+   "hauteur_eau_cm": 25,
+   "aval": {
+    "fh": 168,
+    "fm": 169,
+    "fb": 170
+   },
+   "amont": {
+    "fh": 131,
+    "fm": 134,
+    "fb": 137
+   },
+   "dh_m": 0.35
+  },
+  {
+   "n": 8,
+   "facies": "Plat lentique",
+   "distance_m": 4.8,
+   "hauteur_eau_cm": 11,
+   "aval": {
+    "fh": 131,
+    "fm": 134,
+    "fb": 137
+   },
+   "amont": {
+    "fh": 134,
+    "fm": 140,
+    "fb": 146
+   },
+   "dh_m": -0.06
+  },
+  {
+   "n": 9,
+   "facies": "Plat lentique",
+   "distance_m": 1.1,
+   "hauteur_eau_cm": 19,
+   "aval": {
+    "fh": 134,
+    "fm": 140,
+    "fb": 146
+   },
+   "amont": {
+    "fh": 124,
+    "fm": 131,
+    "fb": 138
+   },
+   "dh_m": 0.09
+  },
+  {
+   "n": 10,
+   "facies": "Plat lentique",
+   "distance_m": 10,
+   "hauteur_eau_cm": 15,
+   "aval": {
+    "fh": 141,
+    "fm": 142.5,
+    "fb": 144
+   },
+   "amont": {
+    "fh": 138,
+    "fm": 145,
+    "fb": 152
+   },
+   "dh_m": -0.025
+  },
+  {
+   "n": 11,
+   "facies": "Radier",
+   "distance_m": 35.9,
+   "hauteur_eau_cm": 18,
+   "aval": {
+    "fh": 247,
+    "fm": 257,
+    "fb": 267
+   },
+   "amont": {
+    "fh": 211,
+    "fm": 219,
+    "fb": 227
+   },
+   "dh_m": 0.38
+  },
+  {
+   "n": 12,
+   "facies": "Plat courant",
+   "distance_m": 10.9,
+   "hauteur_eau_cm": null,
+   "aval": {
+    "fh": 211,
+    "fm": 219,
+    "fb": 227
+   },
+   "amont": {
+    "fh": 206,
+    "fm": 219,
+    "fb": 232
+   },
+   "dh_m": 0
+  },
+  {
+   "n": 13,
+   "facies": "Radier",
+   "distance_m": 4.1,
+   "hauteur_eau_cm": null,
+   "aval": {
+    "fh": 206,
+    "fm": 219,
+    "fb": 232
+   },
+   "amont": {
+    "fh": 185,
+    "fm": 200.5,
+    "fb": 216
+   },
+   "dh_m": 0.185
+  },
+  {
+   "n": 14,
+   "facies": "Plat courant",
+   "distance_m": 4.9,
+   "hauteur_eau_cm": null,
+   "aval": {
+    "fh": 185,
+    "fm": 200.5,
+    "fb": 216
+   },
+   "amont": {
+    "fh": 188,
+    "fm": 206,
+    "fb": 224
+   },
+   "dh_m": -0.055
+  },
+  {
+   "n": 15,
+   "facies": "Radier",
+   "distance_m": 21.6,
+   "hauteur_eau_cm": null,
+   "aval": {
+    "fh": 275,
+    "fm": 288,
+    "fb": 301
+   },
+   "amont": {
+    "fh": 249,
+    "fm": 252,
+    "fb": 255
+   },
+   "dh_m": 0.36
+  },
+  {
+   "n": 16,
+   "facies": "Plat courant",
+   "distance_m": 5.1,
+   "hauteur_eau_cm": null,
+   "aval": {
+    "fh": 249,
+    "fm": 252,
+    "fb": 255
+   },
+   "amont": {
+    "fh": 252,
+    "fm": 254,
+    "fb": 256
+   },
+   "dh_m": -0.02
+  },
+  {
+   "n": 17,
+   "facies": "Radier",
+   "distance_m": 7.2,
+   "hauteur_eau_cm": null,
+   "aval": {
+    "fh": 252,
+    "fm": 254,
+    "fb": 256
+   },
+   "amont": {
+    "fh": 244,
+    "fm": 247,
+    "fb": 250
+   },
+   "dh_m": 0.07
+  },
+  {
+   "n": 18,
+   "facies": "Plat courant",
+   "distance_m": 9.6,
+   "hauteur_eau_cm": null,
+   "aval": {
+    "fh": 244,
+    "fm": 247,
+    "fb": 250
+   },
+   "amont": {
+    "fh": 236,
+    "fm": 245,
+    "fb": 254
+   },
+   "dh_m": 0.02
+  },
+  {
+   "n": 19,
+   "facies": "Radier",
+   "distance_m": 19.8,
+   "hauteur_eau_cm": null,
+   "aval": {
+    "fh": 236,
+    "fm": 245,
+    "fb": 254
+   },
+   "amont": {
+    "fh": 199,
+    "fm": 218,
+    "fb": 237
+   },
+   "dh_m": 0.27
+  },
+  {
+   "n": 20,
+   "facies": "Plat courant",
+   "distance_m": 5.9,
+   "hauteur_eau_cm": null,
+   "aval": {
+    "fh": 254,
+    "fm": 270,
+    "fb": 286
+   },
+   "amont": {
+    "fh": 256,
+    "fm": 269,
+    "fb": 282
+   },
+   "dh_m": 0.01
+  },
+  {
+   "n": 21,
+   "facies": "Radier",
+   "distance_m": 2.4,
+   "hauteur_eau_cm": null,
+   "aval": {
+    "fh": 256,
+    "fm": 269,
+    "fb": 282
+   },
+   "amont": {
+    "fh": 254,
+    "fm": 266,
+    "fb": 278
+   },
+   "dh_m": 0.03
+  },
+  {
+   "n": 22,
+   "facies": "Plat courant",
+   "distance_m": 9.4,
+   "hauteur_eau_cm": null,
+   "aval": {
+    "fh": 254,
+    "fm": 266,
+    "fb": 278
+   },
+   "amont": {
+    "fh": 277,
+    "fm": 283,
+    "fb": 289
+   },
+   "dh_m": -0.17
+  },
+  {
+   "n": 23,
+   "facies": "Radier",
+   "distance_m": 17,
+   "hauteur_eau_cm": null,
+   "aval": {
+    "fh": 277,
+    "fm": 283,
+    "fb": 289
+   },
+   "amont": {
+    "fh": 242,
+    "fm": 244.5,
+    "fb": 247
+   },
+   "dh_m": 0.385
+  },
+  {
+   "n": 24,
+   "facies": "Plat lentique",
+   "distance_m": 8,
+   "hauteur_eau_cm": null,
+   "aval": {
+    "fh": 242,
+    "fm": 244.5,
+    "fb": 247
+   },
+   "amont": {
+    "fh": 238,
+    "fm": 244,
+    "fb": 250
+   },
+   "dh_m": 0.005
+  },
+  {
+   "n": 25,
+   "facies": "Radier",
+   "distance_m": 4,
+   "hauteur_eau_cm": null,
+   "aval": {
+    "fh": 238,
+    "fm": 244,
+    "fb": 250
+   },
+   "amont": {
+    "fh": 225,
+    "fm": 232,
+    "fb": 239
+   },
+   "dh_m": 0.12
+  },
+  {
+   "n": 26,
+   "facies": "Plat courant",
+   "distance_m": 4.1,
+   "hauteur_eau_cm": null,
+   "aval": {
+    "fh": 225,
+    "fm": 232,
+    "fb": 239
+   },
+   "amont": {
+    "fh": 231,
+    "fm": 239,
+    "fb": 247
+   },
+   "dh_m": -0.07
+  },
+  {
+   "n": 27,
+   "facies": "Radier",
+   "distance_m": 9,
+   "hauteur_eau_cm": null,
+   "aval": {
+    "fh": 231,
+    "fm": 239,
+    "fb": 247
+   },
+   "amont": {
+    "fh": 199,
+    "fm": 211,
+    "fb": 223
+   },
+   "dh_m": 0.28
+  },
+  {
+   "n": 28,
+   "facies": "Mouille de concavité",
+   "distance_m": 4.7,
+   "hauteur_eau_cm": null,
+   "aval": {
+    "fh": 199,
+    "fm": 211,
+    "fb": 223
+   },
+   "amont": {
+    "fh": 221,
+    "fm": 236,
+    "fb": 251
+   },
+   "dh_m": -0.25
+  },
+  {
+   "n": 29,
+   "facies": "Radier",
+   "distance_m": 8,
+   "hauteur_eau_cm": null,
+   "aval": {
+    "fh": 243,
+    "fm": 257,
+    "fb": 271
+   },
+   "amont": {
+    "fh": 218,
+    "fm": 228,
+    "fb": 238
+   },
+   "dh_m": 0.29
+  },
+  {
+   "n": 30,
+   "facies": "Plat courant",
+   "distance_m": 4.5,
+   "hauteur_eau_cm": null,
+   "aval": {
+    "fh": 218,
+    "fm": 228,
+    "fb": 238
+   },
+   "amont": {
+    "fh": 227,
+    "fm": 234,
+    "fb": 241
+   },
+   "dh_m": -0.06
+  },
+  {
+   "n": 31,
+   "facies": "Radier",
+   "distance_m": 6,
+   "hauteur_eau_cm": null,
+   "aval": {
+    "fh": 227,
+    "fm": 234,
+    "fb": 241
+   },
+   "amont": {
+    "fh": 210,
+    "fm": 216,
+    "fb": 222
+   },
+   "dh_m": 0.18
+  },
+  {
+   "n": 32,
+   "facies": "Plat courant",
+   "distance_m": 13.8,
+   "hauteur_eau_cm": null,
+   "aval": {
+    "fh": 210,
+    "fm": 216,
+    "fb": 222
+   },
+   "amont": {
+    "fh": 217,
+    "fm": 219,
+    "fb": 221
+   },
+   "dh_m": -0.03
+  },
+  {
+   "n": 33,
+   "facies": "Radier",
+   "distance_m": 10.8,
+   "hauteur_eau_cm": null,
+   "aval": {
+    "fh": 217,
+    "fm": 219,
+    "fb": 221
+   },
+   "amont": {
+    "fh": 196,
+    "fm": 203,
+    "fb": 210
+   },
+   "dh_m": 0.16
+  },
+  {
+   "n": 34,
+   "facies": "Cascade",
+   "distance_m": 0.01,
+   "hauteur_eau_cm": null,
+   "aval": {
+    "fh": 196,
+    "fm": 203,
+    "fb": 210
+   },
+   "amont": {
+    "fh": 25.5,
+    "fm": 33,
+    "fb": 40.5
+   },
+   "dh_m": 1.7
+  }
+ ],
+ "synthese": {
+  "sigma_fm_aval_m": 73.565,
+  "sigma_fm_amont_m": 68.86,
+  "delta_h_m": 4.705,
+  "sigma_distance_m": 305.11,
+  "pente_estimee_pourmille": 15.421,
+  "pente_regression_pourmille": 10.201,
+  "nb_troncons_valides": 34
+ }
+}

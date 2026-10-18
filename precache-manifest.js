@@ -2,7 +2,7 @@
 // FICHIER GÉNÉRÉ — NE PAS ÉDITER À LA MAIN.
 // Régénérer avec :  python build_sw_assets.py
 // ============================================================
-self.PRECACHE_VERSION = "turbo-20260928-1348";
+self.PRECACHE_VERSION = "turbo-20261018-1136";
 self.PRECACHE = [
   "./",
   "./index.html",
@@ -23,11 +23,9 @@ self.PRECACHE = [
   "./apps/carhyce/nomenclatures.js",
   "./apps/carhyce/protocole_carhyce.pdf",
   "./apps/carhyce/styles.css",
-  "./apps/carhyce/sw.js",
   "./apps/jaugeage/icon-192.svg",
   "./apps/jaugeage/index.html",
   "./apps/jaugeage/manifest.json",
-  "./apps/jaugeage/sw.js",
   "./apps/checklist/apple-touch-icon.png",
   "./apps/checklist/icon-192.png",
   "./apps/checklist/icon-512.png",
