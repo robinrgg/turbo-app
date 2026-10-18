@@ -404,6 +404,7 @@ function computeCarry(c){
     if(pos.length===0) pos.push(+(w/2).toFixed(2));   // transect plus étroit que le pas
     out[i]=pos;
     s=+(((s - w) % d + d) % d).toFixed(4);    // report continu : pas - reliquat de berge
+    if(s<1e-6) s=+d.toFixed(4);               // dernier point pile sur la berge → suivant à un pas (pas à 0)
   });
   return out;
 }

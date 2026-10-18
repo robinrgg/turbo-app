@@ -1153,8 +1153,11 @@ let checks = {}; // { modeId: { itemKey: bool } }
 function storageKey() { return `cl_checks_v2`; }
 function saveChecks() { localStorage.setItem(storageKey(), JSON.stringify(checks)); }
 function loadChecks() {
-  const raw = localStorage.getItem(storageKey());
-  checks = raw ? JSON.parse(raw) : {};
+  try {
+    const raw = localStorage.getItem(storageKey());
+    checks = raw ? JSON.parse(raw) : {};
+    if (!checks || typeof checks !== "object") checks = {};
+  } catch (e) { checks = {}; }   // sauvegarde illisible : on repart d'une liste vide plutôt que de bloquer l'app
 }
 
 function modeChecks() {

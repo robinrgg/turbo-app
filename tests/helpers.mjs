@@ -63,3 +63,12 @@ export function loadFile(rel, exportsNames = [], globals = {}) {
   vm.runInContext(read(rel) + '\n;' + exportsNames.map(n => `this.${n} = ${n};`).join(''), ctx);
   return ctx;
 }
+
+// Source d'une déclaration `const|let|var NOM = <objet ou tableau littéral>;` de premier niveau.
+export function extractConst(src, name) {
+  const m = new RegExp(`^[ \\t]*(?:const|let|var)\\s+${name}\\s*=\\s*([\\[{])`, 'm').exec(src);
+  if (!m) throw new Error(`Déclaration introuvable : ${name}`);
+  const open = m[1], close = open === '[' ? ']' : '}';
+  const end = skipBalanced(src, m.index + m[0].length, open, close);
+  return `var ${name} = ` + src.slice(m.index + m[0].length - 1, end) + ';';
+}

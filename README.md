@@ -68,12 +68,25 @@ panne du serveur distant.
 node --test
 ```
 
-Aucune dépendance à installer : le lanceur de tests intégré à Node (≥ 18) teste
-directement les fonctions de calcul des apps (pente, débit ISO 748, débits
-caractéristiques, relances réseau), le routage du service worker et la
-cohérence du registre / du précache. Le test de fumée navigateur (chaque app
-se charge sans erreur JS) s'exécute si Playwright est disponible, sinon il est
-ignoré. GitHub Actions lance l'ensemble à chaque push (`.github/workflows/tests.yml`).
+Aucune dépendance à installer : le lanceur de tests intégré à Node (≥ 18) charge
+directement le code des apps. Sans référence externe, les calculs sont vérifiés par :
+
+- **cas calculables à la main** (canal rectangulaire, fond à pente constante,
+  origine et méridien central du Lambert 93, quantiles de séries connues…) ;
+- **propriétés mathématiques** sur des données aléatoires reproductibles
+  (débit proportionnel aux vitesses, indépendant du sens de saisie ; pente
+  inchangée par la hauteur du niveau, de signe inversé si on inverse aval/amont ;
+  facteur d'échelle 1 sur les parallèles 44° et 49°…) ;
+- **contrôles croisés** entre codes indépendants (pente CARHYCE = pente
+  Profil en long sur un relevé réel ; critères « transect complet » saisie = fusion ;
+  lecture du CSV des débits = lecteur CSV de référence) ;
+- **allers-retours** export → import (JSON, Excel CARHYCE, modèle Estimhab)
+  et saisie → rechargement de la page.
+
+Les tests navigateur (graphiques, écrans CARHYCE, saisie de bout en bout, chaque
+app se charge sans erreur) s'exécutent si Playwright est disponible, sinon ils
+sont ignorés. GitHub Actions lance l'ensemble à chaque push
+(`.github/workflows/tests.yml`).
 
 ## Dépendances CDN hors-ligne
 

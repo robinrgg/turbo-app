@@ -4,7 +4,7 @@
 
 // Version du code applicatif, affichée à l'accueil avec la version du cache du hub
 // (service worker racine) pour vérifier la version en cours sur mobile.
-const APP_VERSION = 'v20';
+const APP_VERSION = 'v21';
 
 // Parseur de nombre acceptant indifféremment point ou virgule comme séparateur
 function parseNum(v) {
@@ -1127,8 +1127,8 @@ const App = {
       stats.className = 'granulo-stats';
       stats.id = 'granulo-stats';
       body.appendChild(stats);
-      this.refreshGranuloStats();
       root.appendChild(section);
+      this.refreshGranuloStats();   // après insertion dans la page (getElementById)
     }
 
     // Remarques

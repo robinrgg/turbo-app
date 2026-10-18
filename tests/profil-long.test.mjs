@@ -57,3 +57,35 @@ test('un ancien export sans hauteur d’eau reste importable', () => {
   const st = ctx.stationFromImport(old);
   assert.ok(st.troncons.every(t => t.hauteur_eau_cm === null));
 });
+
+// ---- Propriétés (relevé réel de référence)
+const synth = troncons => { const st = ctx.newStation(); st.troncons = troncons; return ctx.computeSynthese(st); };
+const base = () => plain(ctx.stationFromImport(ref).troncons);
+const near = (a, b, tol = 1e-9) => assert.ok(Math.abs(a - b) < tol, `${a} ≠ ${b}`);
+
+test('propriété : changer la hauteur du niveau entre deux stations ne change pas la pente', () => {
+  const t = base(), c0 = synth(t);
+  // chaque tronçon décalé d'une constante différente sur ses deux visées (mise en station différente)
+  const t2 = t.map((tr, i) => ({ ...tr, aval: { ...tr.aval, fm: tr.aval.fm + 7 * i }, amont: { ...tr.amont, fm: tr.amont.fm + 7 * i } }));
+  const c2 = synth(t2);
+  near(c2.penteEstimee, c0.penteEstimee); near(c2.penteReg, c0.penteReg);
+});
+
+test('propriété : échanger aval et amont inverse le signe de la pente', () => {
+  const t = base(), c0 = synth(t);
+  const c2 = synth(t.map(tr => ({ ...tr, aval: tr.amont, amont: tr.aval })));
+  near(c2.penteEstimee, -c0.penteEstimee); near(c2.penteReg, -c0.penteReg);
+});
+
+test('propriété : distances doublées → pente divisée par deux ; dénivelés doublés → pente doublée', () => {
+  const t = base(), c0 = synth(t);
+  const cD = synth(t.map(tr => ({ ...tr, distance_m: tr.distance_m * 2 })));
+  near(cD.penteEstimee, c0.penteEstimee / 2); near(cD.penteReg, c0.penteReg / 2);
+  const cH = synth(t.map(tr => ({ ...tr, amont: { ...tr.amont, fm: tr.aval.fm - 2 * (tr.aval.fm - tr.amont.fm) } })));
+  near(cH.penteEstimee, 2 * c0.penteEstimee); near(cH.penteReg, 2 * c0.penteReg, 1e-9);
+});
+
+test('propriété : l’ordre de saisie compte pour la régression mais pas pour la pente estimée', () => {
+  const t = base(), c0 = synth(t), c2 = synth([...t].reverse());
+  near(c2.penteEstimee, c0.penteEstimee);
+});

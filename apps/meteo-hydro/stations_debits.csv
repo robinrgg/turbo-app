@@ -70,18 +70,18 @@ F619000101,Le Surmelin à Saint-Eugène,Le Surmelin,SAINT-EUGENE,02,49.025074,3.
 F620000201,La Marne à Château-Thierry,La Marne,CHATEAU-THIERRY,02,49.044438,3.403097,,,,
 F620000301,La Marne à Azy-sur-Marne - Barrage (amont) [VNF],La Marne,AZY-SUR-MARNE,02,49.001675,3.376504,,,,
 F620000302,La Marne à Azy-sur-Marne - Barrage (aval) [VNF],La Marne,AZY-SUR-MARNE,02,49.001161,3.375785,,,,
-H001000301,Le Petit Gland à Any-Martin-Rieux - Hauteur du petit Gland,Le Petit Gland,ANY-MARTIN-RIEUX,02,4.193566,49.876328,,,,
-H002001101,L'Oise à Étréaupont - Hauteur de l'Oise a Etréaupont,L'Oise,ETREAUPONT,02,3.913736,49.904859,,,,
-H003000201,Le Ton à Étréaupont - hauteur du Ton à Etréaupont,Le Ton,ETREAUPONT,02,3.913992,49.901773,,,,
-H004000101,L'Oise à Guise - hauteur de l'Oise a Guise,L'Oise,GUISE,02,3.630458,49.897672,,,,
-H004000201,L'Oise à Proisy - barrage de Proisy,L'Oise,PROISY,02,3.742611,49.902063,,,,
+H001000301,Le Petit Gland à Any-Martin-Rieux - Hauteur du petit Gland,Le Petit Gland,ANY-MARTIN-RIEUX,02,49.876328,4.193566,,,,
+H002001101,L'Oise à Étréaupont - Hauteur de l'Oise a Etréaupont,L'Oise,ETREAUPONT,02,49.904859,3.913736,,,,
+H003000201,Le Ton à Étréaupont - hauteur du Ton à Etréaupont,Le Ton,ETREAUPONT,02,49.901773,3.913992,,,,
+H004000101,L'Oise à Guise - hauteur de l'Oise a Guise,L'Oise,GUISE,02,49.897672,3.630458,,,,
+H004000201,L'Oise à Proisy - barrage de Proisy,L'Oise,PROISY,02,49.902063,3.742611,,,,
 H005000101,Le Noirrieu à la Neuville-lès-Dorengt,Le Noirrieu,NEUVILLE-LES-DORENGT,02,49.977976,3.673103,0.3269,0.055,0.029,11
-H010002201,La Serre à Chaourse - hauteur de la Serre,La Serre,CHAOURSE,02,3.996231,49.703997,,,,
-H010002301,La Serre à Montigny-sous-Marle - Barrage de Montigny sous Marle,La Serre,MONTIGNY-SOUS-MARLE,02,3.790256,49.742381,,,,
+H010002201,La Serre à Chaourse - hauteur de la Serre,La Serre,CHAOURSE,02,49.703997,3.996231,,,,
+H010002301,La Serre à Montigny-sous-Marle - Barrage de Montigny sous Marle,La Serre,MONTIGNY-SOUS-MARLE,02,49.742381,3.790256,,,,
 H011001201,Le Vilpion à Thiernu,Le Vilpion,THIERNU,02,49.760555,3.791216,1.6048,0.875,,3
-H012000201,La Brune à Hary - Hauteur de la Brune,Rivière Brune,HARY,02,3.934664,49.786831,,,,
-H013000101,Le Vilpion à Marle - Hauteur du Vilpion,Le Vilpion,MARLE,02,3.76479,49.742318,,,,
-H143000201,Le ruisseau de Fayau à Aizelles - Hauteur du Fayau dans le camping du moulin,Ruisseau de Fayau,AIZELLES,02,3.808871,49.490133,,,,
+H012000201,La Brune à Hary - Hauteur de la Brune,Rivière Brune,HARY,02,49.786831,3.934664,,,,
+H013000101,Le Vilpion à Marle - Hauteur du Vilpion,Le Vilpion,MARLE,02,49.742318,3.76479,,,,
+H143000201,Le ruisseau de Fayau à Aizelles - Hauteur du Fayau dans le camping du moulin,Ruisseau de Fayau,AIZELLES,02,49.490133,3.808871,,,,
 H162000201,L'Aisne à Fontenoy - Barrage (amont),L'Aisne,FONTENOY,02,49.399401,3.206099,57.047,14.355,9.392,6
 H162000202,L'Aisne à Fontenoy - Barrage (aval),L'Aisne,FONTENOY,02,49.399463,3.20548,,,,
 H162000301,L'Aisne à Cuffies [Vauxrot] - Barrage (amont),L'Aisne,CUFFIES,02,49.395718,3.329179,62.7374,21.997,8.45,6
@@ -357,10 +357,10 @@ B720000002,La Meuse à Chooz - Ile Graviat,La Meuse,CHOOZ,08,50.092335,4.806643,
 B720000003,La Meuse à Chooz - Chooz Petit,La Meuse,CHOOZ,08,50.101867,4.809673,,,,
 B732201001,La Houille à Landrichamps,La Houille,LANDRICHAMPS,08,50.084369,4.82652,3.0213,0.626,0.243,45
 H108000101,L'Aisne à Condé-lès-Autry,L'Aisne,CONDE-LES-AUTRY,08,49.24327,4.839602,8.6188,2.478,,3
-H124000301,Le ruisseau de Saint-Lambert à Suzanne,Ruisseau de Saint-Lambert,SUZANNE,08,4.637332,49.517149,,,,
-H125000201,La Foivre à Écordal,La Foivre,ECORDAL,08,4.577688,49.528047,,,,
-H125000202,La Foivre à Écordal - Hauteur du Foivre,La Foivre,ECORDAL,08,4.57766,49.528067,,,,
-H127000101,Le ruisseau de Saulces à Auboncourt-Vauzelles,Ruisseau de Saulces,AUBONCOURT-VAUZELLES,08,4.496321,49.551286,,,,
+H124000301,Le ruisseau de Saint-Lambert à Suzanne,Ruisseau de Saint-Lambert,SUZANNE,08,49.517149,4.637332,,,,
+H125000201,La Foivre à Écordal,La Foivre,ECORDAL,08,49.528047,4.577688,,,,
+H125000202,La Foivre à Écordal - Hauteur du Foivre,La Foivre,ECORDAL,08,49.528067,4.57766,,,,
+H127000101,Le ruisseau de Saulces à Auboncourt-Vauzelles,Ruisseau de Saulces,AUBONCOURT-VAUZELLES,08,49.551286,4.496321,,,,
 H131000201,La Vaux à Hauteville,La Vaux,HAUTEVILLE,08,49.583713,4.307437,,,,
 H615302002,L'Agron à Verpel,L'Agron,VERPEL,08,49.386372,4.931003,1.7562,0.406,0.178,30
 H616201001,L'Aire à Chevières,L'Aire,CHEVIERES,08,49.334069,4.903247,13.4732,2.572,0.842,65
@@ -461,7 +461,7 @@ Y102501001,La Bruyante à Escouloubre [Usson-les-Bains],La Bruyante,ESCOULOUBRE,
 Y110501001,Le Rebenty à Saint-Martin-Lys,Le Rebenty,SAINT-MARTIN-LYS,11,42.81533,2.227006,1.5762,0.386,0.203,54
 Y111201001,L'Aude à Belvianes-et-Cavirac,L'Aude,BELVIANES-ET-CAVIRAC,11,42.856492,2.195546,12.7491,6.3,3.661,91
 Y111201002,L'Aude à Quillan - Pont RD 118,L'Aude,QUILLAN,11,42.877681,2.185091,9.9765,3.118,2.082,19
-Y111201201,L'Aude [Source de Font Maure - affluent de l'Aude] à Belvianes-et-Cavirac - Source de Font Maure,L'Aude,BELVIANES-ET-CAVIRAC,11,2.203121,42.843047,,,,
+Y111201201,L'Aude [Source de Font Maure - affluent de l'Aude] à Belvianes-et-Cavirac - Source de Font Maure,L'Aude,BELVIANES-ET-CAVIRAC,11,42.843047,2.203121,,,,
 Y113501001,La Sals à Cassaignes,La Sals,CASSAIGNES,11,42.94134,2.307574,1.0618,0.19,0.108,36
 Y114115001,Le ruisseau de Lavalette à Alet-les-Bains,Ruisseau de Lavalette,ALET-LES-BAINS,11,42.99015,2.261906,0.3846,0.054,0.026,21
 Y114115101,L'Aude à Alet-les-Bains - Le Moulin Neuf,L'Aude,ALET-LES-BAINS,11,42.985207,2.262521,13.1677,5.735,3.769,13
@@ -471,7 +471,7 @@ Y115201401,Le Cougaing à Castelreng,Le Cougaing,CASTELRENG,11,43.028566,2.13771
 Y120501001,Le Sou à Saint-Martin-de-Villereglan,Le Sou,SAINT-MARTIN-DE-VILLEREGLAN,11,43.094791,2.209121,0.5247,0.032,0.002,48
 Y122501001,Le Lauquet à Greffeil,Le Lauquet,GREFFEIL,11,43.061975,2.395982,0.4081,0.03,0.014,51
 Y122502002,Le Lauquet à Verzeille [Le Pech] - Pont de Pomas,Le Lauquet,VERZEILLE,11,43.121529,2.313631,0.6047,0.034,0.014,5
-Y122502201,Le Lauquet à Saint-Hilaire [Route de Ladern],Le Lauquet,SAINT-HILAIRE,11,2.332306,43.092944,,,,
+Y122502201,Le Lauquet à Saint-Hilaire [Route de Ladern],Le Lauquet,SAINT-HILAIRE,11,43.092944,2.332306,,,,
 Y123201001,L'Aude à Carcassonne - Pont-Vieux,L'Aude,CARCASSONNE,11,43.210305,2.358165,14.6838,4.885,3.233,17
 Y123201002,L'Aude à Carcassonne - Pont-Neuf,L'Aude,CARCASSONNE,11,43.214641,2.36129,18.58,6.9,3.974,50
 Y123201101,Le ruisseau de Palajanel à Cazilhac [Ouv-Cazilhac1],Ruisseau de Palajanel,CAZILHAC,11,43.181389,2.374035,,,,
@@ -497,7 +497,7 @@ Y142203001,L'Aude à Trèbes [rue Voltaire],L'Aude,TREBES,11,43.209514,2.440727,
 Y142203101,Le ruisseau de la Prade [Plan d'eau Ruchol] à Laure-Minervois [Déversoir],Ruisseau de la Prade,LAURE-MINERVOIS,11,43.277091,2.51994,,,,
 Y142203201,Le ruisseau de Mayral à Rustiques [Ouvrage de régulation],Ruisseau de Mayral,RUSTIQUES,11,43.222295,2.47438,,,,
 Y142203301,Le ruisseau de Canet à Badens [Ouvrage de régulation],Ruisseau de Canet,BADENS,11,43.221933,2.502514,,,,
-Y142203401,Le ruisseau des Arques à Laure-Minervois - Bassin des Arques,Ruisseau des Arques,LAURE-MINERVOIS,11,2.509788,43.275297,,,,
+Y142203401,Le ruisseau des Arques à Laure-Minervois - Bassin des Arques,Ruisseau des Arques,LAURE-MINERVOIS,11,43.275297,2.509788,,,,
 Y143541001,L'Argent-Double à la Redorte [Les Salices],L'Argent-Double,REDORTE,11,43.263965,2.629169,0.8859,0.065,0.018,53
 Y143542101,L'Argent-Double à Trausse,L'Argent-Double,TRAUSSE,11,43.30385,2.551752,,,,
 Y144501001,L'Ognon à Pépieux,L'Ognon,PEPIEUX,11,43.29708,2.69279,0.185,0.011,0.003,38
@@ -641,13 +641,13 @@ X300101301,La Durance à Saint-Paul-lès-Durance [Jouques-Cadarache - EDF],La Du
 X302001001,La Durance à Meyrargues [Pont Pertuis],La Durance,MEYRARGUES,13,43.66595,5.494158,31.6882,8.403,7.114,31
 X321020102,Le ruisseau de Silvacane à la Roque-d'Anthéron [Silvacane] - DREAL,Ruisseau de Silvacane,ROQUE-D'ANTHERON,13,43.715102,5.331244,0.0099,0.002,0.0,12
 X331002001,La Durance à Mallemort,La Durance,MALLEMORT,13,43.737373,5.173714,,,,
-Y401202101,L'Arc [Bras principal] à Rousset,L'Arc,ROUSSET,13,5.593353,43.476227,,,,
+Y401202101,L'Arc [Bras principal] à Rousset,L'Arc,ROUSSET,13,43.476227,5.593353,,,,
 Y402201001,L'Arc à Meyreuil [Pont de Bayeux],L'Arc,MEYREUIL,13,43.500989,5.514785,1.2278,0.281,0.157,52
-Y402201401,Vallat le Grand [Affluent Rive Gauche Arc] à Aix-en-Provence - Station hydrométrique du Grand Vallat,Vallat le Grand,AIX-EN-PROVENCE,13,5.355288,43.491359,,,,
+Y402201401,Vallat le Grand [Affluent Rive Gauche Arc] à Aix-en-Provence - Station hydrométrique du Grand Vallat,Vallat le Grand,AIX-EN-PROVENCE,13,43.491359,5.355288,,,,
 Y411502001,La Luynes à Aix-en-Provence [Pioline],La Luynes,AIX-EN-PROVENCE,13,43.505433,5.400093,0.3097,0.166,0.1,28
 Y412202002,L'Arc à Berre-l'Étang - Saint-Estève,L'Arc,BERRE-L'ETANG,13,43.500074,5.15238,3.1121,0.849,0.305,34
 Y412204001,L'Arc à Aix-en-Provence [Roquefavour-Bruet],L'Arc,AIX-EN-PROVENCE,13,43.516378,5.313526,2.7356,1.191,0.803,28
-Y412541101,L'Arc à Berre-l'Étang - Station Berre MENELIK,L'Arc,BERRE-L'ETANG,13,5.170225,43.506836,,,,
+Y412541101,L'Arc à Berre-l'Étang - Station Berre MENELIK,L'Arc,BERRE-L'ETANG,13,43.506836,5.170225,,,,
 Y420000501,La Touloubre à Aix-en-Provence [Puyricard - La Glacière],La Touloubre,AIX-EN-PROVENCE,13,43.577795,5.420041,,,,
 Y420000601,Le ruisseau de Budéou à Lambesc [Armieux],Ruisseau de Budéou,LAMBESC,13,43.618164,5.263409,,,,
 Y420000701,La Touloubre à Lambesc [Armieux],La Touloubre,LAMBESC,13,43.617108,5.260818,,,,
@@ -710,13 +710,13 @@ O745000301,Le Lander à Saint-Georges [EDF],l'ander,SAINT-GEORGES,15,45.012091,3
 O751551001,Le Remontalou à Chaudes-Aigues [Moulin de Gastal],Le Remontalou,CHAUDES-AIGUES,15,44.858977,3.011481,0.417,0.175,0.098,33
 O753501002,L'Epie à Oradour [Pont-de-Rochebrune] - Nouvelle échelle,Ruisseau de l'Epie,ORADOUR,15,44.95336,2.934496,1.8826,0.343,0.135,13
 O760000201,La Truyère à Neuvéglise [Grandval EDF - QNR],La Truyère,NEUVEGLISE-SUR-TRUYERE,15,44.922568,3.074322,24.564,6.0,1.956,76
-O821000101,La Ressègue à Leynhac - Martory,La Ressègue,LEYNHAC,15,2.293464,44.714268,,,,
-O821000201,Le Célé à Saint-Constant,Le Célé,SAINT-CONSTANT-FOURNOULES,15,2.228709,44.686244,,,,
-O822000101,La Rance à Leynhac - Chapelle du Pont,La Rance,LEYNHAC,15,2.25674,44.754197,,,,
-O823153101,Le Moulègre à Boisset - Planche du Souq,Le Moulègre,BOISSET,15,2.241773,44.748151,,,,
-O825501101,L'Anès à Rouziers - Moulin d'Anès,L'Anès,ROUZIERS,15,2.204302,44.788036,,,,
+O821000101,La Ressègue à Leynhac - Martory,La Ressègue,LEYNHAC,15,44.714268,2.293464,,,,
+O821000201,Le Célé à Saint-Constant,Le Célé,SAINT-CONSTANT-FOURNOULES,15,44.686244,2.228709,,,,
+O822000101,La Rance à Leynhac - Chapelle du Pont,La Rance,LEYNHAC,15,44.754197,2.25674,,,,
+O823153101,Le Moulègre à Boisset - Planche du Souq,Le Moulègre,BOISSET,15,44.748151,2.241773,,,,
+O825501101,L'Anès à Rouziers - Moulin d'Anès,L'Anès,ROUZIERS,15,44.788036,2.204302,,,,
 O826401001,La Rance à Maurs [Les Brauges],La Rance,MAURS,15,44.690382,2.188487,3.5357,0.999,0.435,23
-O826401101,Le ruisseau d'Arcombe à Maurs,Ruisseau d'Arcombe,MAURS,15,2.20284,44.712773,,,,
+O826401101,Le ruisseau d'Arcombe à Maurs,Ruisseau d'Arcombe,MAURS,15,44.712773,2.20284,,,,
 P027251002,Le ruisseau Grande Rhue à Condat,rivière la rhue,CONDAT,15,45.338078,2.762345,5.5041,1.396,0.411,8
 P030401001,La Santoire à Ségur-les-Villas [La Carrière],La Santoire,SEGUR-LES-VILLAS,15,45.192325,2.826229,2.2265,0.481,0.125,33
 P036000101,La Santoire à Condat [EDF - Roche-Pointue],La Santoire,CONDAT,15,45.33323,2.75334,4.5851,1.135,0.248,96
@@ -830,7 +830,7 @@ K400001010,La Loire à Cours-les-Barres - Givry,la Loire,COURS-LES-BARRES,18,47.
 K401301001,L'Aubois à Grossouvre - Trézy,l'Aubois,GROSSOUVRE,18,46.894667,2.932501,0.7678,0.159,0.078,29
 K407311001,La Vauvise à Saint-Bouize - La Grange,la Vauvise,SAINT-BOUIZE,18,47.27071,2.896502,2.9974,0.679,0.209,27
 K408001001,La Loire à Saint-Satur - Ecluse de Saint-Thibault,la Loire,SAINT-SATUR,18,47.341196,2.866674,284.1113,100.744,51.329,24
-K451000101,à Brinon-sur-Sauldre - Le Beuvron à Brinon-sur-Sauldre,,BRINON-SUR-SAULDRE,18,2.278299,47.626743,,,,
+K451000101,à Brinon-sur-Sauldre - Le Beuvron à Brinon-sur-Sauldre,,BRINON-SUR-SAULDRE,18,47.626743,2.278299,,,,
 K540092001,Le Cher à Saint-Amand-Montrond,le Cher,SAINT-AMAND-MONTROND,18,46.725914,2.490608,27.3925,3.963,1.766,48
 K543302001,La Marmande à Saint-Pierre-les-Étieux - Brébeurre,la Marmande,SAINT-PIERRE-LES-ETIEUX,18,46.726831,2.623428,1.1518,0.232,0.08,31
 K544000201,La Loubière à Faverdines,la Loubière,FAVERDINES,18,46.653169,2.472943,0.1895,0.047,0.008,6
@@ -1339,7 +1339,7 @@ V720000501,Le Rhône à Beaucaire [Pont de Beaucaire],Le Rhône,BEAUCAIRE,30,43.
 V730000202,Le Rhône à Fourques - CNR,Le Rhône,FOURQUES,30,43.688581,4.614199,177.2854,94.052,61.597,33
 Y200001002,L'Hérault à Valleraugue,L'Hérault,VALLERAUGUE,30,44.078963,3.653119,2.2254,0.829,0.307,15
 Y200002701,L'Hérault à Saint-André-de-Majencoules,L'Hérault,SAINT-ANDRE-DE-MAJENCOULES,30,44.014378,3.680813,3.4029,0.495,0.213,6
-Y200002801,Valat des Trois Fontaines à Valleraugue - Valleraugue,Valat des Trois Fontaines,VALLERAUGUE,30,3.562869,44.091976,,,,
+Y200002801,Valat des Trois Fontaines à Valleraugue - Valleraugue,Valat des Trois Fontaines,VALLERAUGUE,30,44.091976,3.562869,,,,
 Y201002001,L'Arre au Vigan [La Terrisse],L'Arre,VIGAN,30,44.001181,3.654646,5.2109,1.075,0.519,70
 Y201003501,L'Arre [Source Isis - Affluent de l'Arre] à Avèze - Source Isis,L'Arre,AVEZE,30,43.982572,3.598762,,,,
 Y203001001,La Vis à Blandas [Lafoux de la Vis],La Vis,BLANDAS,30,43.897968,3.490085,4.6154,1.717,1.218,12
@@ -1577,7 +1577,7 @@ Y320003001,Le Lirou au Triadou [Pont du Lien],Le Lirou,TRIADOU,34,43.728781,3.86
 Y321002001,Le Lez à Lattes [3ème écluse],Le lez,LATTES,34,43.562968,3.895081,3.1588,0.837,0.508,16
 Y321002101,Le Lez à Montpellier - Trinquat,Le lez,MONTPELLIER,34,43.592488,3.904096,2.8766,0.646,,3
 Y331001001,Le Salaison à Mauguio,Le Salaison,MAUGUIO,34,43.610152,3.994666,0.4043,0.066,0.011,36
-Y345402401,La Bénovie à Buzignargues - Source de Fontbonne,La Bénovie,BUZIGNARGUES,34,3.99762,43.779071,,,,
+Y345402401,La Bénovie à Buzignargues - Source de Fontbonne,La Bénovie,BUZIGNARGUES,34,43.779071,3.99762,,,,
 J001401001,Le Nançon à Lécousse - Pont aux Anes,le Nançon,LECOUSSE,35,48.375583,-1.196451,0.6667,0.284,0.158,43
 J011000101,La Minette à Chauvigné,la Minette,CHAUVIGNE,35,48.346188,-1.447623,0.2353,0.128,,
 J012151001,Le Couesnon à Romazy - La Mondrais,le Couesnon,ROMAZY,35,48.365471,-1.503786,4.9297,1.148,0.503,56
@@ -1851,18 +1851,18 @@ S321401001,Le ruisseau de Canteloup à Saint-Paul-en-Born,ruisseau de la forge-p
 S411401101,Le ruisseau de la Palue à Saint-Michel-Escalus,Ruisseau de la Palue,SAINT-MICHEL-ESCALUS,40,43.887431,-1.293942,,,,
 S421401001,Le courant de Soustons à Magescq,Courant de Soustons,MAGESCQ,40,43.781389,-1.225079,1.0649,0.771,0.656,54
 K447001001,La Loire à Blois,la Loire,BLOIS,41,47.584957,1.335148,357.9187,123.92,53.031,117
-K455000201,Le Beuvron à Chaumont-sur-Tharonne,le Beuvron,CHAUMONT-SUR-THARONNE,41,1.91924,47.575633,,,,
+K455000201,Le Beuvron à Chaumont-sur-Tharonne,le Beuvron,CHAUMONT-SUR-THARONNE,41,47.575633,1.91924,,,,
 K457221001,Le Beuvron à Montrieux-en-Sologne - Bois Olympe,le Beuvron,MONTRIEUX-EN-SOLOGNE,41,47.52962,1.707556,2.6928,0.44,0.116,13
-K462000101,Le Néant à Vernou-en-Sologne - Le Néant à Vernou-en-Sologne,le Néant,VERNOU-EN-SOLOGNE,41,1.691328,47.517453,,,,
-K465000101,La Bonne Heure à Vernou-en-Sologne,la Bonne Heure,VERNOU-EN-SOLOGNE,41,1.706536,47.499032,,,,
+K462000101,Le Néant à Vernou-en-Sologne - Le Néant à Vernou-en-Sologne,le Néant,VERNOU-EN-SOLOGNE,41,47.517453,1.691328,,,,
+K465000101,La Bonne Heure à Vernou-en-Sologne,la Bonne Heure,VERNOU-EN-SOLOGNE,41,47.499032,1.706536,,,,
 K467000101,Le Beuvron à Cellettes - Clénord,le Beuvron,CELLETTES,41,47.532512,1.420534,4.8698,0.746,,4
 K467000103,Le Beuvron à Cellettes - Clénord - Station débitmétrique,le Beuvron,CELLETTES,41,47.532422,1.420658,3.4963,0.544,,1
-K467000301,Le Beuvron à Tour-en-Sologne,le Beuvron,TOUR-EN-SOLOGNE,41,1.510848,47.543335,,,,
-K468000201,Le Conon à Cour-Cheverny,le Conon,COUR-CHEVERNY,41,1.519044,47.49183,,,,
-K469000201,La Bièvre à Contres,la Bièvre,CONTRES,41,1.427912,47.416292,,,,
-K469000202,La Bièvre à Contres - La Bièvre à Contres,la Bièvre,CONTRES,41,1.42796,47.416241,,,,
-K478000301,Le Cosson à Thoury,le Cosson,THOURY,41,1.587735,47.638616,,,,
-K478000401,à Huisseau-sur-Cosson,,HUISSEAU-SUR-COSSON,41,1.451584,47.59362,,,,
+K467000301,Le Beuvron à Tour-en-Sologne,le Beuvron,TOUR-EN-SOLOGNE,41,47.543335,1.510848,,,,
+K468000201,Le Conon à Cour-Cheverny,le Conon,COUR-CHEVERNY,41,47.49183,1.519044,,,,
+K469000201,La Bièvre à Contres,la Bièvre,CONTRES,41,47.416292,1.427912,,,,
+K469000202,La Bièvre à Contres - La Bièvre à Contres,la Bièvre,CONTRES,41,47.416241,1.42796,,,,
+K478000301,Le Cosson à Thoury,le Cosson,THOURY,41,47.638616,1.587735,,,,
+K478000401,à Huisseau-sur-Cosson,,HUISSEAU-SUR-COSSON,41,47.59362,1.451584,,,,
 K479301001,Le Cosson à Chailles,le Cosson,CHAILLES,41,47.543684,1.309387,3.0095,0.529,0.145,21
 K480001001,La Loire à Onzain - Pont de Chaumont,la Loire,VEUZAIN-SUR-LOIRE,41,47.485578,1.190335,335.5865,119.598,68.145,31
 K484000102,La Cisse à Coulanges - Moulin Jouan,la Cisse,COULANGES,41,47.546587,1.235465,1.3038,0.54,0.255,8
@@ -2018,10 +2018,10 @@ K439000101,Le Loiret à Olivet - Pont Maréchal Leclerc,le Loiret,OLIVET,45,47.8
 K441409001,La Mauve de Détourbe à Meung-sur-Loire,la Mauve de la Détourbe,MEUNG-SUR-LOIRE,45,47.820223,1.694613,1.0766,0.651,0.444,19
 K442701001,Le Lien à Tavers,le Lien,TAVERS,45,47.754893,1.614975,0.2457,0.161,0.077,5
 K444301001,L'Ardoux à Lailly-en-Val,l'Ardoux,LAILLY-EN-VAL,45,47.74751,1.655755,,,,
-K471000201,Le Cosson à Marcilly-en-Villette,le Cosson,MARCILLY-EN-VILLETTE,45,2.016897,47.739459,,,,
+K471000201,Le Cosson à Marcilly-en-Villette,le Cosson,MARCILLY-EN-VILLETTE,45,47.739459,2.016897,,,,
 K473000101,Le Cosson à la Ferté-Saint-Aubin,le Cosson,FERTE-SAINT-AUBIN,45,47.725525,1.928505,0.879,0.107,0.059,7
-K476000101,Le Cosson à Ligny-le-Ribault,le Cosson,LIGNY-LE-RIBAULT,45,1.783509,47.682307,,,,
-K476000102,Le Cosson à Ligny-le-Ribault,le Cosson,LIGNY-LE-RIBAULT,45,1.783509,47.682307,,,,
+K476000101,Le Cosson à Ligny-le-Ribault,le Cosson,LIGNY-LE-RIBAULT,45,47.682307,1.783509,,,,
+K476000102,Le Cosson à Ligny-le-Ribault,le Cosson,LIGNY-LE-RIBAULT,45,47.682307,1.783509,,,,
 O612501001,La Petite Barguelonne à Montcuq,La Petite Barguelonne,MONTCUQ-EN-QUERCY-BLANC,46,44.333691,1.190022,0.5957,0.052,0.0,43
 O795151001,Le Lot à Capdenac,Le Lot,CAPDENAC,46,44.573544,2.070259,,,,
 O797151001,Le Lot à Faycelles,Le Lot,FAYCELLES,46,44.556523,2.015665,108.3902,26.533,14.117,46
@@ -2035,8 +2035,8 @@ O823153002,Le Lot à Cahors - HE,Le Lot,CAHORS,46,44.442167,1.442464,128.8783,43
 O825501001,Le Vert à Castelfranc [Les Campagnes],Le Vert,CASTELFRANC,46,44.511204,1.231889,1.3623,0.203,0.057,56
 O828000201,Le Veyre à Bagnac-sur-Célé [Lafage] - Le Veyre à Bagnac (Lafage),Le Veyre,BAGNAC-SUR-CELE,46,44.690792,2.13797,2.4778,0.495,0.233,10
 O830000201,Le Bervezou à Montet-et-Bouxal - Le bervezou à Montet et Bouxal (Longuecoste),Le Bervezou,MONTET-ET-BOUXAL,46,44.755818,2.057969,0.123,0.086,,
-O831000201,Le ruisseau de Planioles à Planioles,Ruisseau de Planioles,PLANIOLES,46,2.028415,44.633866,,,,
-O831000301,Le ruisseau de Planioles à Figeac,Ruisseau de Planioles,FIGEAC,46,2.029914,44.61465,,,,
+O831000201,Le ruisseau de Planioles à Planioles,Ruisseau de Planioles,PLANIOLES,46,44.633866,2.028415,,,,
+O831000301,Le ruisseau de Planioles à Figeac,Ruisseau de Planioles,FIGEAC,46,44.61465,2.029914,,,,
 O834402001,La Thèze à Saint-Martin-le-Redon - Boussac,La Thèze,SAINT-MARTIN-LE-REDON,46,44.518887,1.016639,0.3123,0.117,0.057,54
 O845000401,Le Vert à Saint-Médard [Source du Martinet],Le Vert,SAINT-MEDARD,46,44.540877,1.304412,0.1211,0.0,0.0,16
 O845000501,Le Vert à Saint-Médard - Source de Font Vincent,Le Vert,SAINT-MEDARD,46,44.54084,1.300258,0.1048,0.008,0.001,19
@@ -2116,7 +2116,7 @@ O306404001,Le Tarnon à Vebron,Le Tarnon,VEBRON,48,44.238223,3.578311,6.9456,3.4
 O308432001,La Mimente à Florac,La Mimente,FLORAC TROIS RIVIERES,48,44.31552,3.603111,3.4849,0.488,0.16,49
 O308435001,La Mimente à Cassagnas,La Mimente,CASSAGNAS,48,44.271035,3.730279,6.5319,2.353,,3
 O312102002,Le Tarn à Montbrun - Pont de Montbrun,Le Tarn,MONTBRUN,48,44.33302,3.49677,17.0414,3.11,0.885,63
-O312102101,Le Tarn [Source Affluent du Tarn au centre du village de Saint Chély] à Mas-Saint-Chély - Saint Chély centre,Le Tarn,MAS-SAINT-CHELY,48,3.384095,44.335945,,,,
+O312102101,Le Tarn [Source Affluent du Tarn au centre du village de Saint Chély] à Mas-Saint-Chély - Saint Chély centre,Le Tarn,MAS-SAINT-CHELY,48,44.335945,3.384095,,,,
 O312102201,Le Tarn [Source du Moulin de Cénaret affluent du Tarn] à Mas-Saint-Chély - Saint Chély Cénarette,Le Tarn,MAS-SAINT-CHELY,48,44.335313,3.38361,,,,
 O312102301,Le Tarn [Le Burle - Affluent du Tarn] à Sainte-Enimie - Burle,Le Tarn,GORGES DU TARN CAUSSES,48,44.366272,3.410322,,,,
 O313000101,Le Tarn aux Vignes [Source de Beldoire] - Station de Beldoire,Le Tarn,VIGNES,48,44.287666,3.235923,0.3263,0.246,0.123,16
@@ -2800,7 +2800,7 @@ Y010581101,[La Méditerranée] à Port-Vendres [marégraphe],,PORT-VENDRES,66,42
 Y011541001,La Massane à Argelès-sur-Mer [Mas d'en Tourens],La Massane,ARGELES-SUR-MER,66,42.525644,2.98574,0.2524,0.017,0.001,52
 Y020401001,Le Tech à Prats-de-Mollo-la-Preste [La Preste],Le Tech,PRATS-DE-MOLLO-LA-PRESTE,66,42.40691,2.403234,0.4531,0.205,0.149,45
 Y021401001,Le Tech à Prats-de-Mollo-la-Preste [Baillanouse],Le Tech,PRATS-DE-MOLLO-LA-PRESTE,66,42.408704,2.511174,,,,
-Y021401101,Le Tech [Source Sainte Cécile - Ravin Sainte Cécile - Affluent du Tech] au Tech - Tech Sainte cécile,Le Tech,TECH,66,2.557169,42.4174,,,,
+Y021401101,Le Tech [Source Sainte Cécile - Ravin Sainte Cécile - Affluent du Tech] au Tech - Tech Sainte cécile,Le Tech,TECH,66,42.4174,2.557169,,,,
 Y023401001,Le Tech à Montferrer [Pas du Loup],Le Tech,MONTFERRER,66,42.435035,2.595799,3.1359,1.36,1.078,18
 Y024401001,Le Tech à Arles-sur-Tech - Pont RD 115,Le Tech,ARLES-SUR-TECH,66,42.463875,2.645169,3.9407,1.48,0.862,10
 Y024404001,Le Tech à Amélie-les-Bains-Palalda,Le Tech,AMELIE-LES-BAINS-PALALDA,66,42.473788,2.67396,4.7575,1.395,0.811,40
@@ -2819,7 +2819,7 @@ Y042401001,La Têt à Serdinya [Joncet],La Têt,SERDINYA,66,42.565872,2.315815,5
 Y043640501,Le Cady à Vernet-les-Bains,Rivière de Cady,VERNET-LES-BAINS,66,42.546127,2.388262,,,,
 Y043642001,Le Cady à Corneilla-de-Conflent,Rivière de Cady,CORNEILLA-DE-CONFLENT,66,42.587049,2.369776,0.8112,0.235,0.125,44
 Y043642101,La rivière de Rotja à Sahorre,Rivière de Rotja,SAHORRE,66,42.532644,2.359824,0.5672,0.13,,3
-Y043642201,La Têt à Ria-Sirach - Ria,La Têt,RIA-SIRACH,66,2.38312,42.601952,,,,
+Y043642201,La Têt à Ria-Sirach - Ria,La Têt,RIA-SIRACH,66,42.601952,2.38312,,,,
 Y044401001,La Têt à Marquixanes,La Têt,MARQUIXANES,66,42.644741,2.486851,8.1405,3.635,2.208,43
 Y044501001,La Castellane à Catllar,La Castellane,CATLLAR,66,42.632398,2.422031,0.8921,0.155,0.042,16
 Y045503001,La Lentilla [partielle] à Espira-de-Conflent [Finestret],La Lentilla,ESPIRA-DE-CONFLENT,66,42.625724,2.50112,,,,
@@ -2837,7 +2837,7 @@ Y047406001,La Têt à Saint-Féliu-d'Amont,La Têt,SAINT-FELIU-D'AMONT,66,42.689
 Y047407001,La Têt à Pézilla-la-Rivière [Passage à gué],La Têt,PEZILLA-LA-RIVIERE,66,42.684621,2.75187,,,,
 Y047882001,[Le canal de Perpignan] à Canohès,,CANOHES,66,42.657437,2.833598,0.4446,0.174,0.066,21
 Y047882101,La Têt à Perpignan [Pont Sauvy],La Têt,PERPIGNAN,66,42.708737,2.908491,,,,
-Y060401201,L'Agly à Saint-Paul-de-Fenouillet - La Tirounère,L'Agly,SAINT-PAUL-DE-FENOUILLET,66,2.479662,42.83327,,,,
+Y060401201,L'Agly à Saint-Paul-de-Fenouillet - La Tirounère,L'Agly,SAINT-PAUL-DE-FENOUILLET,66,42.83327,2.479662,,,,
 Y061504001,La Boulzane à Saint-Paul-de-Fenouillet [Lapradelle],La Boulzane,SAINT-PAUL-DE-FENOUILLET,66,42.814359,2.322791,0.6834,0.162,0.053,20
 Y061504201,Le ruisseau de Saint-Jaume [Source des Adoux] à Fenouillet - Adoux,Ruisseau de Saint-Jaume,FENOUILLET,66,42.790423,2.376301,,,,
 Y062402001,L'Agly à Saint-Paul-de-Fenouillet [Clue de la Fou],L'Agly,SAINT-PAUL-DE-FENOUILLET,66,42.799946,2.497396,2.7048,0.603,0.265,51

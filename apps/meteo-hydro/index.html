@@ -1441,6 +1441,10 @@ function buildChart(id, qmjData, module, qmna5, q25, qinstant) {
     const y = chart.scales.y, area = chart.chartArea;
     if (!y || !area) return {};
     const H = 22, GAP = 12, ctx = chart.ctx;
+    // Le greffon ramène d'office le point d'accroche dans la zone du graphique
+    // (hauteur d'étiquette 11 px × 1,2 + 2 × 3 px de marge interne) : on en tient compte.
+    const LH = 11 * 1.2 + 6, PAD = 3;
+    const anchorOf = py => Math.min(Math.max(py, area.top + PAD + LH/2), area.bottom - PAD - LH/2);
     ctx.save(); ctx.font = "600 11px Barlow";
     const items = Object.entries(ann).map(([k,a]) => ({
       k, side:a.label.position, py:y.getPixelForValue(a.yMin),
@@ -1468,7 +1472,7 @@ function buildChart(id, qmjData, module, qmna5, q25, qinstant) {
       });
       const over = (area.top + H/2) - c[c.length-1];      // déborde en haut → on redescend le bloc
       if (over > 0) c.forEach((v,i) => { c[i] = v + over; });
-      g.forEach((it,i) => { out[it.k] = c[i] - it.py; });
+      g.forEach((it,i) => { out[it.k] = c[i] - anchorOf(it.py); });
     }
     return out;
   }
@@ -1654,12 +1658,29 @@ async function loadCSV() {
   }
 }
 
+// Découpe une ligne CSV (RFC 4180) : champs entre guillemets pouvant contenir des
+// virgules, guillemets doublés ("") pour un guillemet littéral.
+function splitCSVLine(line) {
+  const out = []; let cur = '', q = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (q) {
+      if (c === '"' && line[i+1] === '"') { cur += '"'; i++; }
+      else if (c === '"') q = false;
+      else cur += c;
+    } else if (c === '"') q = true;
+    else if (c === ',') { out.push(cur); cur = ''; }
+    else cur += c;
+  }
+  out.push(cur);
+  return out;
+}
 function parseCSV(text) {
-  const lines = text.trim().split('\n');
-  const headers = lines[0].split(',').map(h => h.trim());
+  const lines = text.trim().split(/\r?\n/);
+  const headers = splitCSVLine(lines[0]).map(h => h.trim());
   const result = {};
   for (let i = 1; i < lines.length; i++) {
-    const vals = lines[i].split(',');
+    const vals = splitCSVLine(lines[i]);
     if (vals.length < headers.length) continue;
     const row = {};
     headers.forEach((h, idx) => row[h] = vals[idx]?.trim() ?? '');
