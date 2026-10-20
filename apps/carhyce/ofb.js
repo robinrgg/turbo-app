@@ -154,6 +154,14 @@ function injecteurOFB(DATA) {
     (niveau === 'err' ? console.error : niveau === 'warn' ? console.warn : console.log)('[turbo-ofb] ' + msg);
   }
 
+  // Champ par son attribut name (identique en création et en modification,
+  // contrairement aux id préfixés par le nom du formulaire)
+  const champ = name => {
+    const el = byName(name);
+    if (!el) throw new Error(`Champ introuvable : ${name}`);
+    return el;
+  };
+
   function setVal(el, v) {
     if (!el) throw new Error('Champ introuvable');
     el.value = v;
@@ -262,7 +270,7 @@ function injecteurOFB(DATA) {
 
   async function remplirFaciesAffine(libelle) {
     if (!libelle) return;
-    const sel = q('#faciesAffine');
+    const sel = byName('faciesAffine');
     if (!sel) return;
     for (let i = 0; i < 30; i++) {
       if (selectParTexte(sel, libelle)) return;
@@ -275,24 +283,24 @@ function injecteurOFB(DATA) {
     const S = cote === 'g' ? 'Gauche' : 'Droite', p = cote === 'g' ? 'bg' : 'bd';
     // Strates : présence, type de végétation, épaisseur
     b.strates.forEach((s, k) => {
-      setCheck(q(`#${p}_strate_checkbox_${k}`), s.present);
+      setCheck(champ(`strates${'Berge' + S}[${k}].typeStrate.tstId`), s.present);
       if (!s.present) return;
       for (let j = 0; j < 4; j++) {
         const cb = byName(`strates${'Berge' + S}[${k}].typeVegetationStrates[${j}].nomencTypeVegetation.tveCode`);
         if (cb) setCheck(cb, s.types.includes(cb.value));
       }
-      const ep = q(`#updateTransect_strates${'Berge' + S}_${k}__nomencEpaisseurVegetation_eveCode`);
+      const ep = byName(`strates${'Berge' + S}[${k}].nomencEpaisseurVegetation.eveCode`);
       if (ep) setVal(ep, s.epaisseur);
     });
-    setCheck(q(`#strateAbsente${'Berge' + S}`), b.absente);
+    setCheck(champ(`strateAbsente${'Berge' + S}`), b.absente);
     await sleep(200);   // reconstruction éventuelle de la liste « strate la plus recouvrante »
     if (b.dominante) {
-      const dom = q(`#strateDominante${'Berge' + S}`);
+      const dom = byName(`strateDominante${'Berge' + S}`);
       if (dom && !selectParTexte(dom, b.dominante)) {
         log(`Berge ${S.toLowerCase()} : strate la plus recouvrante « ${b.dominante} » indisponible`, 'warn');
       }
     }
-    setVal(q(`#updateTransect_materiau${'Berge' + S}`), b.materiau);
+    setVal(champ(`materiau${'Berge' + S}`), b.materiau);
     for (let i = 0; i < 5; i++) {
       const cb = byName(`habitatCaracteristique${'Berge' + S}[${i}].habitatCaracteristique.hcaCode`);
       if (cb) setCheck(cb, b.habitats.includes(cb.value));
@@ -315,15 +323,15 @@ function injecteurOFB(DATA) {
 
     // Détail du transect
     ongletTransect();
-    setVal(q('#updateTransect_numeroTransect'), String(t.numero));
-    setVal(q('#updateTransect_debutTransect'), t.debut);
-    setVal(q('#updateTransect_largeurPleinBord'), t.lpb);
-    setVal(q('#updateTransect_largeurMouillee'), t.lm);
-    setVal(q('#updateTransect_hauteurPleinBord'), t.hpb);
-    setVal(q('#faciesSimplifie'), t.facies_simplifie);
+    setVal(champ('numeroTransect'), String(t.numero));
+    setVal(champ('debutTransect'), t.debut);
+    setVal(champ('largeurPleinBord'), t.lpb);
+    setVal(champ('largeurMouillee'), t.lm);
+    setVal(champ('hauteurPleinBord'), t.hpb);
+    setVal(champ('faciesSimplifie'), t.facies_simplifie);
     await attendreAjax();
     await remplirFaciesAffine(t.facies_affine);
-    setVal(q('#updateTransect_remarquesTransect'), t.remarques);
+    setVal(champ('remarquesTransect'), t.remarques);
 
     // Berges
     ongletBerge();
@@ -332,7 +340,7 @@ function injecteurOFB(DATA) {
     await remplirBerge('d', t.berges.d);
 
     await enregistrer(`enregistrement du T${t.numero}`);
-    if ((q('#updateTransect_numeroTransect') || {}).value !== String(t.numero)) {
+    if ((byName('numeroTransect') || {}).value !== String(t.numero)) {
       throw new Error(`Après enregistrement, le transect affiché n'est pas le T${t.numero} : arrêt par sécurité`);
     }
     log(`T${t.numero} : détail et berges enregistrés`);
@@ -355,9 +363,9 @@ function injecteurOFB(DATA) {
       n = n2;
     }
     t.points.forEach((pt, i) => {
-      setVal(byName(`listPoint[${i}].numPoint`), String(i + 1));
-      setVal(byName(`listPoint[${i}].profPoint`), pt.prof);
-      setVal(byName(`listPoint[${i}].substrat.subCode`), pt.substrat);
+      setVal(champ(`listPoint[${i}].numPoint`), String(i + 1));
+      setVal(champ(`listPoint[${i}].profPoint`), pt.prof);
+      setVal(champ(`listPoint[${i}].substrat.subCode`), pt.substrat);
       for (let j = 0; j < 6; j++) {
         const cb = byName(`listPoint[${i}].pointSubstratAdd[${j}].substratAdditionnel.sadCode`);
         if (cb) setCheck(cb, pt.add.includes(cb.value));
@@ -373,7 +381,11 @@ function injecteurOFB(DATA) {
     for (const t of liste) {
       arret();
       if (transectsExistants().includes(t.numero)) { log(`T${t.numero} déjà présent sur l'OFB : ignoré`, 'warn'); continue; }
-      await transect(t);
+      try {
+        await transect(t);
+      } catch (e) {
+        throw new Error(`${e.message}. Si un transect vide ou incomplet a été créé, le supprimer (bouton « - ») avant de relancer`);
+      }
     }
     log(`Terminé : ${liste.length} transect(s) traité(s). Contrôler la synthèse de l'opération.`, 'ok');
   }
