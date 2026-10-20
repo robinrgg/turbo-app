@@ -4,7 +4,7 @@
 
 // Version du code applicatif, affichée à l'accueil avec la version du cache du hub
 // (service worker racine) pour vérifier la version en cours sur mobile.
-const APP_VERSION = 'v21';
+const APP_VERSION = 'v22';
 
 // Parseur de nombre acceptant indifféremment point ou virgule comme séparateur
 function parseNum(v) {
