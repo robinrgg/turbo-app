@@ -109,6 +109,11 @@
         <button id="btn-export-json" class="primary-btn">⬇ Exporter en JSON</button>
         <button id="btn-export-xlsx" class="primary-btn">⬇ Exporter en Excel (.xlsx)</button>
       </div>
+      <h3>Saisie sur l'interface CARHYCE (OFB)</h3>
+      <p class="muted small">Copie un script contenant la granulométrie et les transects retenus. Sur carhyce.eaufrance.fr, ouvrir l'opération, puis la console du navigateur (F12), y coller le script et valider : un panneau permet de remplir la granulométrie ou d'envoyer les transects.</p>
+      <div class="card-action">
+        <button id="btn-export-ofb" class="primary-btn">📋 Copier le script OFB</button>
+      </div>
       <h3>Aperçu du JSON</h3>
       <pre id="json-preview" class="json-preview"></pre>
     </section>
@@ -133,6 +138,7 @@
   <script src="db.js" defer></script>
   <script src="fusion.js" defer></script>
   <script src="export.js" defer></script>
+  <script src="ofb.js" defer></script>
   <script src="app.js" defer></script>
 </body>
 </html>

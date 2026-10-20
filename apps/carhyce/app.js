@@ -2411,6 +2411,15 @@ const App = {
     document.getElementById('btn-export-xlsx').addEventListener('click', () => {
       Exporter.toXLSX(this.state.op);
     });
+    document.getElementById('btn-export-ofb').addEventListener('click', async () => {
+      try {
+        await OFB.copier(this.state.op);
+        const n = OFB.payload(this.state.op).transects.length;
+        this.toast(`Script OFB copié (granulométrie + ${n} transects)`);
+      } catch (e) {
+        alert('Copie impossible : ' + e.message);
+      }
+    });
   },
 };
 
