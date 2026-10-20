@@ -2,7 +2,7 @@
 // FICHIER GÉNÉRÉ — NE PAS ÉDITER À LA MAIN.
 // Régénérer avec :  python build_sw_assets.py
 // ============================================================
-self.PRECACHE_VERSION = "turbo-20261020-0944";
+self.PRECACHE_VERSION = "turbo-20261020-0959";
 self.PRECACHE = [
   "./",
   "./index.html",
@@ -17,6 +17,7 @@ self.PRECACHE = [
   "./apps/carhyce/export.js",
   "./apps/carhyce/fusion.js",
   "./apps/carhyce/geo.js",
+  "./apps/carhyce/guide_transfert_ofb.pdf",
   "./apps/carhyce/icon.svg",
   "./apps/carhyce/index.html",
   "./apps/carhyce/manifest.webmanifest",
