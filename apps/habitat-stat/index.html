@@ -11,6 +11,8 @@
 <link rel="icon" href="./icon.svg">
 <link rel="apple-touch-icon" href="./icon.svg">
 <link rel="stylesheet" href="../../shared/tokens.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
 :root{ --accent:#5aa9f0; --accent-dim:#3f7fc0; --ttl:#eaeef3; --sub:#a3aebb; }
 *{ box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
@@ -99,6 +101,20 @@ section.card>.bd{ padding:12px; }
 .steep-note{ font-size:.7rem; color:var(--text-dim); line-height:1.5; background:rgba(90,169,240,.09);
   border:1px solid rgba(90,169,240,.30); border-radius:var(--radius-sm); padding:8px 10px; margin-bottom:10px; }
 .steep-note b{ color:var(--accent); }
+
+/* ---- Coordonnées WGS84 + carte ---- */
+.coord-in{ display:flex; gap:5px; }
+.coord-in input{ flex:1; min-width:0; }
+.coord-in .pm{ flex:0 0 auto; width:38px; background:var(--surface-2); border:1px solid var(--border-strong); border-radius:var(--radius-sm);
+  color:var(--text); font-family:var(--font-mono); font-size:1rem; cursor:pointer; }
+.geo-bar{ display:flex; gap:6px; align-items:center; margin:2px 0 6px; }
+.geo-bar .btn{ flex:1; }
+.gps-info{ font-family:var(--font-mono); font-size:.66rem; color:var(--text-mute); line-height:1.5; }
+.gps-info .w{ color:var(--warn); }
+.mapbox{ height:230px; border:1px solid var(--border-strong); border-radius:var(--radius-sm); overflow:hidden; background:var(--bg); margin-top:6px; position:relative; z-index:0; }
+.mapbox .empty{ height:100%; display:flex; align-items:center; justify-content:center; border:none; }
+.map-legend{ display:flex; gap:14px; font-size:.66rem; color:var(--text-mute); margin-top:5px; }
+.map-legend i{ display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:5px; vertical-align:-1px; border:2px solid #fff; }
 
 /* ---- Transects ---- */
 .transect{ border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--bg); margin-bottom:9px; overflow:hidden; }
@@ -287,6 +303,7 @@ function graVector(sub){ const f=new Array(12).fill(0); if(!sub.length) return f
 
 /* ---------- Navigation ---------- */
 function show(scr,backTo){
+  if(scr!=="info") stopGeo();
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   $("scr-"+scr).classList.add('active');
   const back=$("btnBack");
@@ -296,7 +313,7 @@ function show(scr,backTo){
 function go(where){
   if(where==="home"){ cur=null; $("appTitle").innerHTML='Estimhab <span class="accent">·</span> Stathab'; renderHome(); show("home"); return; }
   if(where==="station"){ $("appTitle").textContent=cur.station.code||"Station"; renderSummary(); show("station","home"); return; }
-  if(where==="info"){ renderInfo(); show("info","station"); return; }
+  if(where==="info"){ renderInfo(); show("info","station"); startGeo(); return; }
   if(where==="camp1"){ renderCamp("camp1"); show("camp1","station"); return; }
   if(where==="camp2"){ renderCamp("camp2"); show("camp2","station"); return; }
   if(where==="export"){ renderExport(); show("export","station"); return; }
@@ -345,9 +362,17 @@ function renderInfo(){
       <div class="field"><label>Cours d'eau</label><input data-s="ce" value="${esc(s.ce)}"></div>
       <div class="field"><label>Commune</label><input data-s="com" value="${esc(s.com)}"></div></div>
     <div class="row c2">
-      <div class="field"><label>X / lon</label><input data-s="x" class="mono" value="${esc(s.x)}" inputmode="decimal"></div>
-      <div class="field"><label>Y / lat</label><input data-s="y" class="mono" value="${esc(s.y)}" inputmode="decimal"></div></div>
-    <div class="row c2">
+      <div class="field"><label>Latitude (WGS84, °)</label><div class="coord-in"><input data-s="y" class="mono" value="${esc(s.y)}" inputmode="decimal" placeholder="ex : 45.123456"><button class="pm" data-pm="y" title="Changer le signe">±</button></div></div>
+      <div class="field"><label>Longitude (WGS84, °)</label><div class="coord-in"><input data-s="x" class="mono" value="${esc(s.x)}" inputmode="decimal" placeholder="ex : 3.123456"><button class="pm" data-pm="x" title="Changer le signe">±</button></div></div></div>
+    <div class="hint" id="coordHint">${COORD_HINT}</div>
+    <div class="geo-bar">
+      <button class="btn sm" id="btnUseGps">📍 Utiliser ma position</button>
+      <button class="btn ghost sm" id="btnRecenter" style="flex:0 0 auto">⤢ Recentrer</button>
+    </div>
+    <div class="gps-info" id="gpsInfo">GPS : recherche…</div>
+    <div class="mapbox" id="stMap"></div>
+    <div class="map-legend"><span><i style="background:#5aa9f0"></i>Ma position</span><span><i style="background:#e0564f"></i>Station</span></div>
+    <div class="row c2" style="margin-top:12px">
       <div class="field"><label>Opérateur</label><input data-s="op" value="${esc(s.op)}"></div>
       <div class="field"><label>Date</label><input data-s="date" type="date" value="${esc(s.date)}"></div></div>
   </div></section>
@@ -376,11 +401,112 @@ function renderInfo(){
     <div class="hint">Cumul = somme des hauteurs des chutes &gt; 20 cm le long du thalweg sur tout le tronçon.</div>
   </div></section>`;
   $("scr-info").querySelectorAll('[data-s]').forEach(inp=>inp.addEventListener('input',()=>{
-    cur.station[inp.getAttribute('data-s')]=inp.value; touch();
-    if(inp.getAttribute('data-s')==='code') $("appTitle").textContent=cur.station.code||"Station";
+    const k=inp.getAttribute('data-s');
+    if(k==='y'){ const pair=splitLatLon(inp.value); if(pair){ cur.station.y=pair[0]; cur.station.x=pair[1]; setCoordInputs(); touch(); refreshCoords(true); return; } }
+    cur.station[k]=inp.value; touch();
+    if(k==='code') $("appTitle").textContent=cur.station.code||"Station";
+    if(k==='x'||k==='y') refreshCoords(true);
     refreshGeo();
   }));
+  $("scr-info").querySelectorAll('[data-pm]').forEach(b=>b.addEventListener('click',()=>{
+    const k=b.getAttribute('data-pm'), v=String(cur.station[k]||"").trim();
+    cur.station[k]=v.startsWith("-")?v.slice(1):"-"+v; setCoordInputs(); touch(); refreshCoords(true);
+  }));
+  $("btnUseGps").onclick=useMyPosition;
+  $("btnRecenter").onclick=()=>fitMap();
   refreshGeo();
+}
+
+/* ---------- Coordonnées WGS84, GPS et carte ---------- */
+const COORD_HINT="Degrés décimaux (ouest = longitude négative, bouton ±). Coller « lat, lon » dans la latitude remplit les deux champs.";
+let geoWatch=null, myPos=null, map=null, mkMe=null, mkAcc=null, mkSt=null, mapFitted=false;
+function validLatLon(la,lo){ return la!=null&&lo!=null&&Math.abs(la)<=90&&Math.abs(lo)<=180; }
+/* "45.12, 3.45" / "45,12 3,45" / "45.12;3.45" -> ["45.12","3.45"] ; sinon null */
+function splitLatLon(v){
+  const parts=String(v).trim().split(/\s*;\s*|\s*,\s+|\s+/).filter(Boolean);
+  if(parts.length!==2) return null;
+  const la=num(parts[0]), lo=num(parts[1]);
+  return validLatLon(la,lo)?[parts[0].replace(",","."),parts[1].replace(",",".")]:null;
+}
+/* Lambert 93 -> WGS84 (IGN ALG0004 inverse), pour les anciennes fiches saisies en L93 */
+function l93ToWgs84(x,y){
+  const n=0.7256077650532670, C=11754255.426096, Xs=700000, Ys=12655612.049876, e=0.0818191910428158, lon0=3*Math.PI/180;
+  const dx=x-Xs, dy=Ys-y, R=Math.sqrt(dx*dx+dy*dy), gamma=Math.atan(dx/dy), Liso=-Math.log(R/C)/n;
+  let phi=2*Math.atan(Math.exp(Liso))-Math.PI/2;
+  for(let i=0;i<20;i++){ const es=e*Math.sin(phi); phi=2*Math.atan(Math.pow((1+es)/(1-es),e/2)*Math.exp(Liso))-Math.PI/2; }
+  return { lat:phi*180/Math.PI, lon:(lon0+gamma/n)*180/Math.PI };
+}
+function stationLatLon(s){ const la=num(s.y), lo=num(s.x); return validLatLon(la,lo)?[la,lo]:null; }
+function setCoordInputs(){ const r=$("scr-info"); if(!r) return;
+  const iy=r.querySelector('[data-s="y"]'), ix=r.querySelector('[data-s="x"]');
+  if(iy) iy.value=cur.station.y||""; if(ix) ix.value=cur.station.x||""; }
+function refreshCoords(refit){
+  const s=cur.station, box=$("coordHint"); if(!box) return;
+  const X=num(s.x), Y=num(s.y);
+  if(X!=null&&Y!=null&&X>100000&&X<1300000&&Y>6000000&&Y<7200000){
+    box.innerHTML=`<span style="color:var(--warn)">Valeurs en Lambert 93 ?</span> <button class="btn sm" id="btnL93">Convertir en WGS84</button>`;
+    $("btnL93").onclick=()=>{ const p=l93ToWgs84(X,Y); s.y=p.lat.toFixed(6); s.x=p.lon.toFixed(6); setCoordInputs(); touch(); refreshCoords(true); toast("Converti Lambert 93 → WGS84","ok"); };
+  } else if(String(s.x||"").trim()&&String(s.y||"").trim()&&!validLatLon(Y,X)){
+    box.innerHTML=`<span style="color:var(--warn)">Coordonnées hors plage WGS84 (lat ±90°, lon ±180°).</span>`;
+  } else box.textContent=COORD_HINT;
+  updateMap(refit);
+}
+function startGeo(){
+  initMap(); refreshCoords(true);
+  const info=$("gpsInfo");
+  if(!navigator.geolocation){ info.textContent="GPS : non disponible sur cet appareil."; return; }
+  geoWatch=navigator.geolocation.watchPosition(p=>{
+    const first=!myPos; myPos={ lat:p.coords.latitude, lon:p.coords.longitude, acc:p.coords.accuracy };
+    renderGpsInfo(); updateMap(first&&!mapFitted);
+  }, err=>{ const i=$("gpsInfo"); if(i) i.innerHTML=`<span class="w">GPS : ${err.code===1?"autorisation refusée":"position indisponible"}.</span>`; },
+  { enableHighAccuracy:true, maximumAge:5000, timeout:30000 });
+}
+function stopGeo(){
+  if(geoWatch!=null&&navigator.geolocation) navigator.geolocation.clearWatch(geoWatch);
+  geoWatch=null; if(map){ map.remove(); map=null; } mkMe=mkAcc=mkSt=null; mapFitted=false;
+}
+function renderGpsInfo(){ const i=$("gpsInfo"); if(!i||!myPos) return;
+  const a=Math.round(myPos.acc);
+  i.innerHTML=`Ma position : ${myPos.lat.toFixed(6)}, ${myPos.lon.toFixed(6)} · <span class="${a>20?"w":""}">±${a} m</span>`; }
+function initMap(){
+  const box=$("stMap"); if(!box) return;
+  if(typeof L==="undefined"){ box.innerHTML='<div class="empty">🗺️ Carte indisponible (fond de carte non chargé, réseau requis au premier usage).</div>'; return; }
+  map=L.map(box,{ center:[46.6,2.5], zoom:5, zoomControl:true, attributionControl:true });
+  L.tileLayer('https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png',{ attribution:'© OpenStreetMap France · © contributeurs OSM', subdomains:'abc', maxZoom:20 }).addTo(map);
+}
+function updateMap(refit){
+  if(!map) return;
+  const st=stationLatLon(cur.station);
+  if(st){ if(!mkSt) mkSt=L.circleMarker(st,{ radius:8, color:"#fff", weight:2, fillColor:"#e0564f", fillOpacity:1 }).bindTooltip("Station").addTo(map); else mkSt.setLatLng(st); }
+  else if(mkSt){ mkSt.remove(); mkSt=null; }
+  if(myPos){ const me=[myPos.lat,myPos.lon];
+    if(!mkMe){ mkAcc=L.circle(me,{ radius:myPos.acc, color:"#5aa9f0", weight:1, fillOpacity:.12, interactive:false }).addTo(map);
+      mkMe=L.circleMarker(me,{ radius:7, color:"#fff", weight:2, fillColor:"#5aa9f0", fillOpacity:1 }).bindTooltip("Ma position").addTo(map); }
+    else { mkMe.setLatLng(me); mkAcc.setLatLng(me).setRadius(myPos.acc); } }
+  if(refit) fitMap();
+}
+function fitMap(){
+  if(!map) return;
+  const pts=[]; const st=stationLatLon(cur.station); if(st) pts.push(st); if(myPos) pts.push([myPos.lat,myPos.lon]);
+  if(!pts.length) return;
+  mapFitted=true;
+  if(pts.length===1) map.setView(pts[0],16);
+  else map.fitBounds(L.latLngBounds(pts),{ padding:[30,30], maxZoom:17 });
+}
+function useMyPosition(){
+  const apply=p=>{ cur.station.y=p.lat.toFixed(6); cur.station.x=p.lon.toFixed(6); setCoordInputs(); touch(); refreshCoords(true);
+    toast(`Coordonnées renseignées (±${Math.round(p.acc)} m)`,"ok"); };
+  const ask=p=>{
+    const s=cur.station;
+    if(String(s.x||"").trim()||String(s.y||"").trim())
+      confirmDialog(`Des coordonnées sont déjà saisies (${s.y||"—"}, ${s.x||"—"}). Les remplacer par votre position actuelle (±${Math.round(p.acc)} m) ?`, ()=>apply(p), "Remplacer");
+    else apply(p);
+  };
+  if(myPos) return ask(myPos);
+  if(!navigator.geolocation) return toast("GPS non disponible","err");
+  toast("Recherche de la position…");
+  navigator.geolocation.getCurrentPosition(p=>{ myPos={ lat:p.coords.latitude, lon:p.coords.longitude, acc:p.coords.accuracy }; renderGpsInfo(); updateMap(false); ask(myPos); },
+    ()=>toast("Position indisponible","err"), { enableHighAccuracy:true, timeout:20000, maximumAge:5000 });
 }
 function refreshGeo(){
   const s=cur.station, L=num(s.long),pb=num(s.pb),nbt=num(s.nbt);
@@ -558,7 +684,7 @@ function buildModelJSON(op){
   const st=op.station, c1=computeCamp(op.camp1), c2=computeCamp(op.camp2);
   const subCamp=c1.hasSub?{src:"Q1",c:c1}:(c2.hasSub?{src:"Q2",c:c2}:null);
   return { format:"aquascop.habitat-stat", version:2, exported:new Date().toISOString(),
-    station:{ code:st.code,cours_eau:st.ce,commune:st.com,x:st.x,y:st.y,operateur:st.op,date:st.date,
+    station:{ code:st.code,cours_eau:st.ce,commune:st.com,x:st.x,y:st.y,systeme_coord:"WGS84 (EPSG:4326) — x = longitude, y = latitude, degrés décimaux",operateur:st.op,date:st.date,
       longueur_m:num(st.long),largeur_pleins_bords_m:num(st.pb),nb_transects:num(st.nbt) },
     hydrologie:{ q50_m3s:num(st.q50),q_min_m3s:num(st.qmin),q_max_m3s:num(st.qmax) },
     campagnes:{ Q1:campObj(op.camp1,c1), Q2:campObj(op.camp2,c2) },
