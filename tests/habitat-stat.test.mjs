@@ -1,11 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { inlineScripts, loadFunctions } from './helpers.mjs';
+import { loadFile } from './helpers.mjs';
 
 const src = inlineScripts('apps/habitat-stat/index.html');
 const ctx = loadFunctions(src, ['num', 'rnd', 'todayISO', 'newCampaign', 'newTransect', 'newPoint', 'newStation',
   'spacing', 'suggestPts', 'computeCamp', 'disVector', 'graClass', 'graVector', 'computeCarry',
-  'campObj', 'buildModelJSON', 'campFromModel', 'stationFromModel', 'normalize'],
+  'campObj', 'buildModelJSON', 'campFromModel', 'stationFromModel', 'normalize',
+  'validLatLon', 'splitLatLon', 'l93ToWgs84'],
   { GRA_LABELS: Array.from({ length: 12 }, (_, i) => 'c' + i) });
 const plain = o => JSON.parse(JSON.stringify(o));
 const sum = a => a.reduce((s, x) => s + x, 0);
@@ -109,4 +111,22 @@ test('export modélisation → import : aucune donnée perdue', () => {
   // Ré-exporter l'import donne les mêmes entrées de modèle
   const again = plain(ctx.buildModelJSON({ station: back.station, camp1: back.camp1, camp2: back.camp2 }));
   assert.deepEqual(again.model_inputs, json.model_inputs);
+});
+
+test('splitLatLon : « lat, lon » collé dans un seul champ', () => {
+  assert.deepEqual(plain(ctx.splitLatLon('45.123456, 3.456789')), ['45.123456', '3.456789']);
+  assert.deepEqual(plain(ctx.splitLatLon('45,12 -1,5')), ['45.12', '-1.5']);
+  assert.deepEqual(plain(ctx.splitLatLon('45.1;3.2')), ['45.1', '3.2']);
+  assert.equal(ctx.splitLatLon('45,123'), null);          // virgule décimale seule : pas une paire
+  assert.equal(ctx.splitLatLon('700000 6600000'), null);  // hors plage WGS84
+});
+
+test('l93ToWgs84 : inverse exact de la projection Lambert 93 (aller-retour < 1 cm)', () => {
+  const { GEO } = loadFile('apps/carhyce/geo.js', ['GEO'], { window: {} });
+  const o = ctx.l93ToWgs84(700000, 6600000);
+  close(o.lat, 46.5, 1e-9); close(o.lon, 3, 1e-9);
+  for (const [lat, lon] of [[43.6, 1.44], [48.85, 2.35], [45.77, 4.83], [47.2, -1.55], [50.6, 3.06]]) {
+    const p = GEO.wgs84ToL93(lat, lon), w = ctx.l93ToWgs84(p.x, p.y);
+    close(w.lat, lat, 2e-7); close(w.lon, lon, 2e-7);
+  }
 });
