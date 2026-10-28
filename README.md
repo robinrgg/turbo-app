@@ -1,4 +1,4 @@
-# Turbo App — hub des outils terrain Aquascop
+# Turbo App — hub des outils terrain
 
 Coquille (shell) unique regroupant plusieurs applications web autonomes sous une
 seule URL, une seule icône installable et un seul service worker. Chaque app

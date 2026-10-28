@@ -1,7 +1,7 @@
 {
-  "name": "Turbo App - Aquascop",
+  "name": "Turbo App",
   "short_name": "Turbo",
-  "description": "Hub des outils terrain Aquascop (saisie, débit, checklist, hydro-météo)",
+  "description": "Hub des outils terrain (saisie, débit, checklist, hydro-météo)",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
