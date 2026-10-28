@@ -33,7 +33,7 @@ SHELL = [
 # Dépendances CDN indispensables en mode hors-ligne.
 # (Le scan de dossier ne peut pas les deviner : à maintenir ici.)
 CDN = [
-    "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js",  # SheetJS — export Excel CARHYCE
+    "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js",  # SheetJS - export Excel CARHYCE
 ]
 
 # Extensions embarquées lors du scan des dossiers d'apps
@@ -77,7 +77,7 @@ def compute_assets():
     for slug in offline:
         app_dir = ROOT / "apps" / slug
         if not app_dir.is_dir():
-            print(f"  \u26a0  dossier manquant : apps/{slug}  (ignoré — déplace l'app puis relance)")
+            print(f"  \u26a0  dossier manquant : apps/{slug}  (ignoré - déplace l'app puis relance)")
             continue
         for f in sorted(app_dir.rglob("*")):
             if f.is_file() and f.suffix.lower() in EXT and f.name not in EXCLUDE_NAMES:
@@ -116,7 +116,7 @@ def main():
 
     body = (
         "// ============================================================\n"
-        "// FICHIER GÉNÉRÉ — NE PAS ÉDITER À LA MAIN.\n"
+        "// FICHIER GÉNÉRÉ - NE PAS ÉDITER À LA MAIN.\n"
         "// Régénérer avec :  python build_sw_assets.py\n"
         "// ============================================================\n"
         f"self.PRECACHE_VERSION = {json.dumps(version)};\n"
@@ -124,7 +124,7 @@ def main():
     )
     OUT.write_text(body, encoding="utf-8")
 
-    print(f"\u2713 {OUT.name} généré — {len(uniq)} ressources — version {version}")
+    print(f"\u2713 {OUT.name} généré - {len(uniq)} ressources - version {version}")
     print(f"  Apps hors-ligne (précachées) : {', '.join(offline) or '(aucune)'}")
     print(f"  Apps en ligne (exclues)      : {', '.join(online) or '(aucune)'}")
 

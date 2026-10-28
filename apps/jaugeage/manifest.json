@@ -1,7 +1,7 @@
 {
   "name": "Jaugeage",
   "short_name": "Jaugeage",
-  "description": "Calcul de débit en rivière au moulinet — section médiane (ISO 748)",
+  "description": "Calcul de débit en rivière au moulinet - section médiane (ISO 748)",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

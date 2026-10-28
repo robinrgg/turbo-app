@@ -65,12 +65,12 @@ test('Hub’eau : 503 persistant → message « serveur surchargé » après 3 e
 test('hors ligne (réponse du service worker) → « Pas de connexion réseau »', async () => {
   const off = { status: 503, headers: { 'X-Turbo-Offline': '1' } };
   const { ctx } = loadNet([off, off, off]);
-  await assert.rejects(ctx.hubGet('https://hubeau.eaufrance.fr/x'), /Pas de connexion réseau — Hub'eau injoignable/);
+  await assert.rejects(ctx.hubGet('https://hubeau.eaufrance.fr/x'), /Pas de connexion réseau - Hub'eau injoignable/);
 });
 
 test('appareil hors ligne : échec immédiat, sans relance', async () => {
   const { ctx, calls } = loadNet([new TypeError('Failed to fetch')], { onLine: false });
-  await assert.rejects(ctx.get('https://api.open-meteo.com/v1/forecast'), /Pas de connexion réseau — Open-Meteo/);
+  await assert.rejects(ctx.get('https://api.open-meteo.com/v1/forecast'), /Pas de connexion réseau - Open-Meteo/);
   assert.equal(calls.length, 1);
 });
 

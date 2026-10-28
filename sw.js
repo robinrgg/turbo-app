@@ -1,5 +1,5 @@
 /* ============================================================
-   SERVICE WORKER RACINE — Turbo App
+   SERVICE WORKER RACINE - Turbo App
    ------------------------------------------------------------
    Un seul SW pour tout le hub (scope = racine du dépôt).
    Trois stratégies de routage :
@@ -75,7 +75,7 @@ self.addEventListener('fetch', event => {
   if (strategy === 'live') {
     event.respondWith(
       fetch(event.request).catch(() =>
-        new Response('Hors ligne — données temps réel indisponibles', {
+        new Response('Hors ligne - données temps réel indisponibles', {
           status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8', [OFFLINE_HEADER]: '1' }
         })
       )
