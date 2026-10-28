@@ -1,4 +1,4 @@
-# CARHYCE — Saisie terrain
+# CARHYCE - Saisie terrain
 
 Application web mobile-first pour la saisie de données du protocole CARHYCE (caractérisation hydromorphologique des cours d'eau, OFB).
 
@@ -6,16 +6,16 @@ Conçue pour une utilisation sur smartphone, en autonomie totale (hors-ligne) su
 
 ## Périmètre
 
-Saisie uniquement. Aucun calcul d'indicateurs IMG / IHC, aucune comparaison aux références régionales — ces traitements seront produits dans un second temps par un script Python qui consommera le JSON exporté.
+Saisie uniquement. Aucun calcul d'indicateurs IMG / IHC, aucune comparaison aux références régionales - ces traitements seront produits dans un second temps par un script Python qui consommera le JSON exporté.
 
 ## Modules couverts
 
-- **Station** — métadonnées, coordonnées RGF93/L93, Lpb-ev × 3 et Lm-ev × 3, longueur réelle, distance inter-points, continuité de la ripisylve RG/RD, conditions météo/hydro, débit, pente, habitats non minéraux marginaux ;
-- **Granulométrie** — 100 mesures Wolman, calcul en direct de D16/D50/D84, D84/D16 ;
-- **Pente** — saisie des tronçons (Fh/Fm/Fb aval et amont, distance), calcul de la pente estimée et de la pente régressée ;
-- **Colmatage** — module complet pose (XY + indice de repérage) puis relève (état + profondeur d'oxygénation) ;
-- **Transects** — jusqu'à 18 transects (15 actifs par défaut, T16 à T18 activables) : Lpb / Lm / Hpb, points de mesure (profondeur, substrat minéral, 2 substrats additionnels), faciès simplifié + affiné, ripisylve RG/RD (3 strates × épaisseur + type), nature des matériaux et habitats des berges. Aperçu graphique du profil en travers en temps réel ;
-- **Export** — JSON (format pivot pour la chaîne Python aval) et Excel `.xlsx` (un onglet par module + un onglet par transect).
+- **Station** - métadonnées, coordonnées RGF93/L93, Lpb-ev × 3 et Lm-ev × 3, longueur réelle, distance inter-points, continuité de la ripisylve RG/RD, conditions météo/hydro, débit, pente, habitats non minéraux marginaux ;
+- **Granulométrie** - 100 mesures Wolman, calcul en direct de D16/D50/D84, D84/D16 ;
+- **Pente** - saisie des tronçons (Fh/Fm/Fb aval et amont, distance), calcul de la pente estimée et de la pente régressée ;
+- **Colmatage** - module complet pose (XY + indice de repérage) puis relève (état + profondeur d'oxygénation) ;
+- **Transects** - jusqu'à 18 transects (15 actifs par défaut, T16 à T18 activables) : Lpb / Lm / Hpb, points de mesure (profondeur, substrat minéral, 2 substrats additionnels), faciès simplifié + affiné, ripisylve RG/RD (3 strates × épaisseur + type), nature des matériaux et habitats des berges. Aperçu graphique du profil en travers en temps réel ;
+- **Export** - JSON (format pivot pour la chaîne Python aval) et Excel `.xlsx` (un onglet par module + un onglet par transect).
 
 ## Déploiement sur GitHub Pages
 

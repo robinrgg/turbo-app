@@ -1,4 +1,4 @@
-// geo.js — conversions de coordonnées pour CARHYCE Saisie Terrain
+// geo.js - conversions de coordonnées pour CARHYCE Saisie Terrain
 // WGS84 (lat/lon décimaux) -> RGF93 / Lambert 93 (EPSG:2154), en mètres.
 //
 // Implémentation directe de la projection conique conforme de Lambert (IGN,

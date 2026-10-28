@@ -1,5 +1,5 @@
 /* ============================================================
-   Service worker de RETRAIT — CARHYCE
+   Service worker de RETRAIT - CARHYCE
    ------------------------------------------------------------
    L'app est désormais servie par le service worker racine du hub
    (../../sw.js), qui gère seul le cache et le hors-ligne.

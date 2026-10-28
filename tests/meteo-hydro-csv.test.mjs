@@ -45,7 +45,7 @@ test('CSV : chaque valeur lue par l’app est identique à la lecture de référ
   assert.equal(data.Y553403001.libelle_station, 'La Siagne à Pégomas - Parc "Berges de Cabrol"');
 });
 
-test('CSV : cohérence physique — QMNA5 ≤ module, coordonnées en France métropolitaine', () => {
+test('CSV : cohérence physique - QMNA5 ≤ module, coordonnées en France métropolitaine', () => {
   for (const [code, d] of Object.entries(data)) {
     if (d.module != null && d.qmna5 != null) assert.ok(d.qmna5 <= d.module, `${code} QMNA5 > module`);
     assert.ok(d.lat > 41 && d.lat < 51.5 && d.lon > -5.5 && d.lon < 10, `${code} coordonnées`);

@@ -1,5 +1,5 @@
 /* ============================================================
-   CARHYCE Saisie Terrain — Application principale
+   CARHYCE Saisie Terrain - Application principale
    ============================================================ */
 
 // Version du code applicatif, affichée à l'accueil avec la version du cache du hub
@@ -175,7 +175,7 @@ const App = {
         name.textContent = op.station.libelle || op.station.code || '(opération sans nom)';
         const sub = document.createElement('span');
         sub.textContent = [
-          op.station.date || '—',
+          op.station.date || '-',
           op.station.cours_eau,
           op.station.campagne,
         ].filter(Boolean).join(' · ');
@@ -569,7 +569,7 @@ const App = {
       opt.value = o.id;
       const lib = o.station.libelle || o.station.code || '(sans nom)';
       const sub = [o.station.date, o.station.operateurs].filter(Boolean).join(' · ');
-      opt.textContent = sub ? `${lib} — ${sub}` : lib;
+      opt.textContent = sub ? `${lib} - ${sub}` : lib;
       if (o.id === currentId) opt.selected = true;
       sel.appendChild(opt);
     });
@@ -606,7 +606,7 @@ const App = {
       rb.checked = f.sections[s.key] === side;
       rb.addEventListener('change', () => { if (rb.checked) f.sections[s.key] = side; });
       const span = document.createElement('span');
-      span.textContent = `${side} — ${Fusion.completude(op, s.key)}`;
+      span.textContent = `${side} - ${Fusion.completude(op, s.key)}`;
       lab.appendChild(rb);
       lab.appendChild(span);
       return lab;
@@ -698,7 +698,7 @@ const App = {
     if (type === 'select') {
       input = document.createElement('select');
       const blank = document.createElement('option');
-      blank.value = ''; blank.textContent = '—';
+      blank.value = ''; blank.textContent = '-';
       input.appendChild(blank);
       options.forEach(opt => {
         const o = document.createElement('option');
@@ -706,7 +706,7 @@ const App = {
           o.value = opt; o.textContent = opt;
         } else {
           o.value = opt.value !== undefined ? opt.value : opt.code;
-          o.textContent = opt.label !== undefined ? opt.label : (opt.code ? `${opt.code} — ${opt.libelle}` : opt.libelle);
+          o.textContent = opt.label !== undefined ? opt.label : (opt.code ? `${opt.code} - ${opt.libelle}` : opt.libelle);
         }
         input.appendChild(o);
       });
@@ -788,7 +788,7 @@ const App = {
     f.appendChild(lbl);
     const div = document.createElement('div');
     div.className = 'calc-value';
-    div.textContent = (value == null || isNaN(value)) ? '—' : `${(+value).toFixed(2)} ${unit || ''}`;
+    div.textContent = (value == null || isNaN(value)) ? '-' : `${(+value).toFixed(2)} ${unit || ''}`;
     f.appendChild(div);
     if (note) {
       const n = document.createElement('div');
@@ -810,7 +810,7 @@ const App = {
     const etat = new Set(selected || []);
     options.forEach(opt => {
       const code = typeof opt === 'string' ? opt : opt.code;
-      const label = typeof opt === 'string' ? opt : `${opt.code} — ${opt.libelle}`;
+      const label = typeof opt === 'string' ? opt : `${opt.code} - ${opt.libelle}`;
       const lbl = document.createElement('label');
       const cb = document.createElement('input');
       cb.type = 'checkbox';
@@ -1068,7 +1068,7 @@ const App = {
     const vals = [lpbEvMean, lmEvMean, lTheo, dTheo];
     this._lpbCalcRow.querySelectorAll('.calc-value').forEach((el, i) => {
       const v = vals[i];
-      el.textContent = (v == null || isNaN(v)) ? '—' : `${v.toFixed(2)} m`;
+      el.textContent = (v == null || isNaN(v)) ? '-' : `${v.toFixed(2)} m`;
     });
   },
 
@@ -1089,7 +1089,7 @@ const App = {
 
     // Grille de saisie 100 mesures
     {
-      const { section, body } = this.section('Diamètres mesurés (mm) — 100 éléments');
+      const { section, body } = this.section('Diamètres mesurés (mm) - 100 éléments');
       const info = document.createElement('div');
       info.className = 'info-banner';
       info.textContent = 'Saisir le diamètre perpendiculaire au plus grand axe. La grille contient 100 cases : utilisez la touche TAB pour passer d\'une case à la suivante.';
@@ -1153,14 +1153,14 @@ const App = {
     };
     const d16 = pct(0.16), d50 = pct(0.5), d84 = pct(0.84);
     const ratio = (d16 && d84) ? d84/d16 : null;
-    const fmt = v => (v == null) ? '—' : v.toFixed(1) + ' mm';
+    const fmt = v => (v == null) ? '-' : v.toFixed(1) + ' mm';
     el.innerHTML = '';
     const cells = [
       { label: 'N saisi', value: `${n} / 100` },
       { label: 'D16', value: fmt(d16) },
       { label: 'D50 (médian)', value: fmt(d50) },
       { label: 'D84', value: fmt(d84) },
-      { label: 'D84 / D16', value: ratio == null ? '—' : ratio.toFixed(2) },
+      { label: 'D84 / D16', value: ratio == null ? '-' : ratio.toFixed(2) },
       { label: 'Min', value: fmt(arr.length ? Math.min(...arr) : null) },
       { label: 'Max', value: fmt(arr.length ? Math.max(...arr) : null) },
     ];
@@ -1264,7 +1264,7 @@ const App = {
       const dhDiv = document.createElement('div');
       dhDiv.className = 'calc-value';
       dhDiv.style.marginTop = '0.4rem';
-      dhDiv.textContent = `Δh tronçon = ${dh == null ? '—' : dh.toFixed(3) + ' m'}`;
+      dhDiv.textContent = `Δh tronçon = ${dh == null ? '-' : dh.toFixed(3) + ' m'}`;
       card.appendChild(dhDiv);
 
       list.appendChild(card);
@@ -1284,7 +1284,7 @@ const App = {
       const wrap = document.createElement('div');
       wrap.className = 'field';
       const lbl = document.createElement('label');
-      lbl.textContent = `${label} — ${k.toUpperCase()} (cm)`;
+      lbl.textContent = `${label} - ${k.toUpperCase()} (cm)`;
       wrap.appendChild(lbl);
       const inp = document.createElement('input');
       inp.type = 'text';
@@ -1319,7 +1319,7 @@ const App = {
       if (ecart > this.STADI_TOL_CM) {
         fields.fm.input.classList.add('error');
         fields.fm.note.classList.add('error');
-        fields.fm.note.textContent = `Écart à (Fh+Fb)/2 = ${ecart.toFixed(2)} cm — vérifier la lecture`;
+        fields.fm.note.textContent = `Écart à (Fh+Fb)/2 = ${ecart.toFixed(2)} cm - vérifier la lecture`;
       }
     }
   },
@@ -1464,7 +1464,7 @@ const App = {
       convWrap.appendChild(btnConv);
       body.appendChild(convWrap);
 
-      // Nombre de bâtonnets — stepper − / + : ajout/retrait d'un bâtonnet en un
+      // Nombre de bâtonnets - stepper − / + : ajout/retrait d'un bâtonnet en un
       // tap, sans saisie clavier ni validation (plus pratique sur le terrain).
       const nb = document.createElement('div');
       nb.style.display = 'flex';
@@ -1526,7 +1526,7 @@ const App = {
         // État
         const etatTd = document.createElement('td');
         const sel = document.createElement('select');
-        const blank = document.createElement('option'); blank.value = ''; blank.textContent = '—';
+        const blank = document.createElement('option'); blank.value = ''; blank.textContent = '-';
         sel.appendChild(blank);
         NOM.etat_batonnet.forEach(e => {
           const o = document.createElement('option');
@@ -1562,7 +1562,7 @@ const App = {
       wrap.appendChild(table);
       body.appendChild(wrap);
 
-      // Moyenne du radier — élément ciblé pour mise à jour en direct
+      // Moyenne du radier - élément ciblé pour mise à jour en direct
       const synth = document.createElement('div');
       synth.className = 'calc-value';
       synth.dataset.radierMean = r.id;
@@ -1634,7 +1634,7 @@ const App = {
       if (!el) return;
       const vals = r.batonnets.filter(b => b.profondeur_oxy_cm != null).map(b => +b.profondeur_oxy_cm);
       const moy = vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null;
-      el.textContent = `Moyenne radier ${r.id} : ${moy == null ? '—' : moy.toFixed(2) + ' cm'} (${vals.length} bâtonnet${vals.length>1?'s':''} relevé${vals.length>1?'s':''})`;
+      el.textContent = `Moyenne radier ${r.id} : ${moy == null ? '-' : moy.toFixed(2) + ' cm'} (${vals.length} bâtonnet${vals.length>1?'s':''} relevé${vals.length>1?'s':''})`;
     });
     // Synthèse globale
     const synth = document.getElementById('colmatage-synth');
@@ -1678,7 +1678,7 @@ const App = {
         : 'à saisir';
       info.innerHTML = supprime
         ? `<strong>Transect supprimé</strong><br><small>${tr.modification.raison || 'retiré du protocole'}</small>`
-        : `<strong>${tr.facies_affine || tr.facies_simplifie || '—'}</strong><br><small>${npts} points · Lpb=${tr.lpb_m ?? '—'} m</small>`;
+        : `<strong>${tr.facies_affine || tr.facies_simplifie || '-'}</strong><br><small>${npts} points · Lpb=${tr.lpb_m ?? '-'} m</small>`;
       const st = document.createElement('span');
       st.className = 't-status ' + (status === 'complet' ? 'done'
         : status === 'partiel' ? 'partial'
@@ -1746,13 +1746,13 @@ const App = {
       const { section, body } = this.section('Caractéristiques du transect');
       const g = this.grid();
       g.appendChild(this.field({ label: 'Rive de départ', type: 'select', options: NOM.rive, value: tr.rive_depart, onChange: v => tr.rive_depart = v, note: 'Rive où débute la mesure' }));
-      g.appendChild(this.field({ label: 'Lpb — Largeur plein bord (m)', type: 'number', value: tr.lpb_m, onChange: v => { tr.lpb_m = v; this.refreshTransectCalc(); } }));
-      g.appendChild(this.field({ label: 'Lm — Largeur mouillée (m)', type: 'number', value: tr.lm_m, onChange: v => { tr.lm_m = v; this.refreshTransectCalc(); } }));
+      g.appendChild(this.field({ label: 'Lpb - Largeur plein bord (m)', type: 'number', value: tr.lpb_m, onChange: v => { tr.lpb_m = v; this.refreshTransectCalc(); } }));
+      g.appendChild(this.field({ label: 'Lm - Largeur mouillée (m)', type: 'number', value: tr.lm_m, onChange: v => { tr.lm_m = v; this.refreshTransectCalc(); } }));
       // Hpb : au changement (commit), recaler les profondeurs HORS D'EAU
       // (négatives, lues à la mire) de (Hpb_avant − Hpb_après)·100, ce qui
       // préserve les lectures mire. Les points EN EAU (positifs, saisis
       // directement sous la surface) ne dépendent pas de Hpb : on n'y touche pas.
-      const hpbFld = this.field({ label: 'Hpb — Hauteur plein bord (m)', type: 'number', value: tr.hpb_m, onChange: v => { tr.hpb_m = v; this.refreshTransectCalc(); } });
+      const hpbFld = this.field({ label: 'Hpb - Hauteur plein bord (m)', type: 'number', value: tr.hpb_m, onChange: v => { tr.hpb_m = v; this.refreshTransectCalc(); } });
       const hpbInp = hpbFld.querySelector('input');
       let _hpbAvant = tr.hpb_m;
       if (hpbInp) {
@@ -1959,7 +1959,7 @@ const App = {
         mireTd.appendChild(mInp);
         row.appendChild(mireTd);
 
-        // Profondeur — bouton ± à gauche pour inverser le signe
+        // Profondeur - bouton ± à gauche pour inverser le signe
         // (les claviers numériques mobiles n'affichent pas toujours le -)
         const profTd = document.createElement('td');
         profTd.className = 'col-prof';
@@ -2051,7 +2051,7 @@ const App = {
         sSel.appendChild(optTiret);
         NOM.substrats_mineraux.forEach(s => {
           const o = document.createElement('option');
-          o.value = s.code; o.textContent = `${s.code} — ${s.libelle}`;
+          o.value = s.code; o.textContent = `${s.code} - ${s.libelle}`;
           sSel.appendChild(o);
         });
         if (estPremierPoint) {
@@ -2072,7 +2072,7 @@ const App = {
         a1Td.style.minWidth = '48px';
         const a1Sel = document.createElement('select');
         a1Sel.style.minWidth = '3.4em';
-        const a1Blank = document.createElement('option'); a1Blank.value=''; a1Blank.textContent='—';
+        const a1Blank = document.createElement('option'); a1Blank.value=''; a1Blank.textContent='-';
         a1Sel.appendChild(a1Blank);
         NOM.substrats_additionnels.forEach(s => {
           const o = document.createElement('option');
@@ -2143,7 +2143,7 @@ const App = {
     ['rg', 'rd'].forEach(rive => {
       const r = tr['ripisylve_' + rive];
       const label = rive === 'rg' ? 'Rive gauche' : 'Rive droite';
-      const { section, body } = this.section(`Ripisylve — ${label}`, { collapsible: true, collapsed: true });
+      const { section, body } = this.section(`Ripisylve - ${label}`, { collapsible: true, collapsed: true });
       NOM.strates_ripisylve.forEach(strate => {
         const key = strate.toLowerCase().replace('é','e');
         const sk = key === 'arboree' ? 'arboree' : key === 'arbustive' ? 'arbustive' : 'herbacee';
@@ -2185,7 +2185,7 @@ const App = {
     ['rg', 'rd'].forEach(rive => {
       const b = tr['berge_' + rive];
       const label = rive === 'rg' ? 'Rive gauche' : 'Rive droite';
-      const { section, body } = this.section(`Berge — ${label}`, { collapsible: true, collapsed: true });
+      const { section, body } = this.section(`Berge - ${label}`, { collapsible: true, collapsed: true });
       const g = this.grid();
       g.appendChild(this.field({ label: 'Nature des matériaux', type: 'select', options: NOM.materiaux_berges, value: b.materiaux, onChange: v => b.materiaux = v, full: true }));
       body.appendChild(g);
@@ -2241,7 +2241,7 @@ const App = {
     if (el) {
       el.innerHTML = '';
       // calcField encapsulé pour s'intégrer dans la grille
-      const cf = this.calcField({ label: 'Peau — Profondeur d\'eau moyenne (m)', value: peau, unit: 'm', note: 'Moyenne des profondeurs > 0' });
+      const cf = this.calcField({ label: 'Peau - Profondeur d\'eau moyenne (m)', value: peau, unit: 'm', note: 'Moyenne des profondeurs > 0' });
       // On reproduit la structure interne d'un .field pour rester aligné avec la distance inter-points
       el.className = cf.className;
       while (cf.firstChild) el.appendChild(cf.firstChild);

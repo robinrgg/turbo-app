@@ -32,13 +32,13 @@ unique au niveau du hub (service worker + manifest + icône installable).
 
 5. *(Optionnel mais propre)* Supprimer le bloc d'enregistrement du SW dans le
    code de l'app (`navigator.serviceWorker.register('./sw.js')`). S'il reste,
-   il échoue silencieusement (404) sans casser l'app — le SW racine prend le
+   il échoue silencieusement (404) sans casser l'app - le SW racine prend le
    relais. À retirer dès que possible pour éviter toute confusion.
 
 6. **Vérifier les chemins** : tous les liens internes de l'app doivent être
    **relatifs** (`./fichier.js`, `fichier.css`) et jamais absolus (`/fichier.js`).
    Un chemin absolu casserait dans le sous-dossier. Les 4 apps utilisent déjà
-   des chemins relatifs — vérifier seulement en cas de doute.
+   des chemins relatifs - vérifier seulement en cas de doute.
 
 ## Spécifique meteo-hydro
 

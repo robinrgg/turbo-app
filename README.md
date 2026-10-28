@@ -1,4 +1,4 @@
-# Turbo App — hub des outils terrain
+# Turbo App - hub des outils terrain
 
 Coquille (shell) unique regroupant plusieurs applications web autonomes sous une
 seule URL, une seule icône installable et un seul service worker. Chaque app
@@ -14,9 +14,9 @@ pour régénérer la liste de précache.
 turbo-app/
 ├── index.html            # launcher : grille de cartes générée depuis apps.js
 ├── apps.js               # REGISTRE central (source unique de vérité)
-├── manifest.json         # PWA racine — une seule icône installable
+├── manifest.json         # PWA racine - une seule icône installable
 ├── sw.js                 # service worker racine (offline/online unifié)
-├── precache-manifest.js  # GÉNÉRÉ — liste de précache (ne pas éditer)
+├── precache-manifest.js  # GÉNÉRÉ - liste de précache (ne pas éditer)
 ├── build_sw_assets.py    # régénère precache-manifest.js
 ├── icon.svg              # icône du hub
 ├── icon-192.png
@@ -47,7 +47,7 @@ désinstallent les anciens SW encore présents sur les appareils : les garder.
 `offline: true` → l'app est précachée et fonctionne sans réseau.
 `offline: false` → l'app n'est pas précachée (réseau requis, données temps réel).
 
-## Service worker — stratégies
+## Service worker - stratégies
 
 | Type de requête                                   | Stratégie      |
 |---------------------------------------------------|----------------|

@@ -1,5 +1,5 @@
 /* ============================================================
-   TOKENS PARTAGÉS — design system commun Turbo App
+   TOKENS PARTAGÉS - design system commun Turbo App
    Adoptable au fil de l'eau par les sous-apps (import optionnel).
    ============================================================ */
 :root {
@@ -29,7 +29,7 @@
   --radius-sm: 8px;
   --tap:       44px;
 
-  /* Typo — 100 % système, aucune dépendance réseau pour le shell */
+  /* Typo - 100 % système, aucune dépendance réseau pour le shell */
   --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --font-mono: ui-monospace, "SFMono-Regular", "JetBrains Mono", "IBM Plex Mono", monospace;
 }

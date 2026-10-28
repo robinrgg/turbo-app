@@ -312,7 +312,7 @@ function injecteurOFB(DATA) {
   }
 
   async function transect(t) {
-    log(`— T${t.numero} : création`);
+    log(`- T${t.numero} : création`);
     const plus = q('#transectList input[value="+"]');
     if (!plus) throw new Error('Bouton « + » des transects introuvable');
     plus.click();
@@ -399,7 +399,7 @@ function injecteurOFB(DATA) {
   const existants = transectsExistants();
   panel.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center">
-      <strong>Import turbo-app — ${DATA.station.libelle || DATA.station.code || 'opération'}</strong>
+      <strong>Import turbo-app - ${DATA.station.libelle || DATA.station.code || 'opération'}</strong>
       <button data-a="fermer" title="Fermer">✕</button>
     </div>
     <button data-a="granulo">Remplir la granulométrie (${DATA.granulometrie.filter(v => v !== '').length} valeurs)</button>

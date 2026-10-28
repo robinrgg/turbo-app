@@ -239,7 +239,7 @@ input[type=file]{ display:none; }
 <script>
 "use strict";
 /* ============================================================
-   Estimhab / Stathab / Stathab_steep — saisie multi-stations
+   Estimhab / Stathab / Stathab_steep - saisie multi-stations
    Accueil (liste) -> fiche station -> sous-écrans ; fusion.
    Substrat : axe b en mm (0 = dalle/fines). Hauteurs en cm.
    Export = un JSON de station (brut + dérivé), entrée directe
@@ -277,7 +277,7 @@ function blink(){ const d=$("saveDot"); d.classList.add("on"); clearTimeout(blin
 /* ---------- Utils ---------- */
 function num(v){ const n=parseFloat(String(v).replace(",",".")); return isFinite(n)?n:null; }
 function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m])); }
-function fmt(n,d){ return n==null?"—":Number(n).toFixed(d==null?2:d); }
+function fmt(n,d){ return n==null?"-":Number(n).toFixed(d==null?2:d); }
 function rnd(x,d){ return x==null?null:+Number(x).toFixed(d); }
 function toast(m,t){ const e=$("toast"); e.textContent=m; e.className="toast show "+(t||""); setTimeout(()=>e.className="toast",1800); }
 function confirmDialog(msg,onOK,okLabel){ const bg=$("modalBg"); $("modalMsg").textContent=msg; $("modalOk").textContent=okLabel||"Supprimer"; bg.hidden=false;
@@ -330,7 +330,7 @@ function renderHome(){
     const li=document.createElement("li"); li.className="st-card";
     li.innerHTML=`<div class="body">
       <div class="nm">${esc(op.station.code||"(sans code)")}</div>
-      <div class="mt">${[op.station.ce,op.station.com,op.station.date].filter(Boolean).map(esc).join(" · ")||"—"}</div>
+      <div class="mt">${[op.station.ce,op.station.com,op.station.date].filter(Boolean).map(esc).join(" · ")||"-"}</div>
       <div class="badges">
         <span class="pill ${c1.nPts?"on":""}">Q1 ${c1.nPts} pt</span>
         <span class="pill ${c2.nPts?"on":""}">Q2 ${c2.nPts} pt</span>
@@ -345,12 +345,12 @@ function renderHome(){
 function renderSummary(){
   const s=cur.station, c1=computeCamp(cur.camp1), c2=computeCamp(cur.camp2);
   $("fsTitle").textContent=s.code||"(station sans code)";
-  $("fsSub").textContent=[s.ce,s.com,s.date,s.op].filter(Boolean).join(" · ")||"—";
+  $("fsSub").textContent=[s.ce,s.com,s.date,s.op].filter(Boolean).join(" · ")||"-";
   const geoOK=num(s.long)&&num(s.nbt);
   $("pgInfo").textContent=geoOK?"géométrie ✓":"à compléter";
   $("pgC1").textContent=c1.nPts?(c1.nPts+" pts"):"vide";
   $("pgC2").textContent=c2.nPts?(c2.nPts+" pts"):"vide";
-  $("pgExp").textContent=(c1.nPts&&c2.nPts)?"prêt":"—";
+  $("pgExp").textContent=(c1.nPts&&c2.nPts)?"prêt":"-";
 }
 
 /* ---------- Sous-écran : identification & géométrie ---------- */
@@ -389,13 +389,13 @@ function renderInfo(){
   <section class="card"><div class="hd"><span class="ttl"><span class="bar"></span>Hydrologie</span></div><div class="bd">
     <div class="field"><label>Q50 naturel (m³/s) <span class="star">†</span></label><input data-s="q50" class="mono" value="${esc(s.q50)}" inputmode="decimal"></div>
     <div class="row c2">
-      <div class="field"><label>Gamme — Q min (m³/s)</label><input data-s="qmin" class="mono" value="${esc(s.qmin)}" inputmode="decimal"></div>
+      <div class="field"><label>Gamme - Q min (m³/s)</label><input data-s="qmin" class="mono" value="${esc(s.qmin)}" inputmode="decimal"></div>
       <div class="field"><label>Q max (m³/s)</label><input data-s="qmax" class="mono" value="${esc(s.qmax)}" inputmode="decimal"></div></div>
     <div class="hint"><span class="star" style="color:var(--accent)">†</span> requis pour <b>Estimhab</b> uniquement.</div>
   </div></section>
 
   <section class="card"><div class="hd"><span class="ttl"><span class="bar"></span>Spécifique Stathab_steep <span style="color:var(--accent)">*</span></span></div><div class="bd">
-    <div class="steep-note">Champs <b>*</b> : à saisir <b>uniquement</b> pour une exploitation en <b>Stathab_steep</b> (pente 1–25 %). Inutiles pour Estimhab / Stathab.</div>
+    <div class="steep-note">Champs <b>*</b> : à saisir <b>uniquement</b> pour une exploitation en <b>Stathab_steep</b> (pente 1-25 %). Inutiles pour Estimhab / Stathab.</div>
     <div class="row c2">
       <div class="field"><label>Pente ligne d'eau (%) <span class="star">*</span></label><input data-s="pente" class="mono" value="${esc(s.pente)}" inputmode="decimal"></div>
       <div class="field"><label>Cumul chutes &gt; 20 cm (m) <span class="star">*</span></label><input data-s="chutes" class="mono" value="${esc(s.chutes)}" inputmode="decimal"></div></div>
@@ -500,7 +500,7 @@ function useMyPosition(){
   const ask=p=>{
     const s=cur.station;
     if(String(s.x||"").trim()||String(s.y||"").trim())
-      confirmDialog(`Des coordonnées sont déjà saisies (${s.y||"—"}, ${s.x||"—"}). Les remplacer par votre position actuelle (±${Math.round(p.acc)} m) ?`, ()=>apply(p), "Remplacer");
+      confirmDialog(`Des coordonnées sont déjà saisies (${s.y||"-"}, ${s.x||"-"}). Les remplacer par votre position actuelle (±${Math.round(p.acc)} m) ?`, ()=>apply(p), "Remplacer");
     else apply(p);
   };
   if(myPos) return ask(myPos);
@@ -512,7 +512,7 @@ function useMyPosition(){
 function refreshGeo(){
   const s=cur.station, L=num(s.long),pb=num(s.pb),nbt=num(s.nbt);
   const it=(L&&nbt&&nbt>1)?L/(nbt-1):null; const box=$("geoDerived"); if(!box) return;
-  let m=[`Inter-transect : <span class="derived">${it?fmt(it,2)+" m":"—"}</span>`];
+  let m=[`Inter-transect : <span class="derived">${it?fmt(it,2)+" m":"-"}</span>`];
   if(L&&pb){ const r=L/pb; m.push(`Longueur = <span class="derived">${fmt(r,1)}×</span> Lpb ${r<15?'<span style="color:var(--warn)">(&lt;15×)</span>':'<span style="color:var(--ok)">(≥15× ✓)</span>'}`); }
   box.innerHTML=m.join(" &nbsp;·&nbsp; ");
 }
@@ -558,7 +558,7 @@ function renderCamp(which){
       <div class="field"><label>Débit mesuré (m³/s)</label><input class="mono" data-f="debit" value="${esc(c.debit)}" inputmode="decimal"></div>
       <div class="field"><label>Date</label><input type="date" data-f="date" value="${esc(c.date)}"></div></div>
     <div class="field"><label>Opérateur</label><input data-f="operateur" value="${esc(c.operateur)}"></div>
-    <div class="field"><label>Largeur mouillée moyenne (m) — fixe l'espacement inter-point d = L̄/7</label><input class="mono" data-f="lm" value="${esc(c.lm)}" inputmode="decimal"></div>
+    <div class="field"><label>Largeur mouillée moyenne (m) - fixe l'espacement inter-point d = L̄/7</label><input class="mono" data-f="lm" value="${esc(c.lm)}" inputmode="decimal"></div>
     <label style="display:flex;align-items:center;gap:9px;font-size:.85rem;padding:6px 0;cursor:pointer">
       <input type="checkbox" data-f="substrat" ${c.substrat?"checked":""} style="width:20px;height:20px;min-height:0">
       Substrat (axe b) relevé sur cette campagne</label>
@@ -570,7 +570,7 @@ function renderCamp(which){
     <div class="kv"><span class="k">Hauteur moy. (cm)</span><span class="v" id="syn-h">${fmt(cc.Hcm,1)}</span></div>
     <div class="kv"><span class="k">Nombre de points</span><span class="v" id="syn-n">${cc.nPts}</span></div>
     ${c.substrat?`<div class="kv"><span class="k">Axe b moyen (cm)</span><span class="v" id="syn-sub">${fmt(cc.meanSubCm,2)}</span></div>`:""}
-    <div class="hint" style="margin-top:6px">d = ${d?fmt(d,2)+" m":"— (renseigner la largeur mouillée moyenne ci-dessus)"}. Cible : ~100 hauteurs, ≥15 transects.</div>
+    <div class="hint" style="margin-top:6px">d = ${d?fmt(d,2)+" m":"- (renseigner la largeur mouillée moyenne ci-dessus)"}. Cible : ~100 hauteurs, ≥15 transects.</div>
   </div></section>
 
   <section class="card"><div class="hd"><span class="ttl"><span class="bar"></span>Transects</span></div><div class="bd">
@@ -602,7 +602,7 @@ function transectHTML(which,t,i,pos){
   const head=sub?`<span>#</span><span>pos m</span><span>h (cm)</span><span>axe b mm</span>`
                 :`<span>#</span><span>pos m</span><span>h (cm)</span>`;
   const rows=(t.points||[]).map((p,j)=>{
-    const position=(pos&&pos[j]!=null)?pos[j].toFixed(2):"—";
+    const position=(pos&&pos[j]!=null)?pos[j].toFixed(2):"-";
     return `<div class="pt-row" style="grid-template-columns:${cols}">
       <span class="idx">${j+1}</span><span class="pos">${position}</span>
       <input data-p="h" data-t="${i}" data-j="${j}" inputmode="decimal" value="${esc(p.h)}" placeholder="cm">
@@ -611,7 +611,7 @@ function transectHTML(which,t,i,pos){
   }).join("");
   return `<div class="transect ${t.collapsed?'collapsed':''}">
     <div class="th" data-toggle="${i}"><span class="n">${i+1}</span>
-      <span class="meta">Largeur <b>${w!=null?fmt(w):"—"} m</b> · ${t.points.length} pt${t.points.length>1?"s":""}</span>
+      <span class="meta">Largeur <b>${w!=null?fmt(w):"-"} m</b> · ${t.points.length} pt${t.points.length>1?"s":""}</span>
       <span class="chev">▾</span></div>
     <div class="tb">
       <div class="field" style="margin-bottom:8px"><label>Largeur mouillée (m)</label><input class="mono" data-tw="${i}" inputmode="decimal" value="${esc(t.largeur)}"></div>
@@ -669,7 +669,7 @@ function renderChecks(box,c1,c2){
   if(subN===0) w.push(["warn","Aucune campagne ne porte le substrat."]);
   if(subN===2) w.push(["warn","Substrat coché sur les deux campagnes (un seul débit attendu)."]);
   const p=num(s.pente); if(p!=null){ if(p<1) w.push(["warn","Pente < 1 % : hors domaine Stathab_steep."]);
-    else if(p>5) w.push(["warn","Pente > 5 % : hors Estimhab/Stathab — privilégier Stathab_steep."]); if(p>25) w.push(["warn","Pente > 25 % : hors domaine steep."]); }
+    else if(p>5) w.push(["warn","Pente > 5 % : hors Estimhab/Stathab - privilégier Stathab_steep."]); if(p>25) w.push(["warn","Pente > 25 % : hors domaine steep."]); }
   const L=num(s.long),pb=num(s.pb); if(L&&pb&&L/pb<15) w.push(["warn",`Longueur = ${fmt(L/pb,1)}× Lpb (< 15×).`]);
   box.innerHTML= w.length? w.map(x=>`<div class="wl ${x[0]}">${x[1]}</div>`).join("") : '<div class="empty">Aucun contrôle en défaut.</div>';
 }
@@ -685,7 +685,7 @@ function buildModelJSON(op){
   const st=op.station, c1=computeCamp(op.camp1), c2=computeCamp(op.camp2);
   const subCamp=c1.hasSub?{src:"Q1",c:c1}:(c2.hasSub?{src:"Q2",c:c2}:null);
   return { format:"habitat-stat", version:2, exported:new Date().toISOString(),
-    station:{ code:st.code,cours_eau:st.ce,commune:st.com,x:st.x,y:st.y,systeme_coord:"WGS84 (EPSG:4326) — x = longitude, y = latitude, degrés décimaux",operateur:st.op,date:st.date,
+    station:{ code:st.code,cours_eau:st.ce,commune:st.com,x:st.x,y:st.y,systeme_coord:"WGS84 (EPSG:4326) - x = longitude, y = latitude, degrés décimaux",operateur:st.op,date:st.date,
       longueur_m:num(st.long),largeur_pleins_bords_m:num(st.pb),nb_transects:num(st.nbt) },
     hydrologie:{ q50_m3s:num(st.q50),q_min_m3s:num(st.qmin),q_max_m3s:num(st.qmax) },
     campagnes:{ Q1:campObj(op.camp1,c1), Q2:campObj(op.camp2,c2) },
@@ -737,7 +737,7 @@ function fusionCampOptions(){ const o=[];
   return o;
 }
 function renderFusion(){
-  $("fusFilesInfo").innerHTML = ["A","B"].map(k=>`${k} : ${fus[k]?esc(fus[k].station.code||"(sans code)"):"—"}`).join(" &nbsp;|&nbsp; ");
+  $("fusFilesInfo").innerHTML = ["A","B"].map(k=>`${k} : ${fus[k]?esc(fus[k].station.code||"(sans code)"):"-"}`).join(" &nbsp;|&nbsp; ");
   $("btnFileA").textContent = fus.A? "Fichier A ✓" : "Fichier A…";
   $("btnFileB").textContent = fus.B? "Fichier B ✓" : "Fichier B…";
   const box=$("fusAssemble");
@@ -750,7 +750,7 @@ function renderFusion(){
       <span class="rl">Q2</span>${sel("fq2","B:camp2")}
     </div>
     <div class="field"><label>Métadonnées station</label>
-      <select id="fmeta"><option value="A">Fichier A — ${esc(fus.A.station.code||"(sans code)")}</option><option value="B">Fichier B — ${esc(fus.B.station.code||"(sans code)")}</option></select></div>`;
+      <select id="fmeta"><option value="A">Fichier A - ${esc(fus.A.station.code||"(sans code)")}</option><option value="B">Fichier B - ${esc(fus.B.station.code||"(sans code)")}</option></select></div>`;
   $("btnDoFusion").disabled=false;
 }
 function pickCamp(ref){ const [k,ck]=ref.split(":"); return fus[k]?fus[k][ck]:null; }

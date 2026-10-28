@@ -413,11 +413,11 @@
       </div>
       <button class="btn btn-primary" id="btnSearch" onclick="handleSearch()">Rechercher</button>
     </div>
-    <p class="hint" id="searchHint">Saisir le nom du <strong>cours d'eau</strong> — ex : <code>Hérault</code>, <code>Aveyron</code>, <code>Lez</code></p>
+    <p class="hint" id="searchHint">Saisir le nom du <strong>cours d'eau</strong> - ex : <code>Hérault</code>, <code>Aveyron</code>, <code>Lez</code></p>
 
     <!-- Commune disambiguator -->
     <div id="commune-picker">
-      <div class="picker-lbl">⚠ Plusieurs communes trouvées — sélectionnez la bonne :</div>
+      <div class="picker-lbl">⚠ Plusieurs communes trouvées - sélectionnez la bonne :</div>
       <div id="commune-list"></div>
     </div>
 
@@ -441,7 +441,7 @@
       <div class="card-lbl">Stations sélectionnées (<span id="cartCount">0</span>)</div>
       <button class="btn-deselect" id="btnDeselect" onclick="deselectAll()">✕ Tout désélectionner</button>
     </div>
-    <div id="cartItems"><div class="cart-empty">Aucune station — recherchez ci-dessus et cliquez sur <strong>+ Ajouter</strong>.</div></div>
+    <div id="cartItems"><div class="cart-empty">Aucune station - recherchez ci-dessus et cliquez sur <strong>+ Ajouter</strong>.</div></div>
     <button class="btn-gen" id="btnGenerate" onclick="generateBilan()" disabled>⚡ Générer le bilan</button>
   </div>
 
@@ -457,15 +457,15 @@
 
     <!-- Stats -->
     <div class="cn-stats" id="cn-stats" style="display:none">
-      <span id="cn-stat-total">—</span> stations · QI disponible : <span id="cn-stat-qi">—</span>
+      <span id="cn-stat-total">-</span> stations · QI disponible : <span id="cn-stat-qi">-</span>
     </div>
 
     <!-- Légende -->
     <div class="cn-legend" id="cn-legend" style="display:none">
       <div class="cn-legend-title">Conditions d'intervention terrain</div>
-      <div class="cn-leg-row"><div class="cn-dot" style="background:#2ecc71"></div> QI/QMJ ≤ Q25 — basses eaux favorables</div>
-      <div class="cn-leg-row"><div class="cn-dot" style="background:#f1c40f"></div> Q25 &lt; QI/QMJ ≤ Module — débit moyen</div>
-      <div class="cn-leg-row"><div class="cn-dot" style="background:#e74c3c"></div> QI/QMJ &gt; Module — hautes eaux</div>
+      <div class="cn-leg-row"><div class="cn-dot" style="background:#2ecc71"></div> QI/QMJ ≤ Q25 - basses eaux favorables</div>
+      <div class="cn-leg-row"><div class="cn-dot" style="background:#f1c40f"></div> Q25 &lt; QI/QMJ ≤ Module - débit moyen</div>
+      <div class="cn-leg-row"><div class="cn-dot" style="background:#e74c3c"></div> QI/QMJ &gt; Module - hautes eaux</div>
       <div class="cn-leg-row"><div class="cn-dot" style="background:#566573"></div> Données indisponibles</div>
     </div>
 
@@ -574,7 +574,7 @@ async function showSuggestions(q) {
   let items = [];
 
   if (state.mode === 'commune') {
-    // geo.api.gouv.fr — gère nativement accents, casse, variantes
+    // geo.api.gouv.fr - gère nativement accents, casse, variantes
     try {
       const r = await fetch(`${GEOAPI}/communes?nom=${enc(q)}&fields=nom,codeDepartement,codesPostaux&limit=10`);
       if (r.ok) {
@@ -584,7 +584,7 @@ async function showSuggestions(q) {
           const key = c.nom + '_' + c.codeDepartement;
           if (!seen.has(key)) {
             seen.add(key);
-            items.push({ label: `${c.nom} (${c.codeDepartement}) — ${(c.codesPostaux||[]).join(', ')}`, value: c.nom });
+            items.push({ label: `${c.nom} (${c.codeDepartement}) - ${(c.codesPostaux||[]).join(', ')}`, value: c.nom });
           }
         }
       }
@@ -598,7 +598,7 @@ async function showSuggestions(q) {
         if (name && !seen.has(name) && normalize(name).includes(qn)) {
           seen.add(name);
           items.push({ label: name, value: name });
-          // Pas de break ici — on parcourt tout pour avoir les meilleurs résultats
+          // Pas de break ici - on parcourt tout pour avoir les meilleurs résultats
         }
       }
       // Tri : priorité aux noms qui commencent par la saisie, puis alphabétique
@@ -685,10 +685,10 @@ function switchTab(mode) {
   document.getElementById('tab-'+mode).classList.add('active');
   const hint=document.getElementById('searchHint'), inp=document.getElementById('searchInput');
   if (mode==='river') {
-    hint.innerHTML = "Saisir le nom du <strong>cours d'eau</strong> — ex : <code>Hérault</code>, <code>Aveyron</code>, <code>Lez</code>";
+    hint.innerHTML = "Saisir le nom du <strong>cours d'eau</strong> - ex : <code>Hérault</code>, <code>Aveyron</code>, <code>Lez</code>";
     inp.placeholder = 'ex : Hérault';
   } else {
-    hint.innerHTML = "Saisir le nom de la <strong>commune</strong> — stations actives dans un rayon de 10 km";
+    hint.innerHTML = "Saisir le nom de la <strong>commune</strong> - stations actives dans un rayon de 10 km";
     inp.placeholder = 'ex : Montpellier';
   }
 }
@@ -738,7 +738,7 @@ async function searchByCommune(name) {
     communeStore = unique;
     document.getElementById('commune-list').innerHTML = unique.map((_,i)=>`
       <button class="commune-btn" onclick="selectCommune(${i})">
-        <strong>${esc(unique[i].nom)}</strong> (${esc(unique[i].codeDepartement)}) — ${esc((unique[i].codesPostaux||[]).join(', '))}
+        <strong>${esc(unique[i].nom)}</strong> (${esc(unique[i].codeDepartement)}) - ${esc((unique[i].codesPostaux||[]).join(', '))}
       </button>`).join('');
     document.getElementById('commune-picker').style.display='block';
   } else {
@@ -795,7 +795,7 @@ function showResults() {
     row.innerHTML = `
       <div>
         <div class="sres-name">${esc(s.libelle_station)}</div>
-        <div class="sres-meta">${esc(s.code_station)} · ${esc(s.libelle_cours_eau||'—')} · ${esc(s.libelle_commune||'—')}${dist}</div>
+        <div class="sres-meta">${esc(s.code_station)} · ${esc(s.libelle_cours_eau||'-')} · ${esc(s.libelle_commune||'-')}${dist}</div>
       </div>
       <button class="btn-add ${inCart?'added':''}" id="addbtn_${idx}" onclick="addToCart(${idx})">
         ${inCart?'✓ Ajoutée':'+ Ajouter'}
@@ -826,7 +826,7 @@ function showResults() {
       const popupHtml = () => {
         const added = state.selected.some(x => x.code_station===s.code_station);
         return `<div class="popup-name">${esc(s.libelle_station)}</div>
-          <div class="popup-meta">${esc(s.code_station)}<br>${esc(s.libelle_cours_eau||'—')} · ${esc(s.libelle_commune||'—')}</div>
+          <div class="popup-meta">${esc(s.code_station)}<br>${esc(s.libelle_cours_eau||'-')} · ${esc(s.libelle_commune||'-')}</div>
           <button class="popup-add ${added?'added':''}" onclick="addToCart(${idx})" id="popupbtn_${idx}">
             ${added?'✓ Ajoutée':'+ Ajouter'}
           </button>`;
@@ -909,13 +909,13 @@ function updateCartUI() {
   desel.style.display = n > 0 ? 'block' : 'none';
   const el = document.getElementById('cartItems');
   if (!n) {
-    el.innerHTML = '<div class="cart-empty">Aucune station — recherchez ci-dessus et cliquez sur <strong>+ Ajouter</strong>.</div>';
+    el.innerHTML = '<div class="cart-empty">Aucune station - recherchez ci-dessus et cliquez sur <strong>+ Ajouter</strong>.</div>';
     return;
   }
   el.innerHTML = state.selected.map((s,i) => `
     <div class="cart-item">
       <div><div class="ci-name">${esc(s.libelle_station)}</div>
-      <div class="ci-code">${esc(s.code_station)} · ${esc(s.libelle_cours_eau||'—')}</div></div>
+      <div class="ci-code">${esc(s.code_station)} · ${esc(s.libelle_cours_eau||'-')}</div></div>
       <button class="btn-rm" id="rmbtn_${i}" data-code="${esc(s.code_station)}"
         onclick="removeFromCart(document.getElementById('rmbtn_${i}').dataset.code)" title="Retirer">×</button>
     </div>`).join('');
@@ -1051,17 +1051,17 @@ async function fetchRetry(url, service, okStatus) {
     try {
       r = await fetch(url);
     } catch (e) {
-      if (navigator.onLine === false || last) throw new Error(`Pas de connexion réseau — ${service} injoignable`);
+      if (navigator.onLine === false || last) throw new Error(`Pas de connexion réseau - ${service} injoignable`);
       await sleep(RETRY_DELAYS_MS[attempt]); continue;
     }
     if (r.headers.get('X-Turbo-Offline')) {
-      if (last) throw new Error(`Pas de connexion réseau — ${service} injoignable`);
+      if (last) throw new Error(`Pas de connexion réseau - ${service} injoignable`);
       await sleep(RETRY_DELAYS_MS[attempt]); continue;
     }
     if (okStatus(r.status)) return r.json();
     if (RETRY_STATUS.includes(r.status) && !last) { await sleep(RETRY_DELAYS_MS[attempt]); continue; }
     throw new Error(RETRY_STATUS.includes(r.status)
-      ? `${service} indisponible (HTTP ${r.status}) — serveur surchargé, réessayer dans quelques minutes`
+      ? `${service} indisponible (HTTP ${r.status}) - serveur surchargé, réessayer dans quelques minutes`
       : `${service} HTTP ${r.status}`);
   }
 }
@@ -1099,7 +1099,7 @@ async function findAndRenderSubstitution(st) {
     ? `<span style="color:var(--green)">● Même cours d'eau</span>`
     : `<span style="color:var(--orange)">● Cours d'eau différent</span>`;
 
-  // Store sub data as JSON in a hidden span — avoids any onclick quoting issues
+  // Store sub data as JSON in a hidden span - avoids any onclick quoting issues
   const subJson = JSON.stringify({
     code_station: sub.code_station,
     libelle_station: sub.libelle_station,
@@ -1114,7 +1114,7 @@ async function findAndRenderSubstitution(st) {
       <div class="sub-left">
         <div class="sub-title">📡 Station de substitution proposée</div>
         <div class="sub-name">${esc(sub.libelle_station)}</div>
-        <div class="sub-meta">${esc(sub.code_station)} · ${esc(sub.libelle_cours_eau||'—')} · ${esc(sub.libelle_commune||'—')} · ${distTxt} — ${riverTag}</div>
+        <div class="sub-meta">${esc(sub.code_station)} · ${esc(sub.libelle_cours_eau||'-')} · ${esc(sub.libelle_commune||'-')} · ${distTxt} - ${riverTag}</div>
         <div class="sub-debit">Débit récent : ${rnd(sub._lastVal)} m³/s (${sub._lastDate})</div>
         <span id="subdata_${st.code_station.replace(/\W/g,'_')}" style="display:none">${esc(subJson)}</span>
       </div>
@@ -1123,7 +1123,7 @@ async function findAndRenderSubstitution(st) {
       </button>
     </div>`;
 
-  // Attach click handler directly — no inline JSON in onclick
+  // Attach click handler directly - no inline JSON in onclick
   document.getElementById('subbtn_'+st.code_station.replace(/\W/g,'_'))
     .addEventListener('click', () => replaceStation(st.code_station, sub));
 }
@@ -1308,30 +1308,30 @@ function renderBilan(results) {
     html += `<div class="card">
       <div class="bilan-name">📍 ${esc(st.libelle_station)}</div>
       <div class="bilan-meta">
-        <div class="mkv">Cours d'eau : <span>${esc(st.libelle_cours_eau||'—')}</span></div>
-        <div class="mkv">Commune : <span>${esc(st.libelle_commune||'—')}</span></div>
+        <div class="mkv">Cours d'eau : <span>${esc(st.libelle_cours_eau||'-')}</span></div>
+        <div class="mkv">Commune : <span>${esc(st.libelle_commune||'-')}</span></div>
         <div class="mkv">Code : <span>${esc(st.code_station)}</span></div>
         <div class="mkv">Coord. : <span>${st.lat.toFixed(4)}°N ${st.lon.toFixed(4)}°E</span></div>
       </div>
       ${err?`<div class="err-box" style="margin-top:14px">Erreur : ${esc(err)}</div>`:''}
       ${!err?`
-        <div class="sec-lbl">📈 Débit moyen journalier — 14 derniers jours</div>
-        ${(!fromCsv && ny<5)?`<div class="warn-box">⚠ Historique insuffisant (${ny} an(s)) — Module et QMNA5 non calculables.</div>`:''}
+        <div class="sec-lbl">📈 Débit moyen journalier - 14 derniers jours</div>
+        ${(!fromCsv && ny<5)?`<div class="warn-box">⚠ Historique insuffisant (${ny} an(s)) - Module et QMNA5 non calculables.</div>`:''}
         <div class="stats-row">
           <div class="stat-box sc">
-            <div class="stat-val">${curVal!==null?rnd(curVal):'—'} ${curVal!==null?'<span class="stat-u">m³/s</span>':''}</div>
+            <div class="stat-val">${curVal!==null?rnd(curVal):'-'} ${curVal!==null?'<span class="stat-u">m³/s</span>':''}</div>
             <div class="stat-lbl">${curLabel}</div>
           </div>
           <div class="stat-box sm">
-            <div class="stat-val">${mod!==null?rnd(mod):'—'} ${mod!==null?'<span class="stat-u">m³/s</span>':''}</div>
+            <div class="stat-val">${mod!==null?rnd(mod):'-'} ${mod!==null?'<span class="stat-u">m³/s</span>':''}</div>
             <div class="stat-lbl">Module${ny?` (${ny} ans)`:''}</div>
           </div>
           <div class="stat-box sy">
-            <div class="stat-val">${q25!==null?rnd(q25):'—'} ${q25!==null?'<span class="stat-u">m³/s</span>':''}</div>
+            <div class="stat-val">${q25!==null?rnd(q25):'-'} ${q25!==null?'<span class="stat-u">m³/s</span>':''}</div>
             <div class="stat-lbl">Q25</div>
           </div>
           <div class="stat-box sq">
-            <div class="stat-val">${qmna5!==null?rnd(qmna5):'—'} ${qmna5!==null?'<span class="stat-u">m³/s</span>':''}</div>
+            <div class="stat-val">${qmna5!==null?rnd(qmna5):'-'} ${qmna5!==null?'<span class="stat-u">m³/s</span>':''}</div>
             <div class="stat-lbl">QMNA5</div>
           </div>
         </div>
@@ -1367,14 +1367,14 @@ function renderMeteo(meteo) {
     const pcls=prec===0?'pz':prec>5?'ph':'';
     rows+=`<tr ${isTd?'class="td-today"':''}>
       <td class="dc">${fmtLong(d.time[i])}${isTd?' · <strong>Auj.</strong>':''}</td>
-      <td class="${pcls}">${prec!=null?prec.toFixed(1):'—'}</td>
-      <td>${d.temperature_2m_min[i]!=null?d.temperature_2m_min[i].toFixed(1)+'°':'—'}</td>
-      <td>${d.temperature_2m_max[i]!=null?d.temperature_2m_max[i].toFixed(1)+'°':'—'}</td>
-      <td>${d.wind_speed_10m_max[i]!=null?Math.round(d.wind_speed_10m_max[i]):'—'}</td>
-      <td>${d.wind_direction_10m_dominant[i]!=null?arrow(d.wind_direction_10m_dominant[i])+' '+card(d.wind_direction_10m_dominant[i]):'—'}</td>
+      <td class="${pcls}">${prec!=null?prec.toFixed(1):'-'}</td>
+      <td>${d.temperature_2m_min[i]!=null?d.temperature_2m_min[i].toFixed(1)+'°':'-'}</td>
+      <td>${d.temperature_2m_max[i]!=null?d.temperature_2m_max[i].toFixed(1)+'°':'-'}</td>
+      <td>${d.wind_speed_10m_max[i]!=null?Math.round(d.wind_speed_10m_max[i]):'-'}</td>
+      <td>${d.wind_direction_10m_dominant[i]!=null?arrow(d.wind_direction_10m_dominant[i])+' '+card(d.wind_direction_10m_dominant[i]):'-'}</td>
     </tr>`;
   }
-  return `<div class="sec-lbl" style="margin-top:28px">🌤️ Prévisions météo 7 jours — Open-Meteo (AROME · ECMWF)</div>
+  return `<div class="sec-lbl" style="margin-top:28px">🌤️ Prévisions météo 7 jours - Open-Meteo (AROME · ECMWF)</div>
     <div class="meteo-table-wrap"><table class="meteo-table">
       <thead><tr><th style="text-align:left">Date</th><th>Précip. (mm)</th><th>T° min</th><th>T° max</th><th>Vent max (km/h)</th><th>Direction</th></tr></thead>
       <tbody>${rows}</tbody>
@@ -1480,7 +1480,7 @@ function buildChart(id, qmjData, module, qmna5, q25, qinstant) {
   if (module!=null&&!moduleOnChart) {
     const note=document.createElement('div');
     note.style.cssText='font-size:.76rem;color:#2ecc71;margin-top:6px;padding:4px 10px;background:rgba(46,204,113,.08);border-radius:4px;display:inline-block';
-    note.textContent=`ℹ Module (${rnd(module)} m³/s) hors échelle — débit actuel très inférieur au module annuel`;
+    note.textContent=`ℹ Module (${rnd(module)} m³/s) hors échelle - débit actuel très inférieur au module annuel`;
     canvas.parentElement.insertAdjacentElement('afterend',note);
   }
 
@@ -1510,7 +1510,7 @@ function buildChart(id, qmjData, module, qmna5, q25, qinstant) {
           titleFont:{family:'Barlow',size:12}, bodyFont:{family:'JetBrains Mono',size:12},
           callbacks:{
             label: c => {
-              if (c.parsed.y==null) return '  — données manquantes';
+              if (c.parsed.y==null) return '  - données manquantes';
               const label = c.dataIndex===qiIdx ? '  QI' : '  QMJ';
               return `${label} : ${rnd(c.parsed.y)} m³/s`;
             }
@@ -1540,7 +1540,7 @@ const esc      = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').r
 const fmtShort = s => new Date(s).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'});
 const fmtLong  = s => new Date(s+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'});
 const fmtHour  = s => { const d=new Date(s); return d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'})+' '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}); };
-function rnd(v){if(v==null)return'—';if(v<0.01)return v.toFixed(4);if(v<1)return v.toFixed(3);if(v<10)return v.toFixed(2);if(v<100)return v.toFixed(1);return Math.round(v).toString();}
+function rnd(v){if(v==null)return'-';if(v<0.01)return v.toFixed(4);if(v<1)return v.toFixed(3);if(v<10)return v.toFixed(2);if(v<100)return v.toFixed(1);return Math.round(v).toString();}
 const card  = deg => ['N','NE','E','SE','S','SO','O','NO'][Math.round(deg/45)%8];
 const arrow = deg => ['↑','↗','→','↘','↓','↙','←','↖'][Math.round(deg/45)%8];
 function haversine(la1,lo1,la2,lo2){
@@ -1573,17 +1573,17 @@ const CN_CSV_URL = './stations_debits.csv';
 // Jaune = débit moyen → intervention possible
 // Rouge = débit fort → intervention difficile / dangereuse
 function cnColor(qi, module, q25, qmna5) {
-  if (qi == null || module == null) return '#566573'; // gris — pas de référence
-  if (qi > module)              return '#e74c3c';     // rouge — au-dessus du module, hautes eaux
-  if (q25 != null && qi > q25) return '#f1c40f';     // jaune — entre Q25 et module
-  return '#2ecc71';                                   // vert  — sous le Q25, basses eaux favorables
+  if (qi == null || module == null) return '#566573'; // gris - pas de référence
+  if (qi > module)              return '#e74c3c';     // rouge - au-dessus du module, hautes eaux
+  if (q25 != null && qi > q25) return '#f1c40f';     // jaune - entre Q25 et module
+  return '#2ecc71';                                   // vert  - sous le Q25, basses eaux favorables
 }
 
 function cnColorLabel(qi, module, q25, qmna5) {
-  if (qi == null || module == null) return '— données manquantes';
-  if (qi > module)              return `${rnd(qi)} m³/s > Module — hautes eaux`;
+  if (qi == null || module == null) return '- données manquantes';
+  if (qi > module)              return `${rnd(qi)} m³/s > Module - hautes eaux`;
   if (q25 != null && qi > q25) return `Q25 < ${rnd(qi)} m³/s ≤ Module`;
-  return `${rnd(qi)} m³/s ≤ Q25 — basses eaux`;
+  return `${rnd(qi)} m³/s ≤ Q25 - basses eaux`;
 }
 
 async function initCarteNationale() {
@@ -1709,7 +1709,7 @@ async function fetchAllQI() {
 
   // ── PHASE 1 : observations_tr paginé sur 2h (max 3 pages) ──
   // 2h de données = ~55 000 mesures → couvre ~1900 stations de façon stable
-  cnShowLoader('Phase 1/2 — Débits instantanés (fenêtre 2h)…');
+  cnShowLoader('Phase 1/2 - Débits instantanés (fenêtre 2h)…');
   try {
     const now2h = new Date(Date.now() - 2 * 60 * 60 * 1000);
     const dateDebut = now2h.toISOString().replace(/\.\d{3}Z$/, 'Z');
@@ -1742,7 +1742,7 @@ async function fetchAllQI() {
 
       page++;
       const p1Count = Object.values(qiMap).filter(v => v !== null).length;
-      cnShowLoader(`Phase 1/2 — Page ${page}/${MAX_PAGES} · ${p1Count} stations QI…`);
+      cnShowLoader(`Phase 1/2 - Page ${page}/${MAX_PAGES} · ${p1Count} stations QI…`);
 
       if (rows.length < 10000) break;
       dateCursor = rows.reduce((min, r) => r.date_obs < min ? r.date_obs : min, rows[0].date_obs);
@@ -1753,7 +1753,7 @@ async function fetchAllQI() {
 
   // ── PHASE 2 : obs_elab QmnJ (7 derniers jours) pour les stations sans QI ──
   const sans = allCodes.filter(c => qiMap[c] === null && csvData[c]?.module != null);
-  cnShowLoader(`Phase 2/2 — Dernier QMJ pour ${sans.length} stations sans QI temps réel…`);
+  cnShowLoader(`Phase 2/2 - Dernier QMJ pour ${sans.length} stations sans QI temps réel…`);
 
   const BATCH = 30;
   const dateFrom = daysAgo(7);
@@ -1786,7 +1786,7 @@ async function fetchAllQI() {
     // Mise à jour progression toutes les 5 batches
     if (i % (BATCH * 5) === 0) {
       const done = Object.values(qiMap).filter(v => v !== null).length;
-      cnShowLoader(`Phase 2/2 — ${done} stations chargées sur ${allCodes.length}…`);
+      cnShowLoader(`Phase 2/2 - ${done} stations chargées sur ${allCodes.length}…`);
     }
   }
 
@@ -1818,16 +1818,16 @@ function renderMarkersNat(qiMap) {
       const qi_label = qtype === 'QI' ? 'Débit instantané (QI)' : 'Dernier débit journalier (QMJ)';
       const qi_txt   = qi != null
         ? `<span style="color:${qi_color};font-weight:700;font-size:1rem">${rnd(qi)} m³/s</span>
-           <span style="font-size:.7rem;color:var(--muted)"> — ${qi_label}</span>`
-        : '<span style="color:var(--muted)">— indisponible</span>';
-      const mod_txt  = st.module != null ? `${rnd(st.module)} m³/s` : '—';
-      const q25_txt  = st.q25    != null ? `${rnd(st.q25)} m³/s`    : '—';
-      const qm_txt   = st.qmna5  != null ? `${rnd(st.qmna5)} m³/s`  : '—';
+           <span style="font-size:.7rem;color:var(--muted)"> - ${qi_label}</span>`
+        : '<span style="color:var(--muted)">- indisponible</span>';
+      const mod_txt  = st.module != null ? `${rnd(st.module)} m³/s` : '-';
+      const q25_txt  = st.q25    != null ? `${rnd(st.q25)} m³/s`    : '-';
+      const qm_txt   = st.qmna5  != null ? `${rnd(st.qmna5)} m³/s`  : '-';
       return `
         <div class="cn-popup-name">${esc(st.libelle_station)}</div>
         <div class="cn-popup-meta">
           ${esc(code)}<br>
-          ${esc(st.libelle_cours_eau||'—')} · ${esc(st.libelle_commune||'—')}
+          ${esc(st.libelle_cours_eau||'-')} · ${esc(st.libelle_commune||'-')}
         </div>
         <div class="cn-popup-row">
           <span class="cn-popup-lbl">${qi_label}</span>

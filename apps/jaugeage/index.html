@@ -378,7 +378,7 @@ button.btn.full { width: 100%; }
 
 <header class="app-header">
   <h1><span class="accent">▌</span>JAUGEAGE</h1>
-  <span class="status-pill" id="saveStatus">—</span>
+  <span class="status-pill" id="saveStatus">-</span>
 </header>
 
 <!-- TAB SAISIE -->
@@ -430,27 +430,27 @@ button.btn.full { width: 100%; }
       <div class="results-grid">
         <div class="result-cell hi">
           <span class="lbl">Débit total</span>
-          <span class="val mono" id="r_Q">—<span class="unit">m³/s</span></span>
+          <span class="val mono" id="r_Q">-<span class="unit">m³/s</span></span>
         </div>
         <div class="result-cell">
           <span class="lbl">Incertitude (95 %)</span>
-          <span class="val mono" id="r_U">—<span class="unit">%</span></span>
+          <span class="val mono" id="r_U">-<span class="unit">%</span></span>
         </div>
         <div class="result-cell">
           <span class="lbl">Section</span>
-          <span class="val mono" id="r_S">—<span class="unit">m²</span></span>
+          <span class="val mono" id="r_S">-<span class="unit">m²</span></span>
         </div>
         <div class="result-cell">
           <span class="lbl">V moyenne</span>
-          <span class="val mono" id="r_Vmoy">—<span class="unit">m/s</span></span>
+          <span class="val mono" id="r_Vmoy">-<span class="unit">m/s</span></span>
         </div>
         <div class="result-cell">
           <span class="lbl">P moyenne</span>
-          <span class="val mono" id="r_Pmoy">—<span class="unit">m</span></span>
+          <span class="val mono" id="r_Pmoy">-<span class="unit">m</span></span>
         </div>
         <div class="result-cell">
           <span class="lbl">Largeur</span>
-          <span class="val mono" id="r_L">—<span class="unit">m</span></span>
+          <span class="val mono" id="r_L">-<span class="unit">m</span></span>
         </div>
       </div>
       <div id="r_warn" style="margin-top:8px"></div>
@@ -496,7 +496,7 @@ button.btn.full { width: 100%; }
         <input type="file" id="importArchiveFile" accept=".json" style="display:none" onchange="importArchive(event)">
       </div>
       <div class="hint" style="margin-top:8px">
-        « Tout exporter » crée un fichier JSON de l'ensemble de la liste — utile pour sauvegarder ou transférer vers un autre appareil.
+        « Tout exporter » crée un fichier JSON de l'ensemble de la liste - utile pour sauvegarder ou transférer vers un autre appareil.
       </div>
     </div>
   </section>
@@ -645,7 +645,7 @@ function deleteFromArchive(id) {
   });
 }
 
-/* CALCULS — section médiane uniquement */
+/* CALCULS - section médiane uniquement */
 function near(a, b, tol = 0.05) { return Math.abs(a - b) < tol; }
 
 function meanVelocity(points) {
@@ -730,7 +730,7 @@ function computeAll() {
   verts.forEach((v, i) => {
     if (!v.isBord) return;
     /* Bord : V_bord = α × V_verticale_immédiatement_adjacente_dans_le_transect
-       (modèle Moulinet INRAE — utilise verticals[1] pour le bord gauche et
+       (modèle Moulinet INRAE - utilise verticals[1] pour le bord gauche et
        verticals[n-2] pour le bord droit, qu'elle soit complète ou bathymétrique). */
     const alpha = v.coeffRive !== null ? v.coeffRive : 0.67;
     let adjacent;
@@ -774,7 +774,7 @@ function surroundingCompleteIdx(verts, i) {
   return { left, right };
 }
 
-/* Incertitude composée selon ISO 748:2021 §9.2 — formule (21)
+/* Incertitude composée selon ISO 748:2021 §9.2 - formule (21)
    u_Q² = u_s² + u_m² + Σ(q_i²·u_q,i²) / Q²
    où u_q,i² = u_b² + u_d² + u_p² + u_c² + u_e,i²
    Résultat en % au niveau de confiance 95 % (k=2 implicite par convention ISO).
@@ -953,8 +953,8 @@ function renderVertDetail(v) {
 
   const pointsHtml = (v.points || []).map((p, idx) => {
     const zRel = parseFloat(p.z_rel);
-    const hMeters = !isNaN(zRel) && D > 0 ? (zRel * D).toFixed(2).replace('.', ',') : '—';
-    const positionLabel = !isNaN(zRel) ? fmtZ(zRel) + ' H' : '—';
+    const hMeters = !isNaN(zRel) && D > 0 ? (zRel * D).toFixed(2).replace('.', ',') : '-';
+    const positionLabel = !isNaN(zRel) ? fmtZ(zRel) + ' H' : '-';
     if (isCustom) {
       return `
         <div class="point-row">
@@ -980,9 +980,9 @@ function renderVertDetail(v) {
     <div class="field">
       <label>Coefficient de rive α</label>
       <select class="mono" onchange="setCoeffRive('${v.id}', this.value)">
-        <option value="0.67" ${near(v.coeffRive, 0.67) ? 'selected' : ''}>0,67 — berge inclinée naturelle</option>
-        <option value="0.86" ${near(v.coeffRive, 0.86) ? 'selected' : ''}>0,86 — intermédiaire</option>
-        <option value="0.91" ${near(v.coeffRive, 0.91) ? 'selected' : ''}>0,91 — paroi verticale lisse</option>
+        <option value="0.67" ${near(v.coeffRive, 0.67) ? 'selected' : ''}>0,67 - berge inclinée naturelle</option>
+        <option value="0.86" ${near(v.coeffRive, 0.86) ? 'selected' : ''}>0,86 - intermédiaire</option>
+        <option value="0.91" ${near(v.coeffRive, 0.91) ? 'selected' : ''}>0,91 - paroi verticale lisse</option>
       </select>
     </div>
   ` : '';
@@ -1005,11 +1005,11 @@ function renderVertDetail(v) {
     <div class="field"><label>Mode points</label>
       <select class="mono" onchange="changeMode('${v.id}', this.value)">
         <option value="auto" ${v.pointsMode==='auto'?'selected':''}>Auto (selon profondeur)</option>
-        <option value="1" ${v.pointsMode==='1'?'selected':''}>1 pt — 0,4 H</option>
-        <option value="2" ${v.pointsMode==='2'?'selected':''}>2 pts — 0,2 / 0,8 H</option>
-        <option value="3" ${v.pointsMode==='3'?'selected':''}>3 pts — 0,2 / 0,4 / 0,8 H</option>
-        <option value="5" ${v.pointsMode==='5'?'selected':''}>5 pts — 0 / 0,2 / 0,4 / 0,8 / 1 H</option>
-        <option value="6" ${v.pointsMode==='6'?'selected':''}>6 pts — 0 / 0,2 / 0,4 / 0,6 / 0,8 / 1 H</option>
+        <option value="1" ${v.pointsMode==='1'?'selected':''}>1 pt - 0,4 H</option>
+        <option value="2" ${v.pointsMode==='2'?'selected':''}>2 pts - 0,2 / 0,8 H</option>
+        <option value="3" ${v.pointsMode==='3'?'selected':''}>3 pts - 0,2 / 0,4 / 0,8 H</option>
+        <option value="5" ${v.pointsMode==='5'?'selected':''}>5 pts - 0 / 0,2 / 0,4 / 0,8 / 1 H</option>
+        <option value="6" ${v.pointsMode==='6'?'selected':''}>6 pts - 0 / 0,2 / 0,4 / 0,6 / 0,8 / 1 H</option>
         <option value="custom" ${v.pointsMode==='custom'?'selected':''}>Personnalisé</option>
       </select>
     </div>
@@ -1050,7 +1050,7 @@ function renderResults() {
       const uAbs = r.Q * uPct / 100;
       uEl.innerHTML = `±${fmt(uPct, 1)}<span class="unit">%</span><span class="sub mono">±${fmt(uAbs, 3)} m³/s</span>`;
     } else {
-      uEl.innerHTML = `—<span class="unit">%</span>`;
+      uEl.innerHTML = `-<span class="unit">%</span>`;
     }
   }
 
@@ -1324,7 +1324,7 @@ function renderArchive() {
   list.innerHTML = arr.map(item => `
     <div class="archive-item">
       <div class="meta">
-        <div class="main">${escapeHtml(item.meta.cours || '—')} · ${escapeHtml(item.meta.station || 'sans station')}</div>
+        <div class="main">${escapeHtml(item.meta.cours || '-')} · ${escapeHtml(item.meta.station || 'sans station')}</div>
         <div class="sub">${escapeHtml(item.meta.date || '')} ${escapeHtml(item.meta.heure || '')}</div>
         <div class="q">Q = ${fmt(item.Q, 3)} m³/s</div>
       </div>
@@ -1345,8 +1345,8 @@ function renderCurrentSummary() {
   }
   el.innerHTML = `
     <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 12px">
-      <div style="font-size:13px;font-weight:500;margin-bottom:2px">${escapeHtml(m.cours||'—')} · ${escapeHtml(m.station||'sans station')}</div>
-      <div class="mono" style="font-size:11px;color:var(--txt-dim);margin-bottom:6px">${escapeHtml(m.date||'')} ${escapeHtml(m.heure||'')} — ${state.verticales.length} verticale${state.verticales.length>1?'s':''}</div>
+      <div style="font-size:13px;font-weight:500;margin-bottom:2px">${escapeHtml(m.cours||'-')} · ${escapeHtml(m.station||'sans station')}</div>
+      <div class="mono" style="font-size:11px;color:var(--txt-dim);margin-bottom:6px">${escapeHtml(m.date||'')} ${escapeHtml(m.heure||'')} - ${state.verticales.length} verticale${state.verticales.length>1?'s':''}</div>
       <div class="mono" style="font-size:14px;color:var(--accent)">Q = ${fmt(r.Q, 3)} m³/s · S = ${fmt(r.S, 2)} m² · V̄ = ${fmt(r.Vmoy, 3)} m/s</div>
     </div>
   `;
@@ -1415,8 +1415,8 @@ function rebuildPointsListInDom(vid) {
   const isCustom = v.pointsMode === 'custom';
   list.innerHTML = (v.points || []).map((p, idx) => {
     const zRel = parseFloat(p.z_rel);
-    const hMeters = !isNaN(zRel) && D > 0 ? (zRel * D).toFixed(2).replace('.', ',') : '—';
-    const positionLabel = !isNaN(zRel) ? fmtZ(zRel) + ' H' : '—';
+    const hMeters = !isNaN(zRel) && D > 0 ? (zRel * D).toFixed(2).replace('.', ',') : '-';
+    const positionLabel = !isNaN(zRel) ? fmtZ(zRel) + ' H' : '-';
     if (isCustom) {
       return `
         <div class="point-row">
@@ -1447,8 +1447,8 @@ function updatePointMetersInDom(vid) {
   v.points.forEach((p, idx) => {
     if (!rows[idx]) return;
     const zRel = parseFloat(p.z_rel);
-    const hMeters = !isNaN(zRel) && D > 0 ? (zRel * D).toFixed(2).replace('.', ',') : '—';
-    const positionLabel = !isNaN(zRel) ? fmtZ(zRel) + ' H' : '—';
+    const hMeters = !isNaN(zRel) && D > 0 ? (zRel * D).toFixed(2).replace('.', ',') : '-';
+    const positionLabel = !isNaN(zRel) ? fmtZ(zRel) + ' H' : '-';
     const posEl = rows[idx].querySelector('.pos-label');
     const hEl = rows[idx].querySelector('.h-label');
     if (posEl) posEl.textContent = positionLabel;
@@ -1548,7 +1548,7 @@ function exportCSV() {
   const r = computeAll();
   const sep = ';';
   const lines = [];
-  // — Métadonnées —
+  // - Métadonnées -
   lines.push('# METADONNEES');
   lines.push(['Date', state.meta.date || ''].join(sep));
   lines.push(['Heure', state.meta.heure || ''].join(sep));
@@ -1559,7 +1559,7 @@ function exportCSV() {
   lines.push(['Echelle (m)', state.meta.echelle || ''].join(sep));
   lines.push(['Notes', (state.meta.notes || '').replace(/[\r\n]+/g, ' ')].join(sep));
   lines.push('');
-  // — Synthèse —
+  // - Synthèse -
   lines.push('# SYNTHESE');
   lines.push(['Débit total (m³/s)', r.Q.toFixed(4)].join(sep));
   if (r.uncertainty) {
@@ -1572,7 +1572,7 @@ function exportCSV() {
   lines.push(['Largeur totale (m)', r.L.toFixed(2)].join(sep));
   lines.push(['Nombre de verticales', r.verts.length].join(sep));
   lines.push('');
-  // — Détail par verticale —
+  // - Détail par verticale -
   lines.push('# DETAIL VERTICALES');
   lines.push(['#', 'Type', 'Distance au bord (m)', 'Profondeur (m)', 'V_moy (m/s)', 'Surface partielle (m²)', 'Débit partiel (m³/s)', '% du débit', 'Coeff. rive α'].join(sep));
   r.verts.forEach((v, i) => {
@@ -1587,7 +1587,7 @@ function exportCSV() {
     ].join(sep));
   });
   lines.push('');
-  // — Détail des points par verticale complète —
+  // - Détail des points par verticale complète -
   lines.push('# DETAIL POINTS PAR VERTICALE');
   lines.push(['# Verticale', 'Distance au bord (m)', 'Profondeur (m)', 'z_rel (depuis fond)', 'Hauteur depuis fond (m)', 'Vitesse (m/s)'].join(sep));
   r.verts.forEach((v, i) => {
@@ -1696,14 +1696,14 @@ function download(content, filename, type) {
 
 /* HELPERS */
 function fmt(n, dec) {
-  if (n === '' || n === null || n === undefined) return '—';
+  if (n === '' || n === null || n === undefined) return '-';
   const f = parseFloat(n);
-  if (isNaN(f)) return '—';
+  if (isNaN(f)) return '-';
   return f.toFixed(dec).replace('.', ',');
 }
 function fmtZ(z) {
   const f = parseFloat(z);
-  if (isNaN(f)) return '—';
+  if (isNaN(f)) return '-';
   let s = f.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
   return s.replace('.', ',');
 }

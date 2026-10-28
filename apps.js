@@ -1,5 +1,5 @@
 /* ============================================================
-   REGISTRE CENTRAL — source unique de vérité
+   REGISTRE CENTRAL - source unique de vérité
    ------------------------------------------------------------
    Lu par le launcher (index.html) ET par le service worker (sw.js).
    Attaché à `self` pour être compatible fenêtre + worker.

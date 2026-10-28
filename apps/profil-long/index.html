@@ -238,7 +238,7 @@ input[type=file]{display:none}
 <script>
 "use strict";
 /* ============================================================
-   Profil en long — saisie multi-stations
+   Profil en long - saisie multi-stations
    Accueil (liste) -> fiche station. Modèle et calculs repris
    de l'onglet CARHYCE « Pente » (visées Fh/Fm/Fb en cm).
    Architecture (Store localStorage, navigation) calquée sur
@@ -322,7 +322,7 @@ function renderHome(){
   list.forEach(op=>{
     const c=computeSynthese(op);
     const nom = op.meta.station || op.meta.cours || '(sans code)';
-    const sub = [op.meta.cours, op.meta.date, op.meta.operateur].filter(Boolean).join(' · ') || '—';
+    const sub = [op.meta.cours, op.meta.date, op.meta.operateur].filter(Boolean).join(' · ') || '-';
     const nT = op.troncons.length;
     const li=document.createElement('li'); li.className='st-card';
     li.innerHTML =
@@ -403,7 +403,7 @@ function renderTroncons(){
 
     const dh=(tr.aval.fm!=null&&tr.amont.fm!=null)?(tr.aval.fm-tr.amont.fm)/100:null;
     const dhEl=document.createElement('div'); dhEl.className='dh';
-    dhEl.textContent='Δh tronçon = '+(dh==null?'—':dh.toFixed(3)+' m');
+    dhEl.textContent='Δh tronçon = '+(dh==null?'-':dh.toFixed(3)+' m');
     card.appendChild(dhEl);
 
     root.appendChild(card);
@@ -443,7 +443,7 @@ function champSelect(label,options,val,onChange){
   const f=document.createElement('div'); f.className='field';
   const l=document.createElement('label'); l.textContent=label; f.appendChild(l);
   const s=document.createElement('select');
-  const o0=document.createElement('option'); o0.value=''; o0.textContent='—'; s.appendChild(o0);
+  const o0=document.createElement('option'); o0.value=''; o0.textContent='-'; s.appendChild(o0);
   options.forEach(opt=>{ const o=document.createElement('option'); o.value=opt; o.textContent=opt; s.appendChild(o); });
   s.value=val||''; s.addEventListener('change',()=>onChange(s.value)); f.appendChild(s); return f;
 }
@@ -471,7 +471,7 @@ function computeSynthese(op){
 function renderCalc(){ renderStats(); renderProfil(); }
 function renderStats(){
   const c=computeSynthese(); const el=$('stats');
-  const m=v=>v==null?'—':v.toFixed(3), p=v=>v==null?'—':v.toFixed(2);
+  const m=v=>v==null?'-':v.toFixed(3), p=v=>v==null?'-':v.toFixed(2);
   const cells=[
     {l:'Σ Fm aval',v:m(c.sFmAval)+' m'},{l:'Σ Fm amont',v:m(c.sFmAmont)+' m'},
     {l:'ΔH',v:m(c.dH)+' m'},{l:'Σ distances',v:m(c.sDist)+' m'},
@@ -495,7 +495,7 @@ function renderProfil(){
     svg.appendChild(mk('line',{x1:pad.l,x2:W-pad.r,y1:Y(a),y2:Y(a),stroke:'#232f3a','stroke-width':1}));
     const t=mk('text',{x:pad.l-6,y:Y(a)+3,'text-anchor':'end',fill:'#5e6b78','font-size':10,'font-family':'ui-monospace,monospace'}); t.textContent=a.toFixed(2); svg.appendChild(t); }
   const tx=mk('text',{x:(pad.l+W-pad.r)/2,y:H-6,'text-anchor':'middle',fill:'#5e6b78','font-size':10,'font-family':'system-ui'});
-  tx.textContent='distance cumulée (m) — 0 = aval'; svg.appendChild(tx);
+  tx.textContent='distance cumulée (m) - 0 = aval'; svg.appendChild(tx);
   const d=pts.map((p,i)=>(i?'L':'M')+X(p.x).toFixed(1)+' '+Y(p.y).toFixed(1)).join(' ');
   svg.appendChild(mk('path',{d,fill:'none',stroke:'#d98e3c','stroke-width':2.5,'stroke-linejoin':'round','stroke-linecap':'round'}));
   pts.forEach(p=>svg.appendChild(mk('circle',{cx:X(p.x),cy:Y(p.y),r:3.2,fill:'#f0b878'})));

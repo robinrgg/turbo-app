@@ -1,5 +1,5 @@
 /* ============================================================
-   Service worker de RETRAIT — Jaugeage
+   Service worker de RETRAIT - Jaugeage
    ------------------------------------------------------------
    L'app est désormais servie par le service worker racine du hub
    (../../sw.js), qui gère seul le cache et le hors-ligne.

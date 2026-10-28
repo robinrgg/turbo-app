@@ -108,7 +108,7 @@ const DB = {
         propriete_privee: '',
         vegetation_rivulaire: '',
         limpidite: '',
-        // Saisie GPS terrain (WGS84, degrés décimaux) — convertie en L93 via geo.js
+        // Saisie GPS terrain (WGS84, degrés décimaux) - convertie en L93 via geo.js
         lat_amont: null,
         lon_amont: null,
         lat_aval: null,
