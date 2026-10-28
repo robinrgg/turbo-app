@@ -96,7 +96,7 @@ test('computeCarry : dernier point pile sur la berge → le suivant est à un pa
 test('export modélisation → import : aucune donnée perdue', () => {
   const op = ctx.newStation();
   Object.assign(op.station, { code: 'X123', ce: 'Colostre', long: '150', pb: '8', nbt: '15', q50: '0.5', qmin: '0.1', qmax: '3', pente: '2.5', chutes: '1.2' });
-  Object.assign(op.camp1, { debit: '0.3', lm: '5', substrat: true,
+  Object.assign(op.camp1, { debit: '0.3', heure: '14:35', lm: '5', substrat: true,
     transects: [{ largeur: '4.5', points: [{ h: '12', s: '40' }, { h: '20', s: '0' }] }] });
   Object.assign(op.camp2, { debit: '1.1', lm: '6', transects: [{ largeur: '5.5', points: [{ h: '30', s: '' }] }] });
   const json = plain(ctx.buildModelJSON(op));
@@ -107,6 +107,7 @@ test('export modélisation → import : aucune donnée perdue', () => {
   for (const k of ['code', 'ce', 'long', 'pb', 'nbt', 'q50', 'qmin', 'qmax', 'pente', 'chutes'])
     assert.equal(Number(back.station[k]) || back.station[k], Number(op.station[k]) || op.station[k], k);
   assert.equal(back.camp1.transects[0].points[1].s, '0');
+  assert.equal(back.camp1.heure, '14:35'); assert.equal(back.camp2.heure, '');
   assert.equal(back.camp2.transects[0].points[0].h, '30');
   // Ré-exporter l'import donne les mêmes entrées de modèle
   const again = plain(ctx.buildModelJSON({ station: back.station, camp1: back.camp1, camp2: back.camp2 }));

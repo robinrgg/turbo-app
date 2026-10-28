@@ -111,3 +111,33 @@ test('jaugeage : export JSON → import → même débit et mêmes verticales', 
     assert.deepEqual(page.errors, []);
   });
 });
+
+test('jaugeage : une verticale ajoutée a une distance au bord vide, puis saisie libre', { skip }, async () => {
+  await withBrowser(async ({ open }) => {
+    const page = await open('/apps/jaugeage/index.html');
+    const r = await page.evaluate(() => {
+      addVerticale(); updVert(state.verticales[0].id, 'abscisse', '3.2');
+      addVerticale();
+      return { x: state.verticales.map(v => v.abscisse), champ: document.querySelector('.vert-detail input[oninput*="abscisse"], input[oninput*="abscisse"]')?.value };
+    });
+    assert.deepEqual(r.x, ['3.2', ''], 'aucune distance proposée automatiquement');
+    assert.equal(r.champ, '', 'champ de saisie vide');
+    assert.deepEqual(page.errors, []);
+  });
+});
+
+test('Estimhab / Stathab : l’heure de campagne se remplit à la saisie du débit, sans écraser une heure existante', { skip }, async () => {
+  await withBrowser(async ({ open }) => {
+    const page = await open('/apps/habitat-stat/index.html');
+    await page.evaluate(() => { cur = newStation(); Store.put(cur); go('station'); go('camp1'); });
+    assert.equal(await page.inputValue('#scr-camp1 [data-f="heure"]'), '');
+    await page.fill('#scr-camp1 [data-f="debit"]', '0,42');
+    const h = await page.inputValue('#scr-camp1 [data-f="heure"]');
+    assert.match(h, /^\d\d:\d\d$/);
+    assert.equal(await page.evaluate(() => cur.camp1.heure), h);
+    await page.fill('#scr-camp1 [data-f="heure"]', '09:15');
+    await page.fill('#scr-camp1 [data-f="debit"]', '0,43');
+    assert.equal(await page.evaluate(() => cur.camp1.heure), '09:15', 'heure saisie conservée');
+    assert.deepEqual(page.errors, []);
+  });
+});

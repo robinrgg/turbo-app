@@ -249,9 +249,10 @@ const LS_KEY="habitat-stat.v2";
 const $=id=>document.getElementById(id);
 
 /* ---------- Modèle ---------- */
-function newCampaign(label){ return { label, date:todayISO(),operateur:"",debit:"",substrat:false, lm:"", transects:[] }; }
+function newCampaign(label){ return { label, date:todayISO(),heure:"",operateur:"",debit:"",substrat:false, lm:"", transects:[] }; }
 function newTransect(){ return { largeur:"", points:[], collapsed:false }; }
 function newPoint(){ return { h:"", s:"" }; }
+function nowHHMM(){ const d=new Date(); return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0"); }
 function todayISO(){ const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
 function newStation(){
   return { id:"st_"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),
@@ -554,9 +555,11 @@ function renderCamp(which){
   const cc=computeCamp(c), d=spacing(c);
   el.innerHTML=`
   <section class="card"><div class="hd"><span class="ttl"><span class="bar"></span>${c.label}</span></div><div class="bd">
+    <div class="field"><label>Débit mesuré (m³/s)</label><input class="mono" data-f="debit" value="${esc(c.debit)}" inputmode="decimal"></div>
     <div class="row c2">
-      <div class="field"><label>Débit mesuré (m³/s)</label><input class="mono" data-f="debit" value="${esc(c.debit)}" inputmode="decimal"></div>
-      <div class="field"><label>Date</label><input type="date" data-f="date" value="${esc(c.date)}"></div></div>
+      <div class="field"><label>Date</label><input type="date" data-f="date" value="${esc(c.date)}"></div>
+      <div class="field"><label>Heure</label><input type="time" data-f="heure" value="${esc(c.heure||"")}"></div></div>
+    <div class="hint" style="margin:-4px 0 9px">L'heure se remplit à la saisie du débit (comparaison avec la station hydrométrique voisine) ; modifiable.</div>
     <div class="field"><label>Opérateur</label><input data-f="operateur" value="${esc(c.operateur)}"></div>
     <div class="field"><label>Largeur mouillée moyenne (m) - fixe l'espacement inter-point d = L̄/7</label><input class="mono" data-f="lm" value="${esc(c.lm)}" inputmode="decimal"></div>
     <label style="display:flex;align-items:center;gap:9px;font-size:.85rem;padding:6px 0;cursor:pointer">
@@ -583,7 +586,9 @@ function renderCamp(which){
   el.querySelectorAll('[data-f]').forEach(inp=>{
     const f=inp.getAttribute('data-f');
     inp.addEventListener(inp.type==='checkbox'?'change':'input',()=>{
-      c[f]= inp.type==='checkbox'? inp.checked : inp.value; touch();
+      c[f]= inp.type==='checkbox'? inp.checked : inp.value;
+      if(f==='debit'&&inp.value.trim()&&!c.heure){ c.heure=nowHHMM(); el.querySelector('[data-f="heure"]').value=c.heure; }
+      touch();
       if(f==='substrat'||f==='lm') renderCamp(which);
     });
   });
@@ -678,7 +683,7 @@ function renderChecks(box,c1,c2){
 function download(name,txt){ const b=new Blob([txt],{type:"application/json;charset=utf-8"}), u=URL.createObjectURL(b);
   const a=document.createElement("a"); a.href=u; a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(u); a.remove(); },200); }
 function codeName(){ return (cur.station.code||"station").replace(/[^\w\-]+/g,"_"); }
-function campObj(camp,cc){ return { label:camp.label||"",date:camp.date||"",operateur:camp.operateur||"",
+function campObj(camp,cc){ return { label:camp.label||"",date:camp.date||"",heure:camp.heure||"",operateur:camp.operateur||"",
   debit_m3s:cc.Q, largeur_moy_est_m:num(camp.lm), substrat:!!camp.substrat, W_moy_m:rnd(cc.Wm,3),H_moy_cm:rnd(cc.Hcm,1),H_moy_m:rnd(cc.Hm,4),nb_points:cc.nPts,
   transects:(camp.transects||[]).map(t=>({ largeur_m:num(t.largeur), points:(t.points||[]).map(p=>({ h_cm:num(p.h), axe_b_mm: camp.substrat?num(p.s):null })) })) }; }
 function buildModelJSON(op){
@@ -703,7 +708,7 @@ function buildModelJSON(op){
 
 /* ---------- Import (normalisation) ---------- */
 function campFromModel(cm,label){ const c=newCampaign(label); if(!cm) return c;
-  c.date=cm.date||""; c.operateur=cm.operateur||""; c.debit=cm.debit_m3s!=null?String(cm.debit_m3s):""; c.lm=cm.largeur_moy_est_m!=null?String(cm.largeur_moy_est_m):""; c.substrat=!!cm.substrat;
+  c.date=cm.date||""; c.heure=cm.heure||""; c.operateur=cm.operateur||""; c.debit=cm.debit_m3s!=null?String(cm.debit_m3s):""; c.lm=cm.largeur_moy_est_m!=null?String(cm.largeur_moy_est_m):""; c.substrat=!!cm.substrat;
   c.transects=(cm.transects||[]).map(t=>({ largeur:t.largeur_m!=null?String(t.largeur_m):"", collapsed:true,
     points:(t.points||[]).map(p=>({ h:p.h_cm!=null?String(p.h_cm):"", s:p.axe_b_mm!=null?String(p.axe_b_mm):"" })) })); return c; }
 function stationFromModel(st){ const o=newStation();
