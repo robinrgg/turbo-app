@@ -141,7 +141,6 @@ const NOM = {
     { code: 'DL', libelle: 'Débris ligneux grossiers, embâcles' },
     { code: 'BR', libelle: 'Blocs rocheux' },
     { code: 'VS', libelle: 'Végétation surplombante' },
-    { code: 'VA', libelle: 'Végétation aquatique' },
   ],
 
   modification_transect: [

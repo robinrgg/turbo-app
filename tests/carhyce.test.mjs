@@ -149,3 +149,28 @@ test('CARHYCE : chaque écran affiche ses calculs dès l’ouverture', { skip },
     assert.deepEqual(page.errors, []);
   });
 });
+
+// VA (végétation aquatique) n'est plus un habitat de berge : absent des cases à cocher et purgé
+// des fiches existantes à l'ouverture ; il reste un substrat additionnel valide.
+test('CARHYCE : habitat de berge VA retiré et purgé des fiches existantes', { skip }, async () => {
+  await withBrowser(async ({ open }) => {
+    const page = await open('/apps/carhyce/index.html');
+    const r = await page.evaluate(async () => {
+      const op = DB.newOperation();
+      op.transects[0].berge_rg.habitats = ['SB', 'VA', 'VS'];
+      op.transects[1].berge_rd.habitats = ['VA'];
+      op.station.habitats_non_min_marginaux.liste = ['VA'];
+      await DB.put(op);
+      await App.openOperation(op.id);
+      const relu = await DB.get(op.id);
+      App.openTransectEdit(0);
+      const cases = [...document.querySelectorAll('.checkbox-group input')].map(c => c.value);
+      return { rg: relu.transects[0].berge_rg.habitats, rd: relu.transects[1].berge_rd.habitats,
+        substrats: relu.station.habitats_non_min_marginaux.liste, cases };
+    });
+    assert.deepEqual(r.rg, ['SB', 'VS']);
+    assert.deepEqual(r.rd, []);
+    assert.deepEqual(r.substrats, ['VA'], 'VA reste un substrat additionnel');
+    assert.deepEqual(r.cases, ['SB', 'CR', 'DL', 'BR', 'VS', 'SB', 'CR', 'DL', 'BR', 'VS']);
+  });
+});
