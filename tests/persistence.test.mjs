@@ -74,8 +74,8 @@ test('Estimhab / Stathab : station saisie → rechargement → données et synth
 });
 
 test('sauvegarde locale corrompue : aucune app ne plante au démarrage', { skip }, async t => {
-  const cas = [['/apps/profil-long/index.html', 'aquascop.profil-long.v2'], ['/apps/jaugeage/index.html', 'jaugeage_current_v2'],
-    ['/apps/habitat-stat/index.html', 'aquascop.habitat-stat.v2'], ['/apps/checklist/index.html', 'cl_checks_v2']];
+  const cas = [['/apps/profil-long/index.html', 'profil-long.v2'], ['/apps/jaugeage/index.html', 'jaugeage_current_v2'],
+    ['/apps/habitat-stat/index.html', 'habitat-stat.v2'], ['/apps/checklist/index.html', 'cl_checks_v2']];
   await withBrowser(async ({ open }) => {
     for (const [p, key] of cas) await t.test(p, async () => {
       const page = await open(p);
@@ -109,5 +109,36 @@ test('jaugeage : export JSON → import → même débit et mêmes verticales', 
     assert.equal(r.Q1, r.Q0);
     assert.equal(r.n, 5); assert.equal(r.bathy, 1);
     assert.deepEqual(page.errors, []);
+  });
+});
+
+// Migration TEMPORAIRE de la clé de sauvegarde : à retirer avec le code de migration des apps.
+test('migration de la clé de sauvegarde : stations récupérées, ancienne clé effacée, résultat affiché', { skip }, async t => {
+  const cas = [['/apps/habitat-stat/index.html', 'habitat-stat'], ['/apps/profil-long/index.html', 'profil-long']];
+  await withBrowser(async ({ open }) => {
+    for (const [p, app] of cas) await t.test(app, async () => {
+      const page = await open(p);
+      const ancienne = await page.evaluate(() => MIG_OLD_KEY);
+      // appareil sans ancienne donnée
+      assert.match(await page.textContent('#migInfo'), /aucune ancienne donnée/);
+      // appareil avec des stations sous l'ancien nom
+      await page.evaluate(([k, app]) => {
+        localStorage.clear();
+        const a = newStation(), b = newStation(); a.id = 'A'; b.id = 'B';
+        if (app === 'habitat-stat') { a.station.code = 'MIG-A'; b.station.code = 'MIG-B'; } else { a.meta.station = 'MIG-A'; b.meta.station = 'MIG-B'; }
+        localStorage.setItem(k, JSON.stringify({ stations: { A: a, B: b } }));
+      }, [ancienne, app]);
+      page.errors.length = 0;
+      await page.reload();
+      assert.equal(await page.evaluate(k => localStorage.getItem(k), ancienne), null, 'ancienne clé effacée');
+      assert.equal(await page.evaluate(() => Store.list().length), 2);
+      assert.match(await page.textContent('body'), /MIG-A/);
+      assert.match(await page.textContent('#migInfo'), /Migration des données effectuée le .* : 2 station\(s\) récupérée\(s\)/);
+      // le message reste affiché aux lancements suivants
+      await page.reload();
+      assert.match(await page.textContent('#migInfo'), /effectuée le .* : 2 station/);
+      assert.deepEqual(page.errors, []);
+      await page.close();
+    });
   });
 });

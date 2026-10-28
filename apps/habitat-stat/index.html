@@ -158,6 +158,12 @@ section.card>.bd{ padding:12px; }
   transition:opacity .2s; font-size:.82rem; max-width:90%; text-align:center; }
 .toast.show{ opacity:1; } .toast.ok{ border-left:3px solid var(--ok); } .toast.err{ border-left:3px solid var(--err); }
 input[type=file]{ display:none; }
+
+/* Encart de migration (TEMPORAIRE) */
+.mig{ font-size:.72rem; line-height:1.45; padding:8px 10px; border-radius:var(--radius-sm); border-left:3px solid; margin-bottom:14px; }
+.mig.ok{ background:rgba(108,194,108,.08); border-color:var(--ok); color:#bfe6bf; }
+.mig.err{ background:rgba(217,102,102,.1); border-color:var(--err); color:#f0b3b3; }
+.mig[hidden]{ display:none; }
 </style>
 </head>
 <body>
@@ -179,6 +185,7 @@ input[type=file]{ display:none; }
         <button class="btn ghost sm" id="btnFusion" style="flex:1">⤙ Fusionner deux saisies</button>
       </div>
     </div>
+    <div class="mig" id="migInfo" hidden></div>
     <h2 class="sec">Stations enregistrées</h2>
     <ul class="st-list" id="stList"></ul>
     <p class="empty" id="stEmpty" hidden>Aucune station. Créer une nouvelle station pour commencer.</p>
@@ -244,7 +251,7 @@ input[type=file]{ display:none; }
    Export = un JSON de station (brut + dérivé), entrée directe
    du code de modélisation Python.
    ============================================================ */
-const LS_KEY="aquascop.habitat-stat.v2";
+const LS_KEY="habitat-stat.v2";
 const $=id=>document.getElementById(id);
 
 /* ---------- Modèle ---------- */
@@ -257,6 +264,37 @@ function newStation(){
     updated:Date.now(),
     station:{ code:"",ce:"",com:"",x:"",y:"",op:"",date:todayISO(), long:"",pb:"",nbt:"15", q50:"",qmin:"",qmax:"", pente:"",chutes:"" },
     camp1:newCampaign("Campagne Q1"), camp2:newCampaign("Campagne Q2") };
+}
+
+/* ---------- Migration de la clé de sauvegarde (TEMPORAIRE) ----------
+   Recopie les stations enregistrées sous l'ancien nom de clé vers LS_KEY, puis
+   efface l'ancienne entrée. Le résultat est mémorisé et affiché à l'accueil.
+   À retirer (avec l'encart #migInfo) une fois tous les appareils passés. */
+const MIG_OLD_KEY="aquascop.habitat-stat.v2", MIG_LOG_KEY="habitat-stat.migration";
+function migrateKey(){
+  try{
+    const old=localStorage.getItem(MIG_OLD_KEY);
+    if(old!=null){
+      let d=null, cible=null; try{ d=JSON.parse(old); }catch(e){} try{ cible=JSON.parse(localStorage.getItem(LS_KEY)); }catch(e){}
+      if(d&&d.stations&&cible&&cible.stations){      // les deux existent : fusion par id, la plus récente gagne
+        for(const [id,s] of Object.entries(d.stations)) if(!cible.stations[id]||(cible.stations[id].updated||0)<(s.updated||0)) cible.stations[id]=s;
+        localStorage.setItem(LS_KEY, JSON.stringify(cible));
+      } else if(!(cible&&cible.stations)) localStorage.setItem(LS_KEY, old);
+      localStorage.removeItem(MIG_OLD_KEY);
+      localStorage.setItem(MIG_LOG_KEY, JSON.stringify({ etat:"ok", date:new Date().toISOString(), n:d&&d.stations?Object.keys(d.stations).length:0 }));
+    } else if(localStorage.getItem(MIG_LOG_KEY)==null)
+      localStorage.setItem(MIG_LOG_KEY, JSON.stringify({ etat:"rien", date:new Date().toISOString(), n:0 }));
+    return JSON.parse(localStorage.getItem(MIG_LOG_KEY));
+  }catch(e){ return { etat:"echec" }; }
+}
+function showMigration(m){
+  const box=document.getElementById("migInfo"); if(!box||!m) return;
+  const d=m.date?new Date(m.date):null, quand=d?d.toLocaleDateString("fr-FR")+" à "+d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}):"";
+  box.className="mig "+(m.etat==="echec"?"err":"ok");
+  box.textContent= m.etat==="ok" ? `✓ Migration des données effectuée le ${quand} : ${m.n} station(s) récupérée(s).`
+    : m.etat==="rien" ? `✓ Migration vérifiée le ${quand} : aucune ancienne donnée sur cet appareil.`
+    : "⚠ Migration non effectuée (mémoire du navigateur inaccessible). Les anciennes données sont intactes : exporter les stations et prévenir.";
+  box.hidden=false;
 }
 
 /* ---------- Store (localStorage) ---------- */
@@ -683,7 +721,7 @@ function campObj(camp,cc){ return { label:camp.label||"",date:camp.date||"",oper
 function buildModelJSON(op){
   const st=op.station, c1=computeCamp(op.camp1), c2=computeCamp(op.camp2);
   const subCamp=c1.hasSub?{src:"Q1",c:c1}:(c2.hasSub?{src:"Q2",c:c2}:null);
-  return { format:"aquascop.habitat-stat", version:2, exported:new Date().toISOString(),
+  return { format:"habitat-stat", version:2, exported:new Date().toISOString(),
     station:{ code:st.code,cours_eau:st.ce,commune:st.com,x:st.x,y:st.y,systeme_coord:"WGS84 (EPSG:4326) — x = longitude, y = latitude, degrés décimaux",operateur:st.op,date:st.date,
       longueur_m:num(st.long),largeur_pleins_bords_m:num(st.pb),nb_transects:num(st.nbt) },
     hydrologie:{ q50_m3s:num(st.q50),q_min_m3s:num(st.qmin),q_max_m3s:num(st.qmax) },
@@ -709,9 +747,11 @@ function stationFromModel(st){ const o=newStation();
   Object.assign(o.station,{ code:st.code||"",ce:st.cours_eau||"",com:st.commune||"",x:st.x||"",y:st.y||"",op:st.operateur||"",date:st.date||"",
     long:st.longueur_m!=null?String(st.longueur_m):"", pb:st.largeur_pleins_bords_m!=null?String(st.largeur_pleins_bords_m):"",
     nbt:st.nb_transects!=null?String(st.nb_transects):"15" }); return o; }
+/* export de modélisation : reconnu par sa structure, quel que soit son marqueur « format » */
+function isModelJSON(obj){ return !!(obj&&obj.station&&obj.campagnes&&obj.model_inputs); }
 /* normalise un fichier importé -> {station:{internal}, camp1, camp2} */
 function normalize(obj){
-  if(obj&&obj.format==="aquascop.habitat-stat"){
+  if(isModelJSON(obj)){
     const o=stationFromModel(obj.station||{}); const h=obj.hydrologie||{}, steep=(obj.model_inputs&&obj.model_inputs.steep)||{};
     Object.assign(o.station,{ q50:h.q50_m3s!=null?String(h.q50_m3s):"", qmin:h.q_min_m3s!=null?String(h.q_min_m3s):"", qmax:h.q_max_m3s!=null?String(h.q_max_m3s):"",
       pente:steep.pente_pct!=null?String(steep.pente_pct):"", chutes:steep.chutes_cumul_m!=null?String(steep.chutes_cumul_m):"" });
@@ -780,7 +820,7 @@ $("btnDelStation").onclick=()=>{ confirmDialog("Supprimer définitivement cette 
 document.querySelectorAll('#scr-station [data-go]').forEach(b=>b.addEventListener('click',()=>go(b.getAttribute('data-go'))));
 
 /* ---------- Init ---------- */
-Store.load(); go("home");
+const migration=migrateKey(); Store.load(); go("home"); showMigration(migration);
 </script>
 </body>
 </html>
