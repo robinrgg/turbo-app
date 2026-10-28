@@ -1,4 +1,4 @@
-// Nomenclatures CARHYCE - codes et libellés issus du fichier de référence Aquascop
+// Nomenclatures CARHYCE - codes et libellés issus du fichier de référence CARHYCE
 // Toutes les listes utilisées par les sélecteurs de l'application
 
 const NOM = {

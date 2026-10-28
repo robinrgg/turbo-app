@@ -78,5 +78,5 @@ C'est ce JSON qui servira d'entrée au script Python de calcul des indicateurs (
 
 ## À faire pour la phase suivante
 
-**Livrable client / annexe de rapport** : équivalent de l'export PDF actuel du fichier Excel (tous les onglets jusqu'au dernier transect imprimés et annexés au rapport d'étude). À produire une fois la saisie stabilisée : génération d'un PDF mis en forme à partir du JSON, intégrable directement dans les annexes du rapport Aquascop. À traiter avec la chaîne Python aval (script de calcul des indicateurs + génération PDF mis en page).
+**Livrable client / annexe de rapport** : équivalent de l'export PDF actuel du fichier Excel (tous les onglets jusqu'au dernier transect imprimés et annexés au rapport d'étude). À produire une fois la saisie stabilisée : génération d'un PDF mis en forme à partir du JSON, intégrable directement dans les annexes du rapport d'étude. À traiter avec la chaîne Python aval (script de calcul des indicateurs + génération PDF mis en page).
 
