@@ -1269,6 +1269,26 @@ const App = {
       g.appendChild(this.field({ label: 'Distance (m)', type: 'number', value: tr.distance_m, onChange: v => { tr.distance_m = v; this.refreshPenteCalc(); } }));
       card.appendChild(g);
 
+      // Niveau non déplacé : la visée aval reprend la visée amont du tronçon précédent
+      if (idx > 0) {
+        const cp = document.createElement('button');
+        cp.type = 'button';
+        cp.className = 'secondary-btn';
+        cp.style.margin = '0.4rem 0';
+        cp.textContent = '⤒ Visée aval = visée amont du tronçon précédent';
+        cp.title = `Recopier les Fh/Fm/Fb de la visée amont du tronçon ${idx} (niveau non déplacé)`;
+        cp.addEventListener('click', () => {
+          const src = p.troncons[idx - 1].amont, dst = tr.aval;
+          if (src.fh == null && src.fm == null && src.fb == null) { this.toast('Visée amont du tronçon précédent vide.'); return; }
+          if ((dst.fh != null || dst.fm != null || dst.fb != null) && !confirm('Écraser la visée aval actuelle ?')) return;
+          dst.fh = src.fh; dst.fm = src.fm; dst.fb = src.fb;
+          this.refreshTroncons();
+          this.scheduleSave();
+          this.toast(`Visée aval reprise du tronçon ${idx}.`);
+        });
+        card.appendChild(cp);
+      }
+
       // Visées aval : Fh / Fm / Fb avec vérification de cohérence stadimétrique sur Fm
       card.appendChild(this.buildStadimetricRow('Aval', tr.aval, () => this.refreshPenteCalc()));
       card.appendChild(this.buildStadimetricRow('Amont', tr.amont, () => this.refreshPenteCalc()));

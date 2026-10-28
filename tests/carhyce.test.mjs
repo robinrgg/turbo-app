@@ -174,3 +174,29 @@ test('CARHYCE : habitat de berge VA retiré et purgé des fiches existantes', { 
     assert.deepEqual(r.cases, ['SB', 'CR', 'DL', 'BR', 'VS', 'SB', 'CR', 'DL', 'BR', 'VS']);
   });
 });
+
+test('CARHYCE pente : la visée aval reprend la visée amont du tronçon précédent (comme Profil en long)', { skip }, async () => {
+  await withBrowser(async ({ open }) => {
+    const page = await open('/apps/carhyce/index.html');
+    const r = await page.evaluate(() => {
+      const op = DB.newOperation();
+      const vide = () => ({ fh: null, fm: null, fb: null });
+      op.pente.troncons = [
+        { limite_aval: '', limite_amont: '', distance_m: 10, aval: { fh: 160, fm: 150, fb: 140 }, amont: { fh: 131, fm: 121, fb: 111 } },
+        { limite_aval: '', limite_amont: '', distance_m: 12, aval: vide(), amont: vide() },
+        { limite_aval: '', limite_amont: '', distance_m: 8, aval: { fh: 1, fm: 2, fb: 3 }, amont: vide() }];
+      App.state.op = op; App.scheduleSave = () => {}; App.toast = () => {};
+      App.renderPente();
+      const boutons = () => [...document.querySelectorAll('#troncons-list .troncon-card')].map(c => c.querySelector('button.secondary-btn'));
+      const nb = boutons().filter(Boolean).length;
+      boutons()[1].click();                                  // tronçon 2 : copie directe
+      window.confirm = () => false; boutons()[2].click();    // tronçon 3 : refus d'écraser
+      const t3refus = { ...op.pente.troncons[2].aval };
+      return { nb, premier: boutons()[0], t2: op.pente.troncons[1].aval, t3refus };
+    });
+    assert.equal(r.nb, 2, 'pas de bouton sur le premier tronçon');
+    assert.equal(r.premier, null);
+    assert.deepEqual(r.t2, { fh: 131, fm: 121, fb: 111 });
+    assert.deepEqual(r.t3refus, { fh: 1, fm: 2, fb: 3 }, 'visée existante conservée si refus');
+  });
+});
