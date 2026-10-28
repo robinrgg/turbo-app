@@ -117,3 +117,31 @@ test('CARHYCE pente : profil en long sous les calculs, même tracé que l’app 
     assert.deepEqual(page.errors, []);
   });
 });
+
+test('profil en long (3 apps) : axes tracés, abscisses graduées en distance, titres des deux axes', { skip }, async t => {
+  const T = [[12, 150, 144], [18, 144, 133], [9, 133, 129], [15, 129, 121]];   // Σ distances = 54 m
+  const cas = [
+    ['Profil en long', '/apps/profil-long/index.html', '#profil', T => {
+      cur = newStation(); cur.troncons = T.map(([d, a, m]) => ({ ...newTroncon(), distance_m: d, aval: { fh: null, fm: a, fb: null }, amont: { fh: null, fm: m, fb: null } }));
+      renderProfil(); }],
+    ['CARHYCE', '/apps/carhyce/index.html', '#pente-chart svg', T => {
+      const op = DB.newOperation(); op.pente.troncons = T.map(([d, a, m]) => ({ limite_aval: '', limite_amont: '', distance_m: d, aval: { fh: null, fm: a, fb: null }, amont: { fh: null, fm: m, fb: null } }));
+      App.state.op = op; App.scheduleSave = () => {}; App.renderPente(); }],
+    ['Estimhab', '/apps/habitat-stat/index.html', '#leChart', T => {
+      cur = newStation(); cur.station.troncons = T.map(([d, a, m]) => ({ ...newTronconLE(), distance_m: d, aval: { fh: null, fm: a, fb: null }, amont: { fh: null, fm: m, fb: null } }));
+      go('ligne'); }]];
+  await withBrowser(async ({ open }) => {
+    for (const [nom, url, sel, remplir] of cas) await t.test(nom, async () => {
+      const page = await open(url);
+      await page.evaluate(`(${remplir})(${JSON.stringify(T)})`);
+      const r = await page.$eval(sel, svg => ({ textes: [...svg.querySelectorAll('text')].map(e => e.textContent),
+        axes: [...svg.querySelectorAll('line')].filter(l => l.getAttribute('stroke-width') === '1.2').length }));
+      assert.ok(r.textes.includes("Distance cumulée depuis l'aval (m)"), 'titre des abscisses');
+      assert.ok(r.textes.includes('Δh cumulé (m)'), 'titre des ordonnées');
+      assert.equal(r.axes, 2, 'axes x et y tracés');
+      for (const g of ['0', '10', '20', '30', '40', '50']) assert.ok(r.textes.includes(g), `graduation ${g} m`);
+      assert.deepEqual(page.errors, []);
+      await page.close();
+    });
+  });
+});
