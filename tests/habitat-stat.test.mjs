@@ -6,7 +6,7 @@ import { loadFile } from './helpers.mjs';
 const src = inlineScripts('apps/habitat-stat/index.html');
 const ctx = loadFunctions(src, ['num', 'rnd', 'todayISO', 'newCampaign', 'newTransect', 'newPoint', 'newStation',
   'spacing', 'suggestPts', 'computeCamp', 'disVector', 'graClass', 'graVector', 'computeCarry',
-  'campObj', 'buildModelJSON', 'campFromModel', 'stationFromModel', 'normalize',
+  'campObj', 'buildModelJSON', 'campFromModel', 'stationFromModel', 'isModelJSON', 'normalize',
   'validLatLon', 'splitLatLon', 'l93ToWgs84'],
   { GRA_LABELS: Array.from({ length: 12 }, (_, i) => 'c' + i) });
 const plain = o => JSON.parse(JSON.stringify(o));
@@ -129,4 +129,15 @@ test('l93ToWgs84 : inverse exact de la projection Lambert 93 (aller-retour < 1 c
     const p = GEO.wgs84ToL93(lat, lon), w = ctx.l93ToWgs84(p.x, p.y);
     close(w.lat, lat, 2e-7); close(w.lon, lon, 2e-7);
   }
+});
+
+test('import : un export est reconnu par sa structure, quel que soit son marqueur « format »', () => {
+  const op = ctx.newStation(); op.station.code = 'F1';
+  const json = plain(ctx.buildModelJSON(op));
+  assert.equal(json.format, 'habitat-stat');
+  for (const format of ['habitat-stat', 'ancien-marqueur', undefined]) {
+    const n = ctx.normalize({ ...json, format });
+    assert.ok(n, String(format)); assert.equal(n.station.code, 'F1');
+  }
+  assert.equal(ctx.normalize({ format: 'habitat-stat' }), null);
 });

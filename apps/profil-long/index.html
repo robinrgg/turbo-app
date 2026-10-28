@@ -144,6 +144,12 @@ pre.json{background:#0d1319;border:1px solid var(--border);border-radius:var(--r
   padding:11px 18px;font-size:.85rem;box-shadow:0 8px 24px rgba(0,0,0,.4);opacity:0;pointer-events:none;transition:opacity .25s;max-width:90%;text-align:center}
 .toast.show{opacity:1}
 input[type=file]{display:none}
+
+/* Encart de migration (TEMPORAIRE) */
+.mig{ font-size:.72rem; line-height:1.45; padding:8px 10px; border-radius:var(--r-sm); border-left:3px solid; margin-bottom:14px; }
+.mig.ok{ background:rgba(108,194,108,.08); border-color:var(--ok); color:#bfe6bf; }
+.mig.err{ background:rgba(217,102,102,.1); border-color:var(--err); color:#f0b3b3; }
+.mig[hidden]{ display:none; }
 </style>
 </head>
 <body>
@@ -163,6 +169,7 @@ input[type=file]{display:none}
       <button class="btn primary block" id="btnNew">＋ Nouvelle station</button>
       <button class="btn ghost sm" id="btnImport">⤓ Importer une station (.json)</button>
     </div>
+    <div class="mig" id="migInfo" hidden></div>
     <h2 class="sec">Stations enregistrées</h2>
     <ul class="st-list" id="stList"></ul>
     <p class="empty" id="stEmpty" hidden>Aucune station. Créer une nouvelle station pour commencer.</p>
@@ -244,7 +251,7 @@ input[type=file]{display:none}
    habitat-stat.
    ============================================================ */
 
-const LS_KEY  = 'aquascop.profil-long.v2';
+const LS_KEY  = 'profil-long.v2';
 const OLD_KEY = 'profil_long_v1';            // ancienne saisie unique -> migrée au 1er lancement
 const STADI_TOL_CM = 0.1;
 const $ = id => document.getElementById(id);
@@ -268,6 +275,37 @@ function newStation(){
     meta:{ date:todayISO(), cours:'', station:'', operateur:'', materiel:'', notes:'' },
     ui:{ infosOpen:true },
     troncons:[ newTroncon() ] };
+}
+
+/* ---------- Migration de la clé de sauvegarde (TEMPORAIRE) ----------
+   Recopie les stations enregistrées sous l'ancien nom de clé vers LS_KEY, puis
+   efface l'ancienne entrée. Le résultat est mémorisé et affiché à l'accueil.
+   À retirer (avec l'encart #migInfo) une fois tous les appareils passés. */
+const MIG_OLD_KEY="aquascop.profil-long.v2", MIG_LOG_KEY="profil-long.migration";
+function migrateKey(){
+  try{
+    const old=localStorage.getItem(MIG_OLD_KEY);
+    if(old!=null){
+      let d=null, cible=null; try{ d=JSON.parse(old); }catch(e){} try{ cible=JSON.parse(localStorage.getItem(LS_KEY)); }catch(e){}
+      if(d&&d.stations&&cible&&cible.stations){      // les deux existent : fusion par id, la plus récente gagne
+        for(const [id,s] of Object.entries(d.stations)) if(!cible.stations[id]||(cible.stations[id].updated||0)<(s.updated||0)) cible.stations[id]=s;
+        localStorage.setItem(LS_KEY, JSON.stringify(cible));
+      } else if(!(cible&&cible.stations)) localStorage.setItem(LS_KEY, old);
+      localStorage.removeItem(MIG_OLD_KEY);
+      localStorage.setItem(MIG_LOG_KEY, JSON.stringify({ etat:"ok", date:new Date().toISOString(), n:d&&d.stations?Object.keys(d.stations).length:0 }));
+    } else if(localStorage.getItem(MIG_LOG_KEY)==null)
+      localStorage.setItem(MIG_LOG_KEY, JSON.stringify({ etat:"rien", date:new Date().toISOString(), n:0 }));
+    return JSON.parse(localStorage.getItem(MIG_LOG_KEY));
+  }catch(e){ return { etat:"echec" }; }
+}
+function showMigration(m){
+  const box=document.getElementById("migInfo"); if(!box||!m) return;
+  const d=m.date?new Date(m.date):null, quand=d?d.toLocaleDateString("fr-FR")+" à "+d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}):"";
+  box.className="mig "+(m.etat==="echec"?"err":"ok");
+  box.textContent= m.etat==="ok" ? `✓ Migration des données effectuée le ${quand} : ${m.n} station(s) récupérée(s).`
+    : m.etat==="rien" ? `✓ Migration vérifiée le ${quand} : aucune ancienne donnée sur cet appareil.`
+    : "⚠ Migration non effectuée (mémoire du navigateur inaccessible). Les anciennes données sont intactes : exporter les stations et prévenir.";
+  box.hidden=false;
 }
 
 /* ---------- Store (localStorage) ---------- */
@@ -551,7 +589,7 @@ $('delStation').onclick=()=>{ confirmDialog('Supprimer définitivement cette sta
 bindMetaOnce(); bindInfosOnce();
 
 /* ---------- Init ---------- */
-Store.load(); migrateOld(); go('home');
+const migration=migrateKey(); Store.load(); migrateOld(); go('home'); showMigration(migration);
 </script>
 </body>
 </html>
