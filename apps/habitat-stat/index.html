@@ -249,7 +249,7 @@ const LS_KEY="habitat-stat.v2";
 const $=id=>document.getElementById(id);
 
 /* ---------- Modèle ---------- */
-function newCampaign(label){ return { label, date:todayISO(),heure:"",operateur:"",debit:"",substrat:false, lm:"", transects:[] }; }
+function newCampaign(label){ return { label, date:"",heure:"",operateur:"",debit:"",substrat:false, lm:"", transects:[] }; }
 function newTransect(){ return { largeur:"", points:[], collapsed:false }; }
 function newPoint(){ return { h:"", s:"" }; }
 function nowHHMM(){ const d=new Date(); return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0"); }
@@ -559,7 +559,7 @@ function renderCamp(which){
     <div class="row c2">
       <div class="field"><label>Date</label><input type="date" data-f="date" value="${esc(c.date)}"></div>
       <div class="field"><label>Heure</label><input type="time" data-f="heure" value="${esc(c.heure||"")}"></div></div>
-    <div class="hint" style="margin:-4px 0 9px">L'heure se remplit à la saisie du débit (comparaison avec la station hydrométrique voisine) ; modifiable.</div>
+    <div class="hint" style="margin:-4px 0 9px">Date et heure se remplissent à la saisie du débit (comparaison avec la station hydrométrique voisine) ; modifiables.</div>
     <div class="field"><label>Opérateur</label><input data-f="operateur" value="${esc(c.operateur)}"></div>
     <div class="field"><label>Largeur mouillée moyenne (m) - fixe l'espacement inter-point d = L̄/7</label><input class="mono" data-f="lm" value="${esc(c.lm)}" inputmode="decimal"></div>
     <label style="display:flex;align-items:center;gap:9px;font-size:.85rem;padding:6px 0;cursor:pointer">
@@ -587,7 +587,9 @@ function renderCamp(which){
     const f=inp.getAttribute('data-f');
     inp.addEventListener(inp.type==='checkbox'?'change':'input',()=>{
       c[f]= inp.type==='checkbox'? inp.checked : inp.value;
-      if(f==='debit'&&inp.value.trim()&&!c.heure){ c.heure=nowHHMM(); el.querySelector('[data-f="heure"]').value=c.heure; }
+      if(f==='debit'&&inp.value.trim()&&!c.heure){   // 1re saisie du débit : date et heure de la mesure
+        c.date=todayISO(); c.heure=nowHHMM();
+        el.querySelector('[data-f="date"]').value=c.date; el.querySelector('[data-f="heure"]').value=c.heure; }
       touch();
       if(f==='substrat'||f==='lm') renderCamp(which);
     });

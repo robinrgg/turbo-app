@@ -126,18 +126,24 @@ test('jaugeage : une verticale ajoutée a une distance au bord vide, puis saisie
   });
 });
 
-test('Estimhab / Stathab : l’heure de campagne se remplit à la saisie du débit, sans écraser une heure existante', { skip }, async () => {
+test('Estimhab / Stathab : date et heure de campagne remplies à la saisie du débit, sans écraser une heure existante', { skip }, async () => {
   await withBrowser(async ({ open }) => {
     const page = await open('/apps/habitat-stat/index.html');
     await page.evaluate(() => { cur = newStation(); Store.put(cur); go('station'); go('camp1'); });
     assert.equal(await page.inputValue('#scr-camp1 [data-f="heure"]'), '');
+    assert.equal(await page.inputValue('#scr-camp1 [data-f="date"]'), '', 'date vide à la création');
+    await page.evaluate(() => { cur.camp1.date = '2026-01-02'; go('camp1'); });   // ancienne date par défaut
     await page.fill('#scr-camp1 [data-f="debit"]', '0,42');
+    assert.equal(await page.inputValue('#scr-camp1 [data-f="date"]'), await page.evaluate(() => todayISO()), 'date du jour de la mesure');
     const h = await page.inputValue('#scr-camp1 [data-f="heure"]');
     assert.match(h, /^\d\d:\d\d$/);
     assert.equal(await page.evaluate(() => cur.camp1.heure), h);
     await page.fill('#scr-camp1 [data-f="heure"]', '09:15');
     await page.fill('#scr-camp1 [data-f="debit"]', '0,43');
     assert.equal(await page.evaluate(() => cur.camp1.heure), '09:15', 'heure saisie conservée');
+    await page.fill('#scr-camp1 [data-f="date"]', '2026-10-01');
+    await page.fill('#scr-camp1 [data-f="debit"]', '0,44');
+    assert.equal(await page.evaluate(() => cur.camp1.date), '2026-10-01', 'date corrigée conservée');
     assert.deepEqual(page.errors, []);
   });
 });
