@@ -147,3 +147,34 @@ test('Estimhab / Stathab : date et heure de campagne remplies à la saisie du d�
     assert.deepEqual(page.errors, []);
   });
 });
+
+test('Estimhab / Stathab : modules ligne d’eau et chutes depuis l’onglet Station', { skip }, async () => {
+  await withBrowser(async ({ open }) => {
+    const page = await open('/apps/habitat-stat/index.html');
+    await page.evaluate(() => { cur = newStation(); Store.put(cur); go('station'); go('info'); window.confirm = () => true; });
+    assert.equal(await page.getAttribute('#scr-info [data-s="pente"]', 'readonly'), null, 'saisie libre au départ');
+    // ligne d'eau : 2 tronçons, le 2e reprend la visée amont du 1er
+    await page.click('#scr-info [data-go="ligne"]');
+    await page.click('#leAdd'); await page.click('#leAdd');
+    const saisir = async (i, sel, v) => page.fill(`#leList .le-card:nth-child(${i}) ${sel}`, v);
+    await saisir(1, '[data-t="distance_m"]', '10');
+    await saisir(1, '[data-v="aval"][data-k="fm"]', '150'); await saisir(1, '[data-v="amont"][data-k="fm"]', '140');
+    await saisir(2, '[data-t="distance_m"]', '10');
+    await page.click('#leList .le-card:nth-child(2) [data-copy]');
+    await saisir(2, '[data-v="amont"][data-k="fm"]', '130');
+    assert.equal(await page.evaluate(() => cur.station.troncons[1].aval.fm), 140, 'visée aval reprise');
+    assert.equal(await page.evaluate(() => cur.station.pente), '1', 'ΔH 0,2 m / 20 m = 10 ‰ = 1 %');
+    assert.equal(await page.locator('#leChart circle').count(), 3);
+    // chutes : 15 cm refusé, 35 et 40 acceptés
+    await page.click('#btnBack');
+    await page.click('#scr-info [data-go="chutes"]');
+    for (const v of ['15', '35', '40']) { await page.fill('#chIn', v); await page.press('#chIn', 'Enter'); }
+    assert.deepEqual(await page.evaluate(() => cur.station.chutesCm), [35, 40]);
+    assert.match(await page.textContent('#toast'), /refusée/);
+    await page.click('#btnBack');
+    assert.equal(await page.inputValue('#scr-info [data-s="pente"]'), '1');
+    assert.equal(await page.inputValue('#scr-info [data-s="chutes"]'), '0.75');
+    assert.notEqual(await page.getAttribute('#scr-info [data-s="pente"]', 'readonly'), null, 'champ calculé non modifiable');
+    assert.deepEqual(page.errors, []);
+  });
+});
