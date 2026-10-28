@@ -133,7 +133,10 @@ async function cacheFirst(request) {
 function fetchWithTimeout(request, ms) {
   return new Promise((resolve, reject) => {
     const id = setTimeout(() => reject(new Error('timeout')), ms);
-    fetch(request).then(
+    // cache: 'no-cache' : revalidation systématique auprès du serveur (ETag, 304 si inchangé).
+    // Sans cela, le cache HTTP du navigateur (max-age=600 sur GitHub Pages) peut resservir
+    // un ancien .js pendant 10 min après une mise à jour (apps en plusieurs fichiers : CARHYCE).
+    (request.mode === 'navigate' ? fetch(request) : fetch(request, { cache: 'no-cache' })).then(
       r => { clearTimeout(id); resolve(r); },
       e => { clearTimeout(id); reject(e); }
     );

@@ -4,7 +4,7 @@
 
 // Version du code applicatif, affichée à l'accueil avec la version du cache du hub
 // (service worker racine) pour vérifier la version en cours sur mobile.
-const APP_VERSION = 'v22';
+const APP_VERSION = 'v23';
 
 /* Profil en long de la ligne d'eau : Δh cumulé (m) selon la distance cumulée depuis l'aval (m),
    axes tracés et gradués avec des pas ronds, titres d'axes. Même rendu dans Profil en long,

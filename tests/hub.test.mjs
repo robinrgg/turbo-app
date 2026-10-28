@@ -12,7 +12,7 @@ const swCtx = vm.createContext({
   self: { location: new URL(ORIGIN + '/turbo-app/sw.js'), addEventListener() {} },
   importScripts() {}, URL, console,
 });
-vm.runInContext(read('sw.js') + '\n;this.strategyFor = strategyFor;', swCtx);
+vm.runInContext(read('sw.js') + '\n;this.strategyFor = strategyFor; this.fetchWithTimeout = fetchWithTimeout;', swCtx);
 const strategy = u => swCtx.strategyFor(new URL(u));
 
 test('SW : les API temps réel ne sont jamais servies depuis le cache', () => {
@@ -27,6 +27,15 @@ test('SW : CDN en cache-first, fichiers du hub en network-first', () => {
   assert.equal(strategy('https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js'), 'cdn');
   assert.equal(strategy('https://fonts.gstatic.com/s/x.woff2'), 'cdn');
   assert.equal(strategy(ORIGIN + '/turbo-app/apps/carhyce/app.js'), 'local');
+});
+
+test('SW : fichiers du hub toujours revalidés auprès du serveur (pas d’ancien .js resservi par le cache HTTP)', async () => {
+  const appels = [];
+  swCtx.fetch = (req, init) => { appels.push([req.mode, init && init.cache]); return Promise.resolve({ ok: true }); };
+  swCtx.setTimeout = setTimeout; swCtx.clearTimeout = clearTimeout;
+  await swCtx.fetchWithTimeout({ mode: 'no-cors', url: ORIGIN + '/turbo-app/apps/carhyce/app.js' }, 1000);
+  await swCtx.fetchWithTimeout({ mode: 'navigate', url: ORIGIN + '/turbo-app/apps/carhyce/index.html' }, 1000);
+  assert.deepEqual(appels, [['no-cors', 'no-cache'], ['navigate', undefined]]);
 });
 
 test('SW : toute API appelée par meteo-hydro est déclarée temps réel', () => {
