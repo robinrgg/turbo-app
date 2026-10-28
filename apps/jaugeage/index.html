@@ -1354,9 +1354,7 @@ function renderCurrentSummary() {
 
 /* ACTIONS */
 function addVerticale() {
-  const lastX = state.verticales.length > 0
-    ? Math.max(...state.verticales.map(v => parseFloat(v.abscisse) || 0)) : 0;
-  const v = newVerticale(lastX > 0 ? +(lastX + 0.5).toFixed(2) : 0, false);
+  const v = newVerticale('', false);   // distance au bord laissée vide : saisie libre
   v.points = autoPointsForDepth(0);
   state.verticales.push(v);
   state.expandedVertId = v.id;
