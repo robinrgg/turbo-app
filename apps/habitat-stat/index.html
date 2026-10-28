@@ -114,6 +114,17 @@ section.card>.bd{ padding:12px; }
 .mapbox{ height:230px; border:1px solid var(--border-strong); border-radius:var(--radius-sm); overflow:hidden; background:var(--bg); margin-top:6px; position:relative; z-index:0; }
 .mapbox .empty{ height:100%; display:flex; align-items:center; justify-content:center; border:none; }
 .map-legend{ display:flex; gap:14px; font-size:.66rem; color:var(--text-mute); margin-top:5px; }
+.field input[readonly]{ color:var(--accent); border-style:dashed; }
+.steep-btn{ margin-top:5px; width:100%; }
+.le-card{ border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--bg); padding:10px; margin-bottom:9px; }
+.le-card .le-hd{ display:flex; align-items:center; justify-content:space-between; font-weight:700; color:var(--ttl); margin-bottom:8px; }
+.le-card .vis-lbl{ font-size:.63rem; color:var(--text-mute); text-transform:uppercase; letter-spacing:.05em; font-weight:700; margin:4px 0 4px; }
+.le-card .stadi{ font-size:.66rem; color:var(--warn); min-height:0; }
+.le-card .dh{ font-family:var(--font-mono); font-size:.78rem; color:var(--accent); margin-top:4px; }
+.le-copy{ width:100%; margin:2px 0 6px; }
+#leChart{ width:100%; height:auto; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius-sm); margin-top:10px; display:block; }
+.ch-row{ display:grid; grid-template-columns:40px 1fr auto; align-items:center; gap:8px; padding:6px 4px; border-bottom:1px solid var(--border); font-family:var(--font-mono); }
+.ch-row .n{ color:var(--text-mute); font-size:.75rem; } .ch-row .del{ background:transparent; border:none; color:var(--err); font-size:18px; min-height:36px; cursor:pointer; }
 .map-legend i{ display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:5px; vertical-align:-1px; border:2px solid #fff; }
 
 /* ---- Transects ---- */
@@ -203,6 +214,9 @@ input[type=file]{ display:none; }
 
   <!-- sous-écran : identification & géométrie -->
   <section class="screen" id="scr-info"></section>
+  <!-- sous-écrans Stathab_steep : ligne d'eau, chutes -->
+  <section class="screen" id="scr-ligne"></section>
+  <section class="screen" id="scr-chutes"></section>
   <!-- sous-écrans campagnes -->
   <section class="screen" id="scr-camp1"></section>
   <section class="screen" id="scr-camp2"></section>
@@ -257,7 +271,7 @@ function todayISO(){ const d=new Date(); return d.getFullYear()+"-"+String(d.get
 function newStation(){
   return { id:"st_"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),
     updated:Date.now(),
-    station:{ code:"",ce:"",com:"",x:"",y:"",op:"",date:todayISO(), long:"",pb:"",nbt:"15", q50:"",qmin:"",qmax:"", pente:"",chutes:"" },
+    station:{ code:"",ce:"",com:"",x:"",y:"",op:"",date:todayISO(), long:"",pb:"",nbt:"15", q50:"",qmin:"",qmax:"", pente:"",chutes:"", troncons:[], chutesCm:[] },
     camp1:newCampaign("Campagne Q1"), camp2:newCampaign("Campagne Q2") };
 }
 
@@ -316,6 +330,8 @@ function go(where){
   if(where==="home"){ cur=null; $("appTitle").innerHTML='Estimhab <span class="accent">·</span> Stathab'; renderHome(); show("home"); return; }
   if(where==="station"){ $("appTitle").textContent=cur.station.code||"Station"; renderSummary(); show("station","home"); return; }
   if(where==="info"){ renderInfo(); show("info","station"); startGeo(); return; }
+  if(where==="ligne"){ renderLigne(); show("ligne","info"); return; }
+  if(where==="chutes"){ renderChutes(); show("chutes","info"); return; }
   if(where==="camp1"){ renderCamp("camp1"); show("camp1","station"); return; }
   if(where==="camp2"){ renderCamp("camp2"); show("camp2","station"); return; }
   if(where==="export"){ renderExport(); show("export","station"); return; }
@@ -356,7 +372,7 @@ function renderSummary(){
 
 /* ---------- Sous-écran : identification & géométrie ---------- */
 function renderInfo(){
-  const s=cur.station;
+  const s=cur.station, le=computeLigneEau(s.troncons||[]), nCh=(s.chutesCm||[]).length;
   $("scr-info").innerHTML=`
   <section class="card"><div class="hd"><span class="ttl"><span class="bar"></span>Identification</span></div><div class="bd">
     <div class="field"><label>Code / nom station</label><input data-s="code" value="${esc(s.code)}" placeholder="ex : ARL-01"></div>
@@ -398,9 +414,13 @@ function renderInfo(){
   <section class="card"><div class="hd"><span class="ttl"><span class="bar"></span>Spécifique Stathab_steep <span style="color:var(--accent)">*</span></span></div><div class="bd">
     <div class="steep-note">Champs <b>*</b> : à saisir <b>uniquement</b> pour une exploitation en <b>Stathab_steep</b> (pente 1-25 %). Inutiles pour Estimhab / Stathab.</div>
     <div class="row c2">
-      <div class="field"><label>Pente ligne d'eau (%) <span class="star">*</span></label><input data-s="pente" class="mono" value="${esc(s.pente)}" inputmode="decimal"></div>
-      <div class="field"><label>Cumul chutes &gt; 20 cm (m) <span class="star">*</span></label><input data-s="chutes" class="mono" value="${esc(s.chutes)}" inputmode="decimal"></div></div>
-    <div class="hint">Cumul = somme des hauteurs des chutes &gt; 20 cm le long du thalweg sur tout le tronçon.</div>
+      <div class="field"><label>Pente ligne d'eau (%) <span class="star">*</span></label><input data-s="pente" class="mono" value="${esc(s.pente)}" inputmode="decimal" ${le.nValid?"readonly":""}>
+        <div class="hint">${le.nValid?`pente estimée, calculée depuis ${le.nValid} tronçon(s)`:"saisie libre"}</div>
+        <button class="btn sm steep-btn" data-go="ligne">Saisir les visées ›</button></div>
+      <div class="field"><label>Cumul chutes &gt; 20 cm (m) <span class="star">*</span></label><input data-s="chutes" class="mono" value="${esc(s.chutes)}" inputmode="decimal" ${nCh?"readonly":""}>
+        <div class="hint">${nCh?`calculé depuis ${nCh} chute(s)`:"saisie libre"}</div>
+        <button class="btn sm steep-btn" data-go="chutes">Saisir les chutes ›</button></div></div>
+    <div class="hint">Cumul = somme des hauteurs des chutes &gt; 20 cm le long du thalweg sur tout le tronçon. Un champ calculé redevient libre quand son module est vidé.</div>
   </div></section>`;
   $("scr-info").querySelectorAll('[data-s]').forEach(inp=>inp.addEventListener('input',()=>{
     const k=inp.getAttribute('data-s');
@@ -414,9 +434,155 @@ function renderInfo(){
     const k=b.getAttribute('data-pm'), v=String(cur.station[k]||"").trim();
     cur.station[k]=v.startsWith("-")?v.slice(1):"-"+v; setCoordInputs(); touch(); refreshCoords(true);
   }));
+  $("scr-info").querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>go(b.getAttribute('data-go'))));
   $("btnUseGps").onclick=useMyPosition;
   $("btnRecenter").onclick=()=>fitMap();
   refreshGeo();
+}
+
+/* ---------- Stathab_steep : ligne d'eau (comme l'onglet Pente de CARHYCE) ---------- */
+const STADI_TOL_CM=0.1, CHUTE_MIN_CM=20;
+function newTronconLE(){ return { limite_aval:"", limite_amont:"", distance_m:null, aval:{fh:null,fm:null,fb:null}, amont:{fh:null,fm:null,fb:null} }; }
+/* Σ Fm aval / amont, ΔH, pente estimée = ΔH / Σ distances, pente par régression sur (dist., Δh) cumulés */
+function computeLigneEau(troncons){
+  let sFmAval=0,sFmAmont=0,sDist=0,nValid=0; const pts=[{x:0,y:0}]; let xCum=0,yCum=0;
+  troncons.forEach(tr=>{
+    if(tr.aval.fm!=null&&tr.amont.fm!=null&&tr.distance_m!=null){
+      sFmAval+=tr.aval.fm/100; sFmAmont+=tr.amont.fm/100; sDist+=tr.distance_m; nValid++;
+      xCum+=tr.distance_m; yCum+=(tr.aval.fm-tr.amont.fm)/100; pts.push({x:xCum,y:yCum});
+    }
+  });
+  const dH=sFmAval-sFmAmont, penteEstimee=sDist>0?1000*dH/sDist:null;
+  let penteReg=null;
+  if(pts.length>=2){
+    const m=pts.length, sx=pts.reduce((a,p)=>a+p.x,0), sy=pts.reduce((a,p)=>a+p.y,0),
+      sxx=pts.reduce((a,p)=>a+p.x*p.x,0), sxy=pts.reduce((a,p)=>a+p.x*p.y,0), den=m*sxx-sx*sx;
+    if(den!==0) penteReg=1000*(m*sxy-sx*sy)/den;
+  }
+  return { sFmAval,sFmAmont,dH,sDist,nValid,penteEstimee,penteReg,pts };
+}
+function chuteValide(v){ const n=num(v); return n!=null&&n>CHUTE_MIN_CM?n:null; }
+/* Report des modules dans les champs Stathab_steep (pente en %, cumul en m) */
+function syncSteep(s){
+  const le=computeLigneEau(s.troncons||[]);
+  if(le.nValid&&le.penteEstimee!=null) s.pente=String(rnd(le.penteEstimee/10,3));
+  const ch=s.chutesCm||[];
+  if(ch.length) s.chutes=String(rnd(ch.reduce((a,b)=>a+b,0)/100,3));
+}
+
+function renderLigne(){
+  const s=cur.station; s.troncons=s.troncons||[];
+  $("scr-ligne").innerHTML=`
+    <div class="st-title">Ligne d'eau</div>
+    <div class="st-sub">Visées stadimétriques Fh / Fm / Fb (cm), aval puis amont, par tronçon. La <b>pente estimée</b> est reportée en % dans le champ Stathab_steep.</div>
+    <section class="card"><div class="hd"><span class="ttl"><span class="bar"></span>Tronçons</span></div><div class="bd">
+      <div id="leList"></div>
+      <button class="btn sm" id="leAdd">+ Tronçon</button>
+    </div></section>
+    <section class="card"><div class="hd"><span class="ttl"><span class="bar"></span>Calcul de la pente</span></div><div class="bd">
+      <div id="leCalc"></div>
+      <svg id="leChart" viewBox="0 0 420 240" role="img" aria-label="Profil en long de la ligne d'eau"></svg>
+    </div></section>`;
+  $("leAdd").onclick=()=>{ s.troncons.push(newTronconLE()); renderTronconsLE(); refreshLE(); touch(); };
+  renderTronconsLE(); refreshLE();
+}
+function renderTronconsLE(){
+  const s=cur.station, list=$("leList"); list.innerHTML="";
+  if(!s.troncons.length) list.innerHTML='<div class="empty" style="margin-bottom:9px">Aucun tronçon.</div>';
+  s.troncons.forEach((tr,idx)=>{
+    const card=document.createElement("div"); card.className="le-card";
+    card.innerHTML=`<div class="le-hd"><span>Tronçon ${idx+1}</span><button class="btn danger ghost sm" data-del>×</button></div>
+      <div class="row c3">
+        <div class="field"><label>Limite aval</label><input data-t="limite_aval" value="${esc(tr.limite_aval)}" placeholder="ex. T1"></div>
+        <div class="field"><label>Limite amont</label><input data-t="limite_amont" value="${esc(tr.limite_amont)}" placeholder="ex. T2"></div>
+        <div class="field"><label>Distance (m)</label><input data-t="distance_m" class="mono" inputmode="decimal" value="${tr.distance_m==null?"":tr.distance_m}"></div></div>
+      ${idx>0?'<button class="btn ghost sm le-copy" data-copy>⤒ Visée aval = visée amont du tronçon précédent</button>':""}
+      ${["aval","amont"].map(v=>`<div class="vis-lbl">Visée ${v}</div><div class="row c3">${["fh","fm","fb"].map(k=>
+        `<div class="field"><label>${k.toUpperCase()} (cm)</label><input data-v="${v}" data-k="${k}" class="mono" inputmode="decimal" value="${tr[v][k]==null?"":tr[v][k]}"></div>`).join("")}</div>
+        <div class="stadi" data-stadi="${v}"></div>`).join("")}
+      <div class="dh" id="le-dh-${idx}"></div>`;
+    card.querySelectorAll("[data-t]").forEach(inp=>inp.addEventListener("input",()=>{
+      const k=inp.getAttribute("data-t"); tr[k]= k==="distance_m"?num(inp.value):inp.value; refreshLE(); touch(); }));
+    card.querySelectorAll("[data-v]").forEach(inp=>inp.addEventListener("input",()=>{
+      tr[inp.getAttribute("data-v")][inp.getAttribute("data-k")]=num(inp.value); checkStadiLE(card,tr); refreshLE(); touch(); }));
+    card.querySelector("[data-del]").onclick=()=>confirmDialog(`Supprimer le tronçon ${idx+1} ?`,()=>{ s.troncons.splice(idx,1); renderTronconsLE(); refreshLE(); touch(); });
+    const cp=card.querySelector("[data-copy]");
+    if(cp) cp.onclick=()=>{
+      const src=s.troncons[idx-1].amont, dst=tr.aval;
+      if(src.fh==null&&src.fm==null&&src.fb==null){ toast("Visée amont du tronçon précédent vide.","err"); return; }
+      const copier=()=>{ dst.fh=src.fh; dst.fm=src.fm; dst.fb=src.fb; renderTronconsLE(); refreshLE(); touch(); toast(`Visée aval reprise du tronçon ${idx}.`,"ok"); };
+      if(dst.fh!=null||dst.fm!=null||dst.fb!=null) confirmDialog("Écraser la visée aval actuelle ?",copier,"Remplacer"); else copier();
+    };
+    list.appendChild(card); checkStadiLE(card,tr);
+  });
+}
+function checkStadiLE(card,tr){
+  ["aval","amont"].forEach(v=>{ const vis=tr[v], note=card.querySelector(`[data-stadi="${v}"]`), fm=card.querySelector(`[data-v="${v}"][data-k="fm"]`);
+    let msg=""; if(vis.fh!=null&&vis.fm!=null&&vis.fb!=null){ const e=Math.abs(vis.fm-(vis.fh+vis.fb)/2); if(e>STADI_TOL_CM) msg=`Écart de Fm à (Fh+Fb)/2 = ${e.toFixed(2)} cm - vérifier la lecture`; }
+    note.textContent=msg; fm.style.borderColor=msg?"var(--warn)":""; });
+}
+function refreshLE(){
+  const s=cur.station, c=computeLigneEau(s.troncons);
+  s.troncons.forEach((tr,i)=>{ const el=$("le-dh-"+i); if(!el) return;
+    const dh=(tr.aval.fm!=null&&tr.amont.fm!=null)?(tr.aval.fm-tr.amont.fm)/100:null; el.textContent="Δh tronçon = "+(dh==null?"-":dh.toFixed(3)+" m"); });
+  const PM=' <span style="font-family:var(--font-sans)">‰</span>';
+  const kv=(k,v,hl)=>`<div class="kv"><span class="k">${k}</span><span class="v"${hl?' style="color:var(--accent)"':""}>${v}</span></div>`;
+  $("leCalc").innerHTML= kv("Σ Fm visées aval",fmt(c.sFmAval,3)+" m")+kv("Σ Fm visées amont",fmt(c.sFmAmont,3)+" m")+kv("ΔH",fmt(c.dH,3)+" m")
+    +kv("Σ distances",fmt(c.sDist,2)+" m")+kv("Pente estimée",fmt(c.penteEstimee,2)+PM+" = "+(c.penteEstimee==null?"-":fmt(c.penteEstimee/10,3))+" %",true)
+    +kv("Pente par régression (info)",fmt(c.penteReg,2)+PM)
+    +`<div class="hint">${c.nValid} tronçon(s) complet(s) pris en compte (distance + Fm aval + Fm amont).</div>`;
+  drawLigneEau(c.pts);
+  syncSteep(s);
+}
+function drawLigneEau(pts){
+  const svg=$("leChart"); svg.innerHTML="";
+  const ns="http://www.w3.org/2000/svg", mk=(t,at,txt)=>{ const e=document.createElementNS(ns,t); for(const k in at) e.setAttribute(k,at[k]); if(txt!=null) e.textContent=txt; return e; };
+  const lbl={ fill:"#a3aebb","font-size":12,"font-family":"system-ui" };
+  const W=420,H=240,pad={l:54,r:12,t:14,b:36}, iW=W-pad.l-pad.r, iH=H-pad.t-pad.b;
+  if(pts.length<2){ svg.appendChild(mk("text",{x:W/2,y:H/2,"text-anchor":"middle",...lbl},"Saisir au moins un tronçon complet")); return; }
+  const xMax=Math.max(...pts.map(p=>p.x))||1; let aMin=Math.min(...pts.map(p=>p.y)), aMax=Math.max(...pts.map(p=>p.y));
+  if(aMin===aMax){ aMin-=0.1; aMax+=0.1; }
+  const aPad=(aMax-aMin)*0.12, y0=aMin-aPad, y1=aMax+aPad, X=x=>pad.l+x/xMax*iW, Y=a=>pad.t+(y1-a)/(y1-y0)*iH;
+  for(let i=0;i<=3;i++){ const a=y0+(y1-y0)*i/3;
+    svg.appendChild(mk("line",{x1:pad.l,x2:W-pad.r,y1:Y(a),y2:Y(a),stroke:"#232f3a","stroke-width":1}));
+    svg.appendChild(mk("text",{x:pad.l-6,y:Y(a)+4,"text-anchor":"end",...lbl,"font-family":"ui-monospace,monospace"},a.toFixed(2))); }
+  svg.appendChild(mk("text",{x:(pad.l+W-pad.r)/2,y:H-8,"text-anchor":"middle",...lbl},"distance cumulée (m) - 0 = aval"));
+  svg.appendChild(mk("text",{x:13,y:pad.t+iH/2,"text-anchor":"middle",transform:`rotate(-90 13 ${pad.t+iH/2})`,...lbl},"Δh cumulé (m)"));
+  svg.appendChild(mk("path",{d:pts.map((p,i)=>(i?"L":"M")+X(p.x).toFixed(1)+" "+Y(p.y).toFixed(1)).join(" "),fill:"none",stroke:"#5aa9f0","stroke-width":2.5,"stroke-linejoin":"round","stroke-linecap":"round"}));
+  pts.forEach(p=>svg.appendChild(mk("circle",{cx:X(p.x),cy:Y(p.y),r:3.4,fill:"#9fd0ff"})));
+}
+
+/* ---------- Stathab_steep : chutes > 20 cm ---------- */
+function renderChutes(){
+  const s=cur.station; s.chutesCm=s.chutesCm||[];
+  $("scr-chutes").innerHTML=`
+    <div class="st-title">Chutes</div>
+    <div class="st-sub">Hauteurs des chutes le long du thalweg, une par une, en cm. Seules les chutes de plus de ${CHUTE_MIN_CM} cm sont acceptées ; le cumul est reporté en m dans le champ Stathab_steep.</div>
+    <section class="card"><div class="hd"><span class="ttl"><span class="bar"></span>Nouvelle chute</span></div><div class="bd">
+      <div class="row" style="grid-template-columns:1fr auto;align-items:end">
+        <div class="field"><label>Hauteur de chute (cm)</label><input id="chIn" class="mono" inputmode="decimal" placeholder="&gt; ${CHUTE_MIN_CM}"></div>
+        <button class="btn primary sm" id="chAdd" style="min-height:var(--tap)">+ Ajouter</button></div>
+    </div></section>
+    <section class="card"><div class="hd"><span class="ttl"><span class="bar"></span>Chutes saisies</span></div><div class="bd">
+      <div id="chList"></div><div id="chTot" style="margin-top:8px"></div>
+    </div></section>`;
+  const ajouter=()=>{ const inp=$("chIn"), v=inp.value.trim(); if(!v) return;
+    const h=chuteValide(v);
+    if(h==null){ toast(num(v)==null?"Hauteur illisible.":`Chute refusée : ${v} cm (seules les chutes > ${CHUTE_MIN_CM} cm comptent).`,"err"); inp.select(); return; }
+    s.chutesCm.push(h); inp.value=""; inp.focus(); refreshChutes(); touch(); };
+  $("chAdd").onclick=ajouter;
+  $("chIn").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); ajouter(); } });
+  refreshChutes();
+}
+function refreshChutes(){
+  const s=cur.station, list=$("chList"), tot=s.chutesCm.reduce((a,b)=>a+b,0);
+  list.innerHTML= s.chutesCm.length? s.chutesCm.map((h,i)=>`<div class="ch-row"><span class="n">#${i+1}</span><span>${h} cm</span><button class="del" data-i="${i}" title="Supprimer">×</button></div>`).join("")
+    : '<div class="empty">Aucune chute.</div>';
+  list.querySelectorAll("[data-i]").forEach(b=>b.onclick=()=>{ const i=+b.getAttribute("data-i");
+    confirmDialog(`Supprimer la chute #${i+1} (${s.chutesCm[i]} cm) ?`,()=>{ s.chutesCm.splice(i,1); refreshChutes(); touch(); }); });
+  $("chTot").innerHTML=`<div class="kv"><span class="k">Nombre de chutes</span><span class="v">${s.chutesCm.length}</span></div>
+    <div class="kv"><span class="k">Cumul</span><span class="v" style="color:var(--accent)">${rnd(tot,1)} cm = ${s.chutesCm.length?rnd(tot/100,3):"-"} m</span></div>`;
+  syncSteep(s);
 }
 
 /* ---------- Coordonnées WGS84, GPS et carte ---------- */
@@ -693,7 +859,10 @@ function buildModelJSON(op){
   const subCamp=c1.hasSub?{src:"Q1",c:c1}:(c2.hasSub?{src:"Q2",c:c2}:null);
   return { format:"habitat-stat", version:2, exported:new Date().toISOString(),
     station:{ code:st.code,cours_eau:st.ce,commune:st.com,x:st.x,y:st.y,systeme_coord:"WGS84 (EPSG:4326) - x = longitude, y = latitude, degrés décimaux",operateur:st.op,date:st.date,
-      longueur_m:num(st.long),largeur_pleins_bords_m:num(st.pb),nb_transects:num(st.nbt) },
+      longueur_m:num(st.long),largeur_pleins_bords_m:num(st.pb),nb_transects:num(st.nbt),
+      ligne_eau:{ troncons:(st.troncons||[]).map(t=>({ limite_aval:t.limite_aval||"",limite_amont:t.limite_amont||"",distance_m:t.distance_m,aval:{...t.aval},amont:{...t.amont} })),
+        pente_estimee_pourmille:(()=>{ const c=computeLigneEau(st.troncons||[]); return c.nValid?rnd(c.penteEstimee,3):null; })() },
+      chutes_cm:[...(st.chutesCm||[])] },
     hydrologie:{ q50_m3s:num(st.q50),q_min_m3s:num(st.qmin),q_max_m3s:num(st.qmax) },
     campagnes:{ Q1:campObj(op.camp1,c1), Q2:campObj(op.camp2,c2) },
     model_inputs:{
@@ -716,7 +885,10 @@ function campFromModel(cm,label){ const c=newCampaign(label); if(!cm) return c;
 function stationFromModel(st){ const o=newStation();
   Object.assign(o.station,{ code:st.code||"",ce:st.cours_eau||"",com:st.commune||"",x:st.x||"",y:st.y||"",op:st.operateur||"",date:st.date||"",
     long:st.longueur_m!=null?String(st.longueur_m):"", pb:st.largeur_pleins_bords_m!=null?String(st.largeur_pleins_bords_m):"",
-    nbt:st.nb_transects!=null?String(st.nb_transects):"15" }); return o; }
+    nbt:st.nb_transects!=null?String(st.nb_transects):"15",
+    troncons:((st.ligne_eau&&st.ligne_eau.troncons)||[]).map(t=>({ ...newTronconLE(), limite_aval:t.limite_aval||"", limite_amont:t.limite_amont||"", distance_m:t.distance_m??null,
+      aval:{ ...newTronconLE().aval, ...t.aval }, amont:{ ...newTronconLE().amont, ...t.amont } })),
+    chutesCm:Array.isArray(st.chutes_cm)?st.chutes_cm.filter(h=>typeof h==="number"):[] }); return o; }
 /* export de modélisation : reconnu par sa structure, quel que soit son marqueur « format » */
 function isModelJSON(obj){ return !!(obj&&obj.station&&obj.campagnes&&obj.model_inputs); }
 /* normalise un fichier importé -> {station:{internal}, camp1, camp2} */

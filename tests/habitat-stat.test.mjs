@@ -1,14 +1,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { inlineScripts, loadFunctions } from './helpers.mjs';
+import { inlineScripts, loadFunctions, read } from './helpers.mjs';
 import { loadFile } from './helpers.mjs';
 
 const src = inlineScripts('apps/habitat-stat/index.html');
 const ctx = loadFunctions(src, ['num', 'rnd', 'todayISO', 'newCampaign', 'newTransect', 'newPoint', 'newStation',
   'spacing', 'suggestPts', 'computeCamp', 'disVector', 'graClass', 'graVector', 'computeCarry',
   'campObj', 'buildModelJSON', 'campFromModel', 'stationFromModel', 'isModelJSON', 'normalize',
-  'validLatLon', 'splitLatLon', 'l93ToWgs84'],
-  { GRA_LABELS: Array.from({ length: 12 }, (_, i) => 'c' + i) });
+  'validLatLon', 'splitLatLon', 'l93ToWgs84', 'newTronconLE', 'computeLigneEau', 'chuteValide', 'syncSteep'],
+  { GRA_LABELS: Array.from({ length: 12 }, (_, i) => 'c' + i), STADI_TOL_CM: 0.1, CHUTE_MIN_CM: 20 });
 const plain = o => JSON.parse(JSON.stringify(o));
 const sum = a => a.reduce((s, x) => s + x, 0);
 const close = (a, b, tol = 1e-9) => assert.ok(Math.abs(a - b) < tol, `${a} ≠ ${b}`);
@@ -141,4 +141,54 @@ test('import : un export est reconnu par sa structure, quel que soit son marqueu
     assert.ok(n, String(format)); assert.equal(n.station.code, 'F1');
   }
   assert.equal(ctx.normalize({ format: 'habitat-stat' }), null);
+});
+
+// ---- Stathab_steep : modules ligne d'eau et chutes
+const refPL = JSON.parse(read('tests/fixtures/profil_long_reference.json'));
+const tronconsRef = refPL.troncons.map(t => ({ ...ctx.newTronconLE(), distance_m: t.distance_m, aval: t.aval, amont: t.amont }));
+
+test('ligne d’eau : pente estimée identique à Profil en long / CARHYCE sur le relevé de référence', () => {
+  const c = ctx.computeLigneEau(tronconsRef);
+  assert.equal(+c.penteEstimee.toFixed(3), refPL.synthese.pente_estimee_pourmille);
+  assert.equal(+c.penteReg.toFixed(3), refPL.synthese.pente_regression_pourmille);
+  assert.equal(c.nValid, refPL.synthese.nb_troncons_valides);
+});
+
+test('ligne d’eau → champ pente (%) : pente estimée en ‰ divisée par 10 ; module vide → champ libre conservé', () => {
+  const op = ctx.newStation();
+  op.station.pente = '9.9';
+  ctx.syncSteep(op.station);
+  assert.equal(op.station.pente, '9.9', 'module vide : saisie libre inchangée');
+  op.station.troncons = tronconsRef;
+  ctx.syncSteep(op.station);
+  assert.equal(op.station.pente, String(+(refPL.synthese.pente_estimee_pourmille / 10).toFixed(3)));
+});
+
+test('chutes : seules les hauteurs > 20 cm sont acceptées ; cumul converti en m', () => {
+  assert.equal(ctx.chuteValide('25'), 25);
+  assert.equal(ctx.chuteValide('20,5'), 20.5);
+  for (const v of ['20', '19,9', '0', '-30', 'abc', '']) assert.equal(ctx.chuteValide(v), null, v);
+  const op = ctx.newStation();
+  op.station.chutesCm = [35, 42.5, 60];
+  ctx.syncSteep(op.station);
+  assert.equal(op.station.chutes, '1.375');
+});
+
+test('export → import : tronçons de ligne d’eau et chutes conservés', () => {
+  const op = ctx.newStation();
+  op.station.troncons = tronconsRef; op.station.chutesCm = [35, 50];
+  ctx.syncSteep(op.station);
+  const json = plain(ctx.buildModelJSON(op));
+  assert.equal(json.station.ligne_eau.troncons.length, tronconsRef.length);
+  assert.equal(json.station.ligne_eau.pente_estimee_pourmille, refPL.synthese.pente_estimee_pourmille);
+  assert.deepEqual(json.station.chutes_cm, [35, 50]);
+  assert.equal(json.model_inputs.steep.chutes_cumul_m, 0.85);
+  const back = plain(ctx.normalize(json));
+  assert.deepEqual(back.station.troncons.map(t => [t.distance_m, t.aval.fm, t.amont.fm]), tronconsRef.map(t => [t.distance_m, t.aval.fm, t.amont.fm]));
+  assert.deepEqual(back.station.chutesCm, [35, 50]);
+  assert.equal(back.station.pente, op.station.pente);
+  // un ancien export sans ces blocs reste importable
+  delete json.station.ligne_eau; delete json.station.chutes_cm;
+  const ancien = plain(ctx.normalize(json));
+  assert.deepEqual(ancien.station.troncons, []); assert.deepEqual(ancien.station.chutesCm, []);
 });
