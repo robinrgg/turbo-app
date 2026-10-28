@@ -6,6 +6,51 @@
 // (service worker racine) pour vérifier la version en cours sur mobile.
 const APP_VERSION = 'v22';
 
+/* Profil en long de la ligne d'eau : Δh cumulé (m) selon la distance cumulée depuis l'aval (m),
+   axes tracés et gradués avec des pas ronds, titres d'axes. Même rendu dans Profil en long,
+   CARHYCE (onglet Pente) et Estimhab · Stathab (Ligne d'eau). */
+function pasRond(etendue, n) {
+  const brut = etendue / n, p = Math.pow(10, Math.floor(Math.log10(brut)));
+  return +[1, 2, 2.5, 5, 10].map(k => k * p).find(v => v >= brut * 0.999).toPrecision(6);
+}
+function decimales(pas) { const s = String(pas); return s.includes('.') ? s.split('.')[1].length : 0; }
+function tracerProfilLong(svg, pts, c) {
+  const ns = 'http://www.w3.org/2000/svg';
+  const mk = (t, at, s) => { const e = document.createElementNS(ns, t); for (const k in at) e.setAttribute(k, at[k]); if (s != null) e.textContent = s; return e; };
+  const txt = (at, s) => mk('text', { fill: c.texte, 'font-size': 12, 'font-family': c.police, ...at }, s);
+  const W = 420, H = 260, pad = { l: 62, r: 14, t: 14, b: 52 }, iW = W - pad.l - pad.r, iH = H - pad.t - pad.b, yB = pad.t + iH;
+  svg.innerHTML = '';
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  if (pts.length < 2) { svg.appendChild(txt({ x: W / 2, y: H / 2, 'text-anchor': 'middle' }, 'Saisir au moins un tronçon complet')); return; }
+  const xMax = Math.max(...pts.map(p => p.x)) || 1;
+  let aMin = Math.min(...pts.map(p => p.y)), aMax = Math.max(...pts.map(p => p.y));
+  if (aMin === aMax) { aMin -= 0.1; aMax += 0.1; }
+  const aPad = (aMax - aMin) * 0.12, y0 = aMin - aPad, y1 = aMax + aPad;
+  const X = x => pad.l + x / xMax * iW, Y = a => pad.t + (y1 - a) / (y1 - y0) * iH;
+  // ordonnées : grille + graduations
+  const pY = pasRond(y1 - y0, 4), dY = decimales(pY);
+  for (let i = Math.ceil(y0 / pY); i * pY <= y1 + 1e-9; i++) {
+    const a = i * pY;
+    svg.appendChild(mk('line', { x1: pad.l, x2: W - pad.r, y1: Y(a), y2: Y(a), stroke: c.grille, 'stroke-width': 1 }));
+    svg.appendChild(txt({ x: pad.l - 7, y: Y(a) + 4, 'text-anchor': 'end' }, (i === 0 ? 0 : a).toFixed(dY)));
+  }
+  // abscisses : graduations en distance
+  const pX = pasRond(xMax, 6), dX = decimales(pX);
+  for (let i = 0; i * pX <= xMax + 1e-9; i++) {
+    const x = i * pX;
+    svg.appendChild(mk('line', { x1: X(x), x2: X(x), y1: yB, y2: yB + 5, stroke: c.axe, 'stroke-width': 1 }));
+    svg.appendChild(txt({ x: X(x), y: yB + 19, 'text-anchor': 'middle' }, x.toFixed(dX)));
+  }
+  svg.appendChild(mk('line', { x1: pad.l, x2: W - pad.r, y1: yB, y2: yB, stroke: c.axe, 'stroke-width': 1.2 }));
+  svg.appendChild(mk('line', { x1: pad.l, x2: pad.l, y1: pad.t, y2: yB, stroke: c.axe, 'stroke-width': 1.2 }));
+  svg.appendChild(txt({ x: pad.l + iW / 2, y: H - 8, 'text-anchor': 'middle', 'font-weight': 600 }, "Distance cumulée depuis l'aval (m)"));
+  svg.appendChild(txt({ x: 14, y: pad.t + iH / 2, 'text-anchor': 'middle', 'font-weight': 600, transform: `rotate(-90 14 ${pad.t + iH / 2})` }, 'Δh cumulé (m)'));
+  // tracé
+  svg.appendChild(mk('path', { d: pts.map((p, i) => (i ? 'L' : 'M') + X(p.x).toFixed(1) + ' ' + Y(p.y).toFixed(1)).join(' '),
+    fill: 'none', stroke: c.ligne, 'stroke-width': 2.5, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }));
+  pts.forEach(p => svg.appendChild(mk('circle', { cx: X(p.x), cy: Y(p.y), r: 3.4, fill: c.point })));
+}
+
 // Parseur de nombre acceptant indifféremment point ou virgule comme séparateur
 function parseNum(v) {
   if (v == null || v === '') return null;
@@ -1421,31 +1466,11 @@ const App = {
     const box = document.createElement('div');
     box.className = 'profile-chart';
     box.id = 'pente-chart';
-    const W = 420, H = 240, pad = { l: 54, r: 12, t: 14, b: 36 }, iW = W - pad.l - pad.r, iH = H - pad.t - pad.b;
-    const ns = 'http://www.w3.org/2000/svg';
-    const mk = (t, at) => { const e = document.createElementNS(ns, t); for (const k in at) e.setAttribute(k, at[k]); return e; };
-    const txt = (at, s) => { const e = mk('text', { class: 'label', style: 'font-size:12px', ...at }); e.textContent = s; return e; };
-    const svg = mk('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': 'Profil en long de la ligne d\'eau' });
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', "Profil en long de la ligne d'eau");
     box.appendChild(svg);
-    if (pts.length < 2) {
-      svg.appendChild(txt({ x: W / 2, y: H / 2, 'text-anchor': 'middle' }, 'Saisir au moins un tronçon complet'));
-      return box;
-    }
-    const xMax = Math.max(...pts.map(p => p.x)) || 1;
-    let aMin = Math.min(...pts.map(p => p.y)), aMax = Math.max(...pts.map(p => p.y));
-    if (aMin === aMax) { aMin -= 0.1; aMax += 0.1; }
-    const aPad = (aMax - aMin) * 0.12, y0 = aMin - aPad, y1 = aMax + aPad;
-    const X = x => pad.l + x / xMax * iW, Y = a => pad.t + (y1 - a) / (y1 - y0) * iH;
-    for (let i = 0; i <= 3; i++) {
-      const a = y0 + (y1 - y0) * i / 3;
-      svg.appendChild(mk('line', { x1: pad.l, x2: W - pad.r, y1: Y(a), y2: Y(a), class: 'grid' }));
-      svg.appendChild(txt({ x: pad.l - 6, y: Y(a) + 4, 'text-anchor': 'end' }, a.toFixed(2)));
-    }
-    svg.appendChild(txt({ x: (pad.l + W - pad.r) / 2, y: H - 8, 'text-anchor': 'middle' }, 'distance cumulée (m) - 0 = aval'));
-    svg.appendChild(txt({ x: 13, y: pad.t + iH / 2, 'text-anchor': 'middle', transform: `rotate(-90 13 ${pad.t + iH / 2})` }, 'Δh cumulé (m)'));
-    const d = pts.map((p, i) => (i ? 'L' : 'M') + X(p.x).toFixed(1) + ' ' + Y(p.y).toFixed(1)).join(' ');
-    svg.appendChild(mk('path', { d, class: 'line-eau', 'stroke-width': 2.5, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }));
-    pts.forEach(p => svg.appendChild(mk('circle', { cx: X(p.x), cy: Y(p.y), r: 3.2, class: 'pt' })));
+    tracerProfilLong(svg, pts, { grille: '#e0e6ec', axe: '#8a99a8', texte: '#5a6b7c', police: 'system-ui, sans-serif', ligne: '#2b8cd6', point: '#143a5c' });
     return box;
   },
 
