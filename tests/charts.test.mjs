@@ -93,3 +93,27 @@ test('hydro-météo : les étiquettes des débits caractéristiques ne se chevau
     assert.deepEqual(page.errors, []);
   });
 });
+
+test('CARHYCE pente : profil en long sous les calculs, même tracé que l’app Profil en long', { skip }, async () => {
+  await withBrowser(async ({ open }) => {
+    const page = await open('/apps/carhyce/index.html');
+    const r = await page.evaluate(() => {
+      const op = DB.newOperation();
+      op.pente.troncons = [10, 20, 15].map((d, i) => ({ limite_aval: '', limite_amont: '', distance_m: d,
+        aval: { fh: null, fm: 150, fb: null }, amont: { fh: null, fm: 150 - 10 * (i + 1), fb: null } }));
+      App.state.op = op; App.scheduleSave = () => {};
+      App.renderPente();
+      const wrap = document.getElementById('pente-calc');
+      const chart = document.getElementById('pente-chart');
+      return { apresCalculs: wrap.lastElementChild === chart && !!wrap.querySelector('.field'),
+        pts: [...chart.querySelectorAll('circle')].map(c => [+c.getAttribute('cx'), +c.getAttribute('cy')]) };
+    });
+    assert.ok(r.apresCalculs, 'graphique en bas, après les calculs');
+    assert.equal(r.pts.length, 4);
+    for (let i = 1; i < r.pts.length; i++) {
+      assert.ok(r.pts[i][0] > r.pts[i - 1][0], 'x croissant');
+      assert.ok(r.pts[i][1] < r.pts[i - 1][1], 'monte vers l’amont');
+    }
+    assert.deepEqual(page.errors, []);
+  });
+});

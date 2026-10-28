@@ -263,8 +263,22 @@ const App = {
       this.showHome();
       return;
     }
+    if (this.purgerHabitatsBerge(op)) await DB.put(op);
     this.state.op = op;
     this.openOperationScreen();
+  },
+
+  // Habitats de berge retirés de la nomenclature (ex. VA) : purgés des fiches existantes
+  purgerHabitatsBerge(op) {
+    const valides = new Set(NOM.habitats_berges.map(h => h.code));
+    let modifie = false;
+    (op.transects || []).forEach(tr => ['berge_rg', 'berge_rd'].forEach(k => {
+      const b = tr[k];
+      if (!b || !Array.isArray(b.habitats)) return;
+      const gardes = b.habitats.filter(h => valides.has(h));
+      if (gardes.length !== b.habitats.length) { b.habitats = gardes; modifie = true; }
+    }));
+    return modifie;
   },
 
   openOperationScreen() {
@@ -1374,10 +1388,45 @@ const App = {
     grid.appendChild(this.calcField({ label: 'Pente estimée (‰)', value: penteEstimee, unit: '‰' }));
     grid.appendChild(this.calcField({ label: 'Pente calculée (‰)', value: slopePerMille, unit: '‰', note: 'Régression sur dist./Δh cumulés' }));
     wrap.appendChild(grid);
+    wrap.appendChild(this.penteChart(pts));
 
     // Reporter automatiquement dans la station
     if (penteEstimee != null) op.station.pente_estimee_pourmille = +penteEstimee.toFixed(3);
     if (slopePerMille != null) op.station.pente_calculee_pourmille = +slopePerMille.toFixed(3);
+  },
+
+  // Profil en long de la ligne d'eau : Δh cumulé en fonction de la distance cumulée (0 = aval),
+  // même représentation que l'app Profil en long.
+  penteChart(pts) {
+    const box = document.createElement('div');
+    box.className = 'profile-chart';
+    box.id = 'pente-chart';
+    const W = 420, H = 240, pad = { l: 54, r: 12, t: 14, b: 36 }, iW = W - pad.l - pad.r, iH = H - pad.t - pad.b;
+    const ns = 'http://www.w3.org/2000/svg';
+    const mk = (t, at) => { const e = document.createElementNS(ns, t); for (const k in at) e.setAttribute(k, at[k]); return e; };
+    const txt = (at, s) => { const e = mk('text', { class: 'label', style: 'font-size:12px', ...at }); e.textContent = s; return e; };
+    const svg = mk('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': 'Profil en long de la ligne d\'eau' });
+    box.appendChild(svg);
+    if (pts.length < 2) {
+      svg.appendChild(txt({ x: W / 2, y: H / 2, 'text-anchor': 'middle' }, 'Saisir au moins un tronçon complet'));
+      return box;
+    }
+    const xMax = Math.max(...pts.map(p => p.x)) || 1;
+    let aMin = Math.min(...pts.map(p => p.y)), aMax = Math.max(...pts.map(p => p.y));
+    if (aMin === aMax) { aMin -= 0.1; aMax += 0.1; }
+    const aPad = (aMax - aMin) * 0.12, y0 = aMin - aPad, y1 = aMax + aPad;
+    const X = x => pad.l + x / xMax * iW, Y = a => pad.t + (y1 - a) / (y1 - y0) * iH;
+    for (let i = 0; i <= 3; i++) {
+      const a = y0 + (y1 - y0) * i / 3;
+      svg.appendChild(mk('line', { x1: pad.l, x2: W - pad.r, y1: Y(a), y2: Y(a), class: 'grid' }));
+      svg.appendChild(txt({ x: pad.l - 6, y: Y(a) + 4, 'text-anchor': 'end' }, a.toFixed(2)));
+    }
+    svg.appendChild(txt({ x: (pad.l + W - pad.r) / 2, y: H - 8, 'text-anchor': 'middle' }, 'distance cumulée (m) - 0 = aval'));
+    svg.appendChild(txt({ x: 13, y: pad.t + iH / 2, 'text-anchor': 'middle', transform: `rotate(-90 13 ${pad.t + iH / 2})` }, 'Δh cumulé (m)'));
+    const d = pts.map((p, i) => (i ? 'L' : 'M') + X(p.x).toFixed(1) + ' ' + Y(p.y).toFixed(1)).join(' ');
+    svg.appendChild(mk('path', { d, class: 'line-eau', 'stroke-width': 2.5, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }));
+    pts.forEach(p => svg.appendChild(mk('circle', { cx: X(p.x), cy: Y(p.y), r: 3.2, class: 'pt' })));
+    return box;
   },
 
   // ============================================================
