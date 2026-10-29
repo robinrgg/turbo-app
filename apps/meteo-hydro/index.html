@@ -244,6 +244,20 @@
     .meteo-table tr.td-today td{background:rgba(0,180,216,.06)}
     .ph{color:var(--accent)} .pz{color:var(--muted)}
 
+    /* ── DÉBIT INSTANTANÉ ── */
+    .qi-ctrl{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end}
+    .qi-ctrl .tabs{margin-bottom:0}
+    .qi-at{display:flex;flex-direction:column;gap:4px}
+    .qi-at label{font-size:.72rem;color:var(--muted)}
+    .qi-at input{background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);
+      padding:8px 10px;font-family:'JetBrains Mono',monospace;font-size:.85rem;color-scheme:dark}
+    #qi-loader{display:none;text-align:center;padding:40px}
+    #qi-loader.show{display:block}
+    .qi-at-res{font-family:'JetBrains Mono',monospace;font-size:.82rem;background:var(--accent-dim);
+      border:1px solid rgba(0,180,216,.35);border-radius:8px;padding:9px 12px;margin-bottom:16px}
+    .qi-at-res b{color:var(--accent)}
+    .qi-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px;font-size:.74rem;color:var(--muted)}
+
     /* ── TOP NAV ── */
     .top-nav{display:flex;gap:6px;padding:0 28px;background:var(--surface);border-bottom:1px solid var(--border)}
     .top-nav-btn{padding:12px 22px;border:none;background:none;color:var(--muted);
@@ -347,6 +361,8 @@
       .tab{flex:1;text-align:center;padding:7px 8px;font-size:.8rem}
       .search-row{flex-direction:column;gap:8px}
       .btn{padding:12px;font-size:.95rem;width:100%}
+      .qi-ctrl{flex-direction:column;align-items:stretch}
+      .qi-at input{width:100%}
       .search-input{font-size:1rem;padding:12px 14px}
       #split-panel{flex-direction:column!important}
       #station-list-wrap{flex:none;width:100%}
@@ -393,14 +409,16 @@
 <nav class="top-nav">
   <button class="top-nav-btn active" id="nav-bilan" onclick="switchPage('bilan')">📋 Bilan terrain</button>
   <button class="top-nav-btn"        id="nav-carte" onclick="switchPage('carte')">🗺️ Carte nationale</button>
+  <button class="top-nav-btn"        id="nav-qi"    onclick="switchPage('qi')">⏱️ Débit instantané</button>
 </nav>
 
 <!-- PAGE BILAN TERRAIN -->
 <div class="page-section active" id="page-bilan">
 <div class="main">
 
-  <!-- SEARCH CARD -->
-  <div class="card">
+  <div id="sel-slot-bilan">
+  <!-- SEARCH CARD (partagée avec l'onglet Débit instantané) -->
+  <div class="card" id="card-search">
     <div class="card-lbl">Recherche de station hydrométrique</div>
     <div class="tabs">
       <button class="tab active" id="tab-river"   onclick="switchTab('river')">Cours d'eau</button>
@@ -435,8 +453,8 @@
     </div>
   </div>
 
-  <!-- CART -->
-  <div class="card">
+  <!-- CART (partagée avec l'onglet Débit instantané) -->
+  <div class="card" id="card-cart">
     <div class="cart-header">
       <div class="card-lbl">Stations sélectionnées (<span id="cartCount">0</span>)</div>
       <button class="btn-deselect" id="btnDeselect" onclick="deselectAll()">✕ Tout désélectionner</button>
@@ -444,11 +462,39 @@
     <div id="cartItems"><div class="cart-empty">Aucune station - recherchez ci-dessus et cliquez sur <strong>+ Ajouter</strong>.</div></div>
     <button class="btn-gen" id="btnGenerate" onclick="generateBilan()" disabled>⚡ Générer le bilan</button>
   </div>
+  </div><!-- /sel-slot-bilan -->
 
   <div id="loader"><div class="ring"></div><div class="loader-msg" id="loaderMsg">Récupération des données…</div></div>
   <div id="bilan"></div>
 </div>
 </div><!-- /page-bilan -->
+
+<!-- PAGE DÉBIT INSTANTANÉ -->
+<div class="page-section" id="page-qi">
+<div class="main">
+  <div id="sel-slot-qi"></div>
+  <div class="card" id="qi-ctrl-card">
+    <div class="card-lbl">Débit instantané - Hub'eau temps réel</div>
+    <div class="qi-ctrl">
+      <div class="tabs" id="qi-periods">
+        <button class="tab" data-days="1">24 h</button>
+        <button class="tab active" data-days="3">3 j</button>
+        <button class="tab" data-days="7">7 j</button>
+        <button class="tab" data-days="30">30 j</button>
+      </div>
+      <div class="qi-at">
+        <label for="qi-at">Débit à une date et heure précises (facultatif)</label>
+        <input type="datetime-local" id="qi-at">
+      </div>
+      <button class="btn btn-primary" id="qi-refresh" onclick="loadQI(true)">↻ Actualiser</button>
+    </div>
+    <p class="hint">Historique disponible : <b>30 derniers jours</b> (limite Hub'eau), pas de 5 min ou plus selon la station. Données brutes temps réel, non validées.
+      La sélection de stations est commune avec Bilan terrain.</p>
+  </div>
+  <div id="qi-loader"><div class="ring"></div><div class="loader-msg" id="qi-loader-msg">Récupération des débits instantanés…</div></div>
+  <div id="qi-list"></div>
+</div>
+</div><!-- /page-qi -->
 
 <!-- PAGE CARTE NATIONALE -->
 <div class="page-section" id="page-carte">
@@ -903,6 +949,7 @@ function removeFromCart(code) {
 
 function updateCartUI() {
   const n = state.selected.length;
+  if (pageActive() === 'page-qi') setTimeout(() => loadQI(false), 0);
   document.getElementById('cartCount').textContent = n;
   document.getElementById('btnGenerate').disabled = n===0;
   const desel = document.getElementById('btnDeselect');
@@ -1557,6 +1604,171 @@ function switchPage(page) {
   document.getElementById('page-' + page).classList.add('active');
   document.getElementById('nav-' + page).classList.add('active');
   if (page === 'carte') initCarteNationale();
+  // Recherche et stations sélectionnées : mêmes cartes (et même sélection) dans Bilan terrain et Débit instantané
+  if (page === 'bilan' || page === 'qi') {
+    const slot = document.getElementById('sel-slot-' + page);
+    ['card-search', 'card-cart'].forEach(id => slot.appendChild(document.getElementById(id)));
+    const gen = document.getElementById('btnGenerate');
+    gen.textContent = page === 'qi' ? '⏱️ Afficher les débits instantanés' : '⚡ Générer le bilan';
+    gen.onclick = page === 'qi' ? () => loadQI(false, true) : generateBilan;
+    if (map) setTimeout(() => map.invalidateSize(), 0);
+  }
+  if (page === 'qi') loadQI(false);
+}
+const pageActive = () => (document.querySelector('.page-section.active') || {}).id;
+
+// ═══════════════════════════════════════════════════════════
+// DÉBIT INSTANTANÉ (observations_tr : 30 jours glissants)
+// ═══════════════════════════════════════════════════════════
+const QI_MAX_JOURS = 30;                  // profondeur d'historique de Hub'eau temps réel
+const QI_FRAIS_MS  = 5 * 60 * 1000;       // données rechargées au-delà de 5 min
+const qiState = { days: 3, cache: {}, charts: {} };   // cache[code] = { from, at, rows:[{t,q}] }
+
+// Série de débits instantanés depuis `fromMs` (pagination par curseur), en m³/s, triée
+async function fetchQISerie(code, fromMs) {
+  const SIZE = 20000;
+  let url = `${HUBEAU}/observations_tr?code_entite=${enc(code)}&grandeur_hydro=Q&sort=asc&size=${SIZE}`
+    + `&fields=date_obs,resultat_obs&date_debut_obs=${new Date(fromMs).toISOString().slice(0, 19)}Z`;
+  const rows = [];
+  for (let page = 0; url && page < 10; page++) {
+    const d = await hubGet(url);
+    (d.data || []).forEach(r => { if (r.resultat_obs != null) rows.push({ t: Date.parse(r.date_obs), q: r.resultat_obs / 1000 }); });
+    url = (d.data || []).length === SIZE ? d.next : null;
+  }
+  return rows.sort((a, b) => a.t - b.t);
+}
+function qiPeriode(rows, days, now) { return rows.filter(r => r.t >= now - days * 864e5); }
+function qiStats(rows) {
+  if (!rows.length) return null;
+  let min = rows[0], max = rows[0], sum = 0;
+  rows.forEach(r => { if (r.q < min.q) min = r; if (r.q > max.q) max = r; sum += r.q; });
+  return { last: rows[rows.length - 1], min, max, moy: sum / rows.length, n: rows.length };
+}
+// Valeur la plus proche d'un instant, à 30 min près au plus (sinon null)
+function qiAt(rows, t, tolMin = 30) {
+  let best = null;
+  rows.forEach(r => { if (!best || Math.abs(r.t - t) < Math.abs(best.t - t)) best = r; });
+  return best && Math.abs(best.t - t) <= tolMin * 60000 ? best : null;
+}
+// Variation du dernier débit par rapport à `heures` plus tôt
+function qiVariation(rows, heures) {
+  if (!rows.length) return null;
+  const last = rows[rows.length - 1], ref = qiAt(rows, last.t - heures * 3600e3);
+  return ref && ref !== last ? { dq: last.q - ref.q, pct: ref.q ? 100 * (last.q - ref.q) / ref.q : null } : null;
+}
+const fmtAge = ms => { const m = Math.round(ms / 60000); return m < 60 ? `il y a ${m} min` : m < 2880 ? `il y a ${Math.round(m / 60)} h` : `il y a ${Math.round(m / 1440)} j`; };
+const fmtVar = v => !v ? '-' : v.dq === 0 ? '0' : (v.dq > 0 ? '+' : '-') + rnd(Math.abs(v.dq));
+
+function initQIControls() {
+  if (initQIControls.done) return; initQIControls.done = true;
+  document.querySelectorAll('#qi-periods .tab').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('#qi-periods .tab').forEach(x => x.classList.toggle('active', x === b));
+    qiState.days = +b.dataset.days; loadQI(false);
+  }));
+  const at = document.getElementById('qi-at');
+  const d = new Date(Date.now() - new Date().getTimezoneOffset() * 60000);
+  at.max = d.toISOString().slice(0, 16);           // vide par défaut : rempli au besoin (ex. heure d'un jaugeage)
+  at.min = new Date(d.getTime() - QI_MAX_JOURS * 864e5).toISOString().slice(0, 16);
+  at.addEventListener('change', () => renderQI());
+}
+
+async function loadQI(force, defiler) {
+  initQIControls();
+  const list = document.getElementById('qi-list');
+  if (!state.selected.length) {
+    Object.values(qiState.charts).forEach(c => c.destroy()); qiState.charts = {};
+    list.innerHTML = '';
+    return;
+  }
+  const now = Date.now(), from = now - qiState.days * 864e5;
+  const aCharger = state.selected.filter(st => { const c = qiState.cache[st.code_station];
+    return force || !c || c.from > from + 60000 || now - c.at > QI_FRAIS_MS; });
+  if (aCharger.length) {
+    const ld = document.getElementById('qi-loader'); ld.classList.add('show');
+    let done = 0; const msg = () => document.getElementById('qi-loader-msg').textContent = `Récupération des débits instantanés… (${done}/${aCharger.length})`; msg();
+    await Promise.all(aCharger.map(async st => {
+      const c = qiState.cache[st.code_station];
+      const debut = (!force && c && now - c.at <= QI_FRAIS_MS) ? Math.min(from, c.from) : from;
+      try { qiState.cache[st.code_station] = { from: debut, at: now, rows: await fetchQISerie(st.code_station, debut), err: null }; }
+      catch (e) { qiState.cache[st.code_station] = { from: debut, at: 0, rows: [], err: e.message }; }
+      done++; msg();
+    }));
+    ld.classList.remove('show');
+  }
+  renderQI();
+  if (defiler) document.getElementById('qi-ctrl-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function renderQI() {
+  const list = document.getElementById('qi-list');
+  Object.values(qiState.charts).forEach(c => c.destroy()); qiState.charts = {};
+  const now = Date.now(), atVal = document.getElementById('qi-at').value;
+  const atT = atVal ? new Date(atVal).getTime() : null;
+  const jours = qiState.days === 1 ? '24 h' : `${qiState.days} jours`;
+  list.innerHTML = state.selected.map((st, i) => {
+    const c = qiState.cache[st.code_station] || { rows: [] };
+    const rows = qiPeriode(c.rows, qiState.days, now), s = qiStats(rows);
+    const v1 = qiVariation(c.rows, 1), v24 = qiVariation(c.rows, 24);
+    const at = atT != null ? qiAt(c.rows, atT) : null;
+    const head = `<div class="bilan-name">📍 ${esc(st.libelle_station)}</div>
+      <div class="bilan-meta"><div class="mkv">Cours d'eau : <span>${esc(st.libelle_cours_eau || '-')}</span></div>
+        <div class="mkv">Code : <span>${esc(st.code_station)}</span></div></div>`;
+    if (c.err) return `<div class="card">${head}<div class="err-box" style="margin-top:14px">Erreur : ${esc(c.err)}</div></div>`;
+    if (!s) return `<div class="card">${head}<div style="color:var(--muted);font-size:.84rem;padding:14px 0 0">Aucun débit instantané sur les ${jours} (station sans mesure temps réel ou en panne).</div></div>`;
+    return `<div class="card">${head}
+      <div class="sec-lbl">⏱️ Débit instantané - ${jours}</div>
+      ${atT != null ? `<div class="qi-at-res">Le ${fmtHour(atT)} : ${at ? `<b>${rnd(at.q)} m³/s</b> (mesure de ${fmtHour(at.t)})` : 'aucune mesure à moins de 30 min'}</div>` : ''}
+      <div class="stats-row">
+        <div class="stat-box sc"><div class="stat-val">${rnd(s.last.q)} <span class="stat-u">m³/s</span></div>
+          <div class="stat-lbl">Dernier QI (${fmtHour(s.last.t)}, ${fmtAge(now - s.last.t)})</div></div>
+        <div class="stat-box"><div class="stat-val">${fmtVar(v1)}</div><div class="stat-lbl">Variation sur 1 h (m³/s)</div></div>
+        <div class="stat-box"><div class="stat-val">${fmtVar(v24)}</div><div class="stat-lbl">Variation sur 24 h (m³/s)</div></div>
+        <div class="stat-box"><div class="stat-val">${rnd(s.moy)} <span class="stat-u">m³/s</span></div><div class="stat-lbl">Moyenne (${s.n} mesures)</div></div>
+        <div class="stat-box sq"><div class="stat-val">${rnd(s.min.q)} <span class="stat-u">m³/s</span></div><div class="stat-lbl">Min (${fmtHour(s.min.t)})</div></div>
+        <div class="stat-box sm"><div class="stat-val">${rnd(s.max.q)} <span class="stat-u">m³/s</span></div><div class="stat-lbl">Max (${fmtHour(s.max.t)})</div></div>
+      </div>
+      <div class="chart-wrap"><canvas id="qi_chart_${i}"></canvas></div>
+      <div class="qi-foot"><span>Mesure la plus ancienne : ${fmtHour(rows[0].t)}</span><span>▲ max · ▼ min</span></div>
+    </div>`;
+  }).join('');
+  state.selected.forEach((st, i) => {
+    const c = qiState.cache[st.code_station]; if (!c || c.err) return;
+    const rows = qiPeriode(c.rows, qiState.days, now); if (!rows.length) return;
+    buildQIChart(`qi_chart_${i}`, rows, atT);
+  });
+}
+
+function buildQIChart(id, rows, atT) {
+  const canvas = document.getElementById(id); if (!canvas || typeof Chart === 'undefined') return;
+  const labels = rows.map(r => fmtHour(r.t)), values = rows.map(r => r.q), ann = {};
+  // Min et max de la période marqués sur la courbe
+  const st = qiStats(rows), iMin = rows.indexOf(st.min), iMax = rows.indexOf(st.max);
+  const repere = (i, col) => ({ type: 'point', xValue: i, yValue: rows[i].q, radius: 5, backgroundColor: col, borderColor: '#0d1b2a', borderWidth: 2 });
+  ann.max = repere(iMax, '#2ecc71'); ann.min = repere(iMin, '#e74c3c');
+  ann.maxLbl = { type: 'label', xValue: iMax, yValue: rows[iMax].q, yAdjust: -14, content: `▲ ${rnd(st.max.q)}`, color: '#2ecc71',
+    font: { size: 11, weight: '600', family: 'JetBrains Mono' }, position: { x: iMax > rows.length * 0.8 ? 'end' : iMax < rows.length * 0.2 ? 'start' : 'center' } };
+  ann.minLbl = { type: 'label', xValue: iMin, yValue: rows[iMin].q, yAdjust: 14, content: `▼ ${rnd(st.min.q)}`, color: '#e74c3c',
+    font: { size: 11, weight: '600', family: 'JetBrains Mono' }, position: { x: iMin > rows.length * 0.8 ? 'end' : iMin < rows.length * 0.2 ? 'start' : 'center' } };
+  if (atT != null && atT >= rows[0].t && atT <= rows[rows.length - 1].t) {
+    const k = rows.reduce((b, r, j) => Math.abs(r.t - atT) < Math.abs(rows[b].t - atT) ? j : b, 0);
+    ann.at = { type: 'line', xMin: k, xMax: k, borderColor: '#ffffff', borderWidth: 1.5, borderDash: [3, 3] };
+  }
+  qiState.charts[id] = new Chart(canvas.getContext('2d'), {
+    type: 'line',
+    data: { labels, datasets: [{ data: values, borderColor: '#4fc3f7', backgroundColor: 'rgba(79,195,247,.08)', borderWidth: 2,
+      tension: 0.15, fill: true, pointRadius: 0, pointHitRadius: 6 }] },
+    options: { responsive: true, maintainAspectRatio: false, animation: false, interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { display: false }, annotation: { annotations: ann },
+        tooltip: { backgroundColor: '#1c2d40', borderColor: '#2c4060', borderWidth: 1, titleFont: { family: 'Barlow', size: 12 },
+          bodyFont: { family: 'JetBrains Mono', size: 12 }, callbacks: { label: c => `  QI : ${rnd(c.parsed.y)} m³/s` } } },
+      scales: {
+        x: { grid: { color: 'rgba(44,64,96,.5)' }, ticks: { color: '#7a9ec0', font: { size: 11, family: 'Barlow' }, maxRotation: 0, autoSkip: true, maxTicksLimit: 4,
+            callback: (v, j) => { const d = new Date(rows[j].t);           // 24 h / 3 j : jour + heure ; au-delà : jour seul
+              return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) + (rows[rows.length - 1].t - rows[0].t <= 4 * 864e5 ? ' ' + d.getHours() + 'h' : ''); } },
+          title: { display: true, text: 'Date et heure (heure locale)', color: '#7a9ec0', font: { size: 11 } } },
+        y: { beginAtZero: true, grid: { color: 'rgba(44,64,96,.5)' }, ticks: { color: '#7a9ec0', font: { size: 11, family: 'JetBrains Mono' }, callback: v => v === 0 ? '0' : rnd(v) },
+          title: { display: true, text: 'Débit (m³/s)', color: '#7a9ec0', font: { size: 11 } } } } }
+  });
 }
 
 // ═══════════════════════════════════════════════════════════

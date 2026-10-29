@@ -79,3 +79,45 @@ test('erreur non passagère (404) : pas de relance', async () => {
   await assert.rejects(ctx.get('https://geo.api.gouv.fr/communes'), /API Géo HTTP 404/);
   assert.equal(calls.length, 1);
 });
+
+// ---- Débit instantané (observations_tr, 30 jours glissants)
+const qi = loadFunctions(src, ['qiPeriode', 'qiStats', 'qiAt', 'qiVariation', 'fetchQISerie'],
+  { HUBEAU: 'https://hubeau.eaufrance.fr/api/v2/hydrometrie', enc: encodeURIComponent });
+const H = 3600e3, T0 = Date.parse('2026-10-28T00:00:00Z');
+const serie = Array.from({ length: 49 }, (_, i) => ({ t: T0 + i * H / 2, q: 1 + i / 10 }));   // 24 h au pas de 30 min
+
+test('débit instantané : période, min / max / moyenne, dernier', () => {
+  const r = qi.qiPeriode(serie, 0.5, T0 + 24 * H);            // 12 dernières heures
+  assert.equal(r.length, 25); assert.equal(r[0].t, T0 + 12 * H);
+  const s = qi.qiStats(serie);
+  assert.equal(s.last, serie[48]); assert.equal(s.min, serie[0]); assert.equal(s.max, serie[48]);
+  assert.ok(Math.abs(s.moy - 3.4) < 1e-9); assert.equal(s.n, 49);
+  assert.equal(qi.qiStats([]), null);
+});
+
+test('débit instantané : valeur la plus proche d’une heure donnée, à 30 min près', () => {
+  assert.equal(qi.qiAt(serie, T0 + 2 * H + 10 * 60e3), serie[4]);        // 02:10 → mesure de 02:00
+  assert.equal(qi.qiAt(serie, T0 + 2 * H + 20 * 60e3), serie[5]);        // 02:20 → mesure de 02:30
+  assert.equal(qi.qiAt(serie, T0 + 25 * H), null, 'au-delà de 30 min : pas de valeur');
+});
+
+test('débit instantané : variation sur 1 h et 24 h', () => {
+  const v1 = qi.qiVariation(serie, 1);
+  assert.ok(Math.abs(v1.dq - 0.2) < 1e-9);
+  assert.ok(Math.abs(qi.qiVariation(serie, 24).dq - 4.8) < 1e-9);
+  assert.equal(qi.qiVariation(serie.slice(0, 1), 1), null);
+});
+
+test('débit instantané : requête Hub’eau depuis une date, L/s → m³/s, pages suivies, valeurs nulles ignorées', async () => {
+  const urls = [];
+  const pleine = Array.from({ length: 20000 }, (_, i) => ({ date_obs: new Date(T0 + i * 1000).toISOString(), resultat_obs: 1000 }));   // 20 000 s, avant la page 2
+  const pages = [{ data: pleine, next: 'https://hubeau.eaufrance.fr/page2' },
+    { data: [{ date_obs: '2026-10-29T00:00:00Z', resultat_obs: 2500 }, { date_obs: '2026-10-29T00:05:00Z', resultat_obs: null }], next: 'https://hubeau.eaufrance.fr/page3' }];
+  const f = loadFunctions(src, ['fetchQISerie'], { HUBEAU: 'https://hubeau.eaufrance.fr/api/v2/hydrometrie', enc: encodeURIComponent,
+    hubGet: async u => { urls.push(u); return pages.shift(); } });
+  const rows = await f.fetchQISerie('Y321002101', T0);
+  assert.match(urls[0], /observations_tr\?code_entite=Y321002101&grandeur_hydro=Q&sort=asc&size=20000.*date_debut_obs=2026-10-28T00:00:00Z/);
+  assert.equal(urls.length, 2, 'page incomplète : pas de page suivante');
+  assert.equal(rows.length, 20001);
+  assert.equal(rows[0].q, 1); assert.equal(rows[20000].q, 2.5);
+});
