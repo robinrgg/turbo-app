@@ -170,7 +170,10 @@ test('Hydro-Météo : onglet Débit instantané (stations du bilan, période, le
     assert.equal(await page.evaluate(() => Object.keys(Chart.getChart('qi_chart_0').options.plugins.annotation.annotations).filter(k => /^(min|max)$/.test(k)).length), 2, 'min et max marqués');
     assert.match(txt, /Station test/);
     assert.match(txt, /Dernier QI/);
-    assert.match(txt, /\+1\.00\s*Variation sur 24 h/);
+    assert.match(txt, /Dernier QI/); assert.doesNotMatch(txt, /Variation|Moyenne/);
+    assert.equal(await page.locator('#qi-list .qi-stats .stat-box').count(), 3, 'dernier QI, min, max');
+    const tops = await page.$$eval('#qi-list .qi-stats .stat-box', els => els.map(e => Math.round(e.getBoundingClientRect().top)));
+    assert.equal(new Set(tops).size, 1, 'sur une seule ligne');
     assert.equal(await page.evaluate(() => !!Chart.getChart('qi_chart_0')), true);
     // lecture à une heure précise (il y a 2 jours) → 1 m³/s
     await page.evaluate(() => { const d = new Date(Date.now() - 2 * 864e5 - new Date().getTimezoneOffset() * 60000);
