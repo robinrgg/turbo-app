@@ -132,3 +132,18 @@ test('ICE : seuil incliné, profil en long saisi point par point, contrôle du t
     assert.deepEqual(page.errors, []);
   });
 });
+
+test('ICE fiche 1a : carte de localisation sous « Utiliser ma position », conservée quand la fiche se redessine', { skip }, async () => {
+  await withBrowser(async ({ open }) => {
+    const page = await open('/apps/ice/index.html');                 // fond de carte bloqué en test : message de repli
+    await page.click('#btnNew');
+    const avant = await page.evaluate(() => { window._carte = document.querySelector('#mapSlot .mapbox'); return !!window._carte; });
+    assert.equal(avant, true);
+    assert.match(await page.textContent('#mapSlot'), /Carte indisponible/);
+    await page.selectOption('#scr-form select >> nth=0', 'Existant');   // un choix redessine la fiche
+    assert.equal(await page.evaluate(() => document.querySelector('#mapSlot .mapbox') === window._carte), true);
+    await page.click('#btnBack');
+    assert.equal(await page.evaluate(() => CARTE.watch), null, 'GPS arrêté hors de la fiche 1a');
+    assert.deepEqual(page.errors, []);
+  });
+});
