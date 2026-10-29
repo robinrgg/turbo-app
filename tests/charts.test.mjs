@@ -145,3 +145,35 @@ test('profil en long (3 apps) : axes tracés, abscisses graduées en distance, t
     });
   });
 });
+
+test('Hydro-Météo : onglet Débit instantané (stations du bilan, période, lecture à une heure, graphique)', { skip }, async () => {
+  await withBrowser(async ({ open }) => {
+    const page = await open('/apps/meteo-hydro/index.html', { cdn: true });
+    await page.evaluate(() => {
+      const now = Date.now(), pas = 5 * 60e3;
+      window.hubGet = async url => {                     // 3 jours simulés, 1 m³/s puis 2 m³/s les dernières 24 h
+        const debut = Date.parse(decodeURIComponent(url.match(/date_debut_obs=([^&]+)/)[1]));
+        const data = [];
+        for (let t = Math.ceil(debut / pas) * pas; t <= now - 30 * 60e3; t += pas) data.push({ date_obs: new Date(t).toISOString(), resultat_obs: t > now - 24 * 3600e3 ? 2000 : 1000 });
+        return { data };
+      };
+      state.selected = [{ code_station: 'X0000001', libelle_station: 'Station test', libelle_cours_eau: 'Rivière', libelle_commune: '', lat: 44, lon: 4 }];
+    });
+    await page.click('#nav-qi');
+    await page.waitForSelector('#qi_chart_0');
+    const txt = await page.textContent('#qi-list');
+    assert.match(txt, /Station test/);
+    assert.match(txt, /Dernier QI/);
+    assert.match(txt, /\+1\.00\s*Variation sur 24 h/);
+    assert.equal(await page.evaluate(() => !!Chart.getChart('qi_chart_0')), true);
+    // lecture à une heure précise (il y a 2 jours) → 1 m³/s
+    await page.evaluate(() => { const d = new Date(Date.now() - 2 * 864e5 - new Date().getTimezoneOffset() * 60000);
+      const at = document.getElementById('qi-at'); at.value = d.toISOString().slice(0, 16); at.dispatchEvent(new Event('change')); });
+    assert.match(await page.textContent('.qi-at-res'), /1\.00 m³\/s/);
+    // passage sur 30 jours : rechargement
+    await page.click('#qi-periods [data-days="30"]');
+    await page.waitForFunction(() => qiState.days === 30 && !document.getElementById('qi-loader').classList.contains('show'));
+    assert.match(await page.textContent('#qi-list'), /30 jours/);
+    assert.deepEqual(page.errors, []);
+  });
+});
