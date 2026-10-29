@@ -4,7 +4,7 @@
 
 // Version du code applicatif, affichée à l'accueil avec la version du cache du hub
 // (service worker racine) pour vérifier la version en cours sur mobile.
-const APP_VERSION = 'v23';
+const APP_VERSION = 'v24';
 
 /* Profil en long de la ligne d'eau : Δh cumulé (m) selon la distance cumulée depuis l'aval (m),
    axes tracés et gradués avec des pas ronds, titres d'axes. Même rendu dans Profil en long,
@@ -158,6 +158,7 @@ const App = {
 
   // ----------- Routage entre écrans -----------
   showScreen(name) {
+    if (name !== 'station') this.arreterGps();      // GPS suivi uniquement dans l'onglet Station
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     const el = document.getElementById('screen-' + name);
     if (el) el.classList.add('active');
@@ -913,6 +914,96 @@ const App = {
   // ============================================================
   //   ÉCRAN STATION
   // ============================================================
+  // ----------- Carte de localisation de la station -----------
+  // Un seul élément carte, créé une fois et réinséré à chaque rendu de l'onglet Station.
+  carte: { el: null, map: null, me: null, acc: null, amont: null, aval: null, watch: null, pos: null, cadree: false },
+  gpsTexte() {
+    const p = this.carte.pos;
+    if (!p) return navigator.geolocation ? 'GPS : recherche de la position…' : 'GPS : non disponible';
+    const a = Math.round(p.acc);
+    return `Ma position : ${p.lat.toFixed(6)}, ${p.lon.toFixed(6)} · <span class="${a > 20 ? 'w' : ''}">±${a} m</span>`;
+  },
+  pointStation(cote) {
+    const st = this.state.op && this.state.op.station; if (!st) return null;
+    const la = parseNum(st['lat_' + cote]), lo = parseNum(st['lon_' + cote]);
+    return la != null && lo != null && Math.abs(la) <= 90 && Math.abs(lo) <= 180 ? [la, lo] : null;
+  },
+  carteStation() {
+    const c = this.carte;
+    if (!c.el) {
+      c.el = document.createElement('div');
+      c.el.className = 'station-map';
+      if (typeof L === 'undefined') c.el.innerHTML = '<div class="map-empty">🗺️ Carte indisponible (fond de carte non chargé : réseau requis au premier usage).</div>';
+      else {
+        c.map = L.map(c.el, { center: [46.6, 2.5], zoom: 5, zoomControl: true, attributionControl: true });
+        L.tileLayer('https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap France · © contributeurs OSM', subdomains: 'abc', maxZoom: 20 }).addTo(c.map);
+      }
+    }
+    setTimeout(() => { if (c.map) c.map.invalidateSize(); this.demarrerGps(); this.majCarteStation(!c.cadree); }, 0);
+    return c.el;
+  },
+  demarrerGps() {
+    const c = this.carte;
+    if (c.watch != null || !navigator.geolocation) return;
+    c.watch = navigator.geolocation.watchPosition(p => {
+      const premiere = !c.pos;
+      c.pos = { lat: p.coords.latitude, lon: p.coords.longitude, acc: p.coords.accuracy };
+      const i = document.getElementById('gps-info'); if (i) i.innerHTML = this.gpsTexte();
+      this.majCarteStation(premiere && !this.pointStation('amont') && !this.pointStation('aval'));
+    }, e => { const i = document.getElementById('gps-info'); if (i) i.innerHTML = `<span class="w">GPS : ${e.code === 1 ? 'autorisation refusée' : 'position indisponible'}.</span>`; },
+    { enableHighAccuracy: true, maximumAge: 5000, timeout: 30000 });
+  },
+  arreterGps() {
+    const c = this.carte;
+    if (c.watch != null && navigator.geolocation) navigator.geolocation.clearWatch(c.watch);
+    c.watch = null; c.cadree = false;
+  },
+  majCarteStation(cadrer) {
+    const c = this.carte, m = c.map; if (!m) return;
+    const point = (cle, ll, col, lib) => {
+      if (ll) { if (!c[cle]) c[cle] = L.circleMarker(ll, { radius: 8, color: '#fff', weight: 2, fillColor: col, fillOpacity: 1 }).bindTooltip(lib).addTo(m); else c[cle].setLatLng(ll); }
+      else if (c[cle]) { c[cle].remove(); c[cle] = null; }
+    };
+    const am = this.pointStation('amont'), av = this.pointStation('aval');
+    point('amont', am, '#0d8a6e', 'Amont'); point('aval', av, '#e0564f', 'Aval');
+    const p = c.pos;
+    if (p) {
+      const ll = [p.lat, p.lon];
+      if (!c.me) {
+        c.acc = L.circle(ll, { radius: p.acc, color: '#2b8cd6', weight: 1, fillOpacity: 0.12, interactive: false }).addTo(m);
+        c.me = L.circleMarker(ll, { radius: 7, color: '#fff', weight: 2, fillColor: '#2b8cd6', fillOpacity: 1 }).bindTooltip('Ma position').addTo(m);
+      } else { c.me.setLatLng(ll); c.acc.setLatLng(ll).setRadius(p.acc); }
+    }
+    if (cadrer) this.cadrerCarteStation();
+  },
+  cadrerCarteStation() {
+    const c = this.carte, m = c.map; if (!m) return;
+    const pts = [this.pointStation('amont'), this.pointStation('aval'), c.pos && [c.pos.lat, c.pos.lon]].filter(Boolean);
+    if (!pts.length) return;
+    c.cadree = true;
+    if (pts.length === 1) m.setView(pts[0], 17); else m.fitBounds(L.latLngBounds(pts), { padding: [30, 30], maxZoom: 18 });
+  },
+  // Remplit la latitude / longitude amont ou aval avec la position GPS (confirmation si déjà saisie),
+  // puis convertit ce point en Lambert 93
+  positionVers(cote) {
+    if (!navigator.geolocation) { this.toast('GPS non disponible sur cet appareil.'); return; }
+    const st = this.state.op.station;
+    this.toast('Recherche de la position…');
+    navigator.geolocation.getCurrentPosition(p => {
+      const lat = +p.coords.latitude.toFixed(6), lon = +p.coords.longitude.toFixed(6), acc = Math.round(p.coords.accuracy);
+      const deja = st['lat_' + cote] != null || st['lon_' + cote] != null;
+      if (deja && !confirm(`Remplacer les coordonnées ${cote} déjà saisies (${st['lat_' + cote]}, ${st['lon_' + cote]}) par votre position (±${acc} m) ?`)) return;
+      st['lat_' + cote] = lat; st['lon_' + cote] = lon;
+      const l93 = typeof GEO !== 'undefined' ? GEO.wgs84ToL93(lat, lon) : null;
+      if (l93) { st['x_' + cote] = l93.x; st['y_' + cote] = l93.y; }
+      const y = window.scrollY;
+      this.renderStation(); window.scrollTo(0, y);
+      this.cadrerCarteStation();
+      this.scheduleSave();
+      this.toast(`Position ${cote} enregistrée (±${acc} m)${l93 ? ', convertie en Lambert 93' : ''}.`);
+    }, () => this.toast('Position indisponible.'), { enableHighAccuracy: true, timeout: 20000, maximumAge: 5000 });
+  },
+
   renderStation() {
     const op = this.state.op;
     const st = op.station;
@@ -957,11 +1048,36 @@ const App = {
 
       // Saisie WGS84 (relevé GPS terrain)
       const gWgs = this.grid();
-      gWgs.appendChild(this.field({ label: 'Latitude amont (WGS84, °)',  type: 'number', value: st.lat_amont, onChange: v => st.lat_amont = v, placeholder: 'ex. 43.2965' }));
-      gWgs.appendChild(this.field({ label: 'Longitude amont (WGS84, °)', type: 'number', value: st.lon_amont, onChange: v => st.lon_amont = v, placeholder: 'ex. 5.3698' }));
-      gWgs.appendChild(this.field({ label: 'Latitude aval (WGS84, °)',   type: 'number', value: st.lat_aval,  onChange: v => st.lat_aval = v }));
-      gWgs.appendChild(this.field({ label: 'Longitude aval (WGS84, °)',  type: 'number', value: st.lon_aval,  onChange: v => st.lon_aval = v }));
+      gWgs.appendChild(this.field({ label: 'Latitude amont (WGS84, °)',  type: 'number', value: st.lat_amont, onChange: v => { st.lat_amont = v; this.majCarteStation(); }, placeholder: 'ex. 43.2965' }));
+      gWgs.appendChild(this.field({ label: 'Longitude amont (WGS84, °)', type: 'number', value: st.lon_amont, onChange: v => { st.lon_amont = v; this.majCarteStation(); }, placeholder: 'ex. 5.3698' }));
+      gWgs.appendChild(this.field({ label: 'Latitude aval (WGS84, °)',   type: 'number', value: st.lat_aval,  onChange: v => { st.lat_aval = v; this.majCarteStation(); } }));
+      gWgs.appendChild(this.field({ label: 'Longitude aval (WGS84, °)',  type: 'number', value: st.lon_aval,  onChange: v => { st.lon_aval = v; this.majCarteStation(); } }));
       body.appendChild(gWgs);
+
+      // Récupération de la position GPS pour l'amont ou l'aval, puis carte de contrôle
+      const gps = document.createElement('div');
+      gps.className = 'gps-btns';
+      [['amont', '📍 Ma position → amont'], ['aval', '📍 Ma position → aval']].forEach(([cote, txt]) => {
+        const b = document.createElement('button');
+        b.type = 'button'; b.className = 'secondary-btn'; b.textContent = txt;
+        b.addEventListener('click', () => this.positionVers(cote));
+        gps.appendChild(b);
+      });
+      body.appendChild(gps);
+      const gpsInfo = document.createElement('div');
+      gpsInfo.className = 'gps-info'; gpsInfo.id = 'gps-info';
+      gpsInfo.innerHTML = this.gpsTexte();
+      body.appendChild(gpsInfo);
+      body.appendChild(this.carteStation());
+      const bar = document.createElement('div');
+      bar.className = 'map-bar';
+      bar.innerHTML = '<span style="white-space:nowrap"><i style="background:#2b8cd6;margin-left:0"></i>Moi<i style="background:#0d8a6e"></i>Amont<i style="background:#e0564f"></i>Aval</span>';
+      const rc = document.createElement('button');
+      rc.type = 'button'; rc.className = 'secondary-btn'; rc.textContent = '⤢ Recentrer';
+      rc.style.cssText = 'padding:0.3rem 0.7rem;min-height:34px;flex:0';
+      rc.addEventListener('click', () => this.cadrerCarteStation());
+      bar.appendChild(rc);
+      body.appendChild(bar);
 
       // Bouton de conversion WGS84 -> Lambert 93
       const convWrap = document.createElement('div');

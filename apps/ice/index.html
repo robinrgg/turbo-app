@@ -11,6 +11,8 @@
 <link rel="icon" href="./icon.svg">
 <link rel="apple-touch-icon" href="./icon.svg">
 <link rel="stylesheet" href="../../shared/tokens.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
 :root{ --accent:#4cb39a; --accent-dim:#357d6c; --ttl:#eaeef3; --sub:#a3aebb; }
 *{ box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
@@ -144,6 +146,13 @@ svg.profil{ width:100%; height:auto; display:block; background:var(--bg); border
   transition:opacity .2s; font-size:.82rem; max-width:90%; text-align:center; }
 .toast.show{ opacity:1; } .toast.ok{ border-left:3px solid var(--ok); } .toast.err{ border-left:3px solid var(--err); }
 input[type=file]{ display:none; }
+/* ---- Carte de localisation (fiche 1a) ---- */
+.mapbox{ height:230px; border:1px solid var(--border-strong); border-radius:var(--radius-sm); overflow:hidden; background:var(--bg); position:relative; z-index:0; }
+.mapbox .empty{ height:100%; display:flex; align-items:center; justify-content:center; border:none; }
+.map-bar{ display:flex; justify-content:space-between; align-items:center; gap:8px; margin:6px 0 10px; font-size:.66rem; color:var(--text-mute); }
+.map-bar i{ display:inline-block; width:10px; height:10px; border-radius:50%; margin:0 4px 0 8px; vertical-align:-1px; border:2px solid #fff; }
+.gps-info{ font-family:var(--font-mono); font-size:.66rem; color:var(--text-mute); margin-bottom:6px; }
+.gps-info .w{ color:var(--warn); }
 @media (max-width:520px){ .row.c3{ grid-template-columns:1fr 1fr; } }
 </style>
 </head>
@@ -452,6 +461,7 @@ function mountForm(root, build, after) {
 
 /* ---------- Navigation ---------- */
 function show(scr) {
+  if (!(scr === "form" && $("scr-form").querySelector("#mapSlot"))) arreterGps();
   document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
   $("scr-" + scr).classList.add("active");
   $("btnBack").hidden = scr === "home";
@@ -518,7 +528,10 @@ function renderFiche(n) {
         f.txt("nom", "Nom de l'ouvrage", { req: true }), f.txt("roe", "Identifiant ROE", { ph: "ROE…" }),
         f.txt("cours_eau", "Cours d'eau à l'aval de l'obstacle"),
         f.row([f.num("lat", "Latitude (WGS84, °)", { req: true }), f.num("lon", "Longitude (WGS84, °)", { req: true })]),
-        f.html(() => `<button type="button" class="btn sm block" id="btnGps" style="margin-bottom:10px">📍 Utiliser ma position</button>`)
+        f.html(() => `<button type="button" class="btn sm block" id="btnGps" style="margin-bottom:8px">📍 Utiliser ma position</button>
+          <div class="gps-info" id="gpsInfo">${gpsTexte()}</div><div id="mapSlot"></div>
+          <div class="map-bar"><span><i style="background:#5aa9f0"></i>Ma position<i style="background:#e0564f"></i>Ouvrage</span>
+          <button type="button" class="btn ghost sm" id="btnRecentre">⤢ Recentrer</button></div>`)
       ], a, F);
       h += card("Etat et typologie ROE", "1a-3/4", [
         f.opt("etat", "Etat", NOM.etat, { req: true, select: true }),
@@ -595,15 +608,67 @@ function renderFiche(n) {
     return h;
   }, root => {
     const gps = root.querySelector("#btnGps"); if (gps) gps.onclick = useMyPosition;
+    if (n === "1a") { attacherCarte(root); const rc = root.querySelector("#btnRecentre"); if (rc) rc.onclick = () => cadrerCarte(); }
     root.querySelectorAll("[data-passe]").forEach(s => s.onchange = () => { a.passes = a.passes || {}; if (s.value) a.passes[s.getAttribute("data-passe")] = s.value; else delete a.passes[s.getAttribute("data-passe")]; touch(); FORM.rerender(); });
     if (n === "1a") $("appTitle").textContent = titreOp();
   });
 }
+/* ---------- Carte de localisation (fiche 1a) ----------
+   Un seul élément carte, créé une fois et réinséré à chaque rendu de la fiche
+   (la carte n'est pas rechargée quand un choix redessine le formulaire). */
+const CARTE = { el: null, map: null, me: null, acc: null, ouv: null, watch: null, pos: null, cadree: false };
+function gpsTexte() {
+  const p = CARTE.pos; if (!p) return navigator.geolocation ? "GPS : recherche de la position…" : "GPS : non disponible";
+  const a = Math.round(p.acc); return `Ma position : ${p.lat.toFixed(6)}, ${p.lon.toFixed(6)} · <span class="${a > 20 ? "w" : ""}">±${a} m</span>`;
+}
+function ouvLatLon() { const la = num(cur && cur.f1a.lat), lo = num(cur && cur.f1a.lon); return la != null && lo != null && Math.abs(la) <= 90 && Math.abs(lo) <= 180 ? [la, lo] : null; }
+function attacherCarte(root) {
+  const slot = root.querySelector("#mapSlot"); if (!slot) return;
+  if (!CARTE.el) {
+    CARTE.el = document.createElement("div"); CARTE.el.className = "mapbox";
+    if (typeof L === "undefined") CARTE.el.innerHTML = '<div class="empty">🗺️ Carte indisponible (fond de carte non chargé : réseau requis au premier usage).</div>';
+    else {
+      CARTE.map = L.map(CARTE.el, { center: [46.6, 2.5], zoom: 5, zoomControl: true, attributionControl: true });
+      L.tileLayer("https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png", { attribution: "© OpenStreetMap France · © contributeurs OSM", subdomains: "abc", maxZoom: 20 }).addTo(CARTE.map);
+    }
+  }
+  slot.appendChild(CARTE.el);
+  if (CARTE.map) setTimeout(() => CARTE.map.invalidateSize(), 0);
+  demarrerGps(); majCarte(!CARTE.cadree);
+}
+function demarrerGps() {
+  if (CARTE.watch != null || !navigator.geolocation) return;
+  CARTE.watch = navigator.geolocation.watchPosition(p => {
+    const premiere = !CARTE.pos; CARTE.pos = { lat: p.coords.latitude, lon: p.coords.longitude, acc: p.coords.accuracy };
+    const i = $("gpsInfo"); if (i) i.innerHTML = gpsTexte(); majCarte(premiere && !ouvLatLon());
+  }, e => { const i = $("gpsInfo"); if (i) i.innerHTML = `<span class="w">GPS : ${e.code === 1 ? "autorisation refusée" : "position indisponible"}.</span>`; },
+  { enableHighAccuracy: true, maximumAge: 5000, timeout: 30000 });
+}
+function arreterGps() { if (CARTE.watch != null && navigator.geolocation) navigator.geolocation.clearWatch(CARTE.watch); CARTE.watch = null; CARTE.cadree = false; }
+function majCarte(cadrer) {
+  const m = CARTE.map; if (!m) return;
+  const o = ouvLatLon();
+  if (o) { if (!CARTE.ouv) CARTE.ouv = L.circleMarker(o, { radius: 8, color: "#fff", weight: 2, fillColor: "#e0564f", fillOpacity: 1 }).bindTooltip("Ouvrage").addTo(m); else CARTE.ouv.setLatLng(o); }
+  else if (CARTE.ouv) { CARTE.ouv.remove(); CARTE.ouv = null; }
+  const p = CARTE.pos;
+  if (p) { const ll = [p.lat, p.lon];
+    if (!CARTE.me) { CARTE.acc = L.circle(ll, { radius: p.acc, color: "#5aa9f0", weight: 1, fillOpacity: .12, interactive: false }).addTo(m);
+      CARTE.me = L.circleMarker(ll, { radius: 7, color: "#fff", weight: 2, fillColor: "#5aa9f0", fillOpacity: 1 }).bindTooltip("Ma position").addTo(m); }
+    else { CARTE.me.setLatLng(ll); CARTE.acc.setLatLng(ll).setRadius(p.acc); } }
+  if (cadrer) cadrerCarte();
+}
+function cadrerCarte() {
+  const m = CARTE.map; if (!m) return;
+  const pts = [ouvLatLon(), CARTE.pos && [CARTE.pos.lat, CARTE.pos.lon]].filter(Boolean); if (!pts.length) return;
+  CARTE.cadree = true;
+  if (pts.length === 1) m.setView(pts[0], 17); else m.fitBounds(L.latLngBounds(pts), { padding: [30, 30], maxZoom: 18 });
+}
+
 function useMyPosition() {
   if (!navigator.geolocation) return toast("GPS non disponible", "err");
   toast("Recherche de la position…");
   navigator.geolocation.getCurrentPosition(p => {
-    const apply = () => { cur.f1a.lat = p.coords.latitude.toFixed(6); cur.f1a.lon = p.coords.longitude.toFixed(6); touch(); FORM.rerender(); toast(`Position enregistrée (±${Math.round(p.coords.accuracy)} m)`, "ok"); };
+    const apply = () => { cur.f1a.lat = p.coords.latitude.toFixed(6); cur.f1a.lon = p.coords.longitude.toFixed(6); touch(); FORM.rerender(); cadrerCarte(); toast(`Position enregistrée (±${Math.round(p.coords.accuracy)} m)`, "ok"); };
     if (!vide(cur.f1a.lat) || !vide(cur.f1a.lon)) confirmDialog(`Remplacer les coordonnées saisies (${cur.f1a.lat}, ${cur.f1a.lon}) par votre position (±${Math.round(p.coords.accuracy)} m) ?`, apply, "Remplacer");
     else apply();
   }, () => toast("Position indisponible", "err"), { enableHighAccuracy: true, timeout: 20000, maximumAge: 5000 });
