@@ -257,8 +257,6 @@
       border:1px solid rgba(0,180,216,.35);border-radius:8px;padding:9px 12px;margin-bottom:16px}
     .qi-at-res b{color:var(--accent)}
     .qi-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px;font-size:.74rem;color:var(--muted)}
-    .btn-sm{padding:7px 14px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text);
-      font-family:'Barlow',sans-serif;font-size:.8rem;cursor:pointer}
 
     /* ── TOP NAV ── */
     .top-nav{display:flex;gap:6px;padding:0 28px;background:var(--surface);border-bottom:1px solid var(--border)}
@@ -418,8 +416,9 @@
 <div class="page-section active" id="page-bilan">
 <div class="main">
 
-  <!-- SEARCH CARD -->
-  <div class="card">
+  <div id="sel-slot-bilan">
+  <!-- SEARCH CARD (partagée avec l'onglet Débit instantané) -->
+  <div class="card" id="card-search">
     <div class="card-lbl">Recherche de station hydrométrique</div>
     <div class="tabs">
       <button class="tab active" id="tab-river"   onclick="switchTab('river')">Cours d'eau</button>
@@ -454,8 +453,8 @@
     </div>
   </div>
 
-  <!-- CART -->
-  <div class="card">
+  <!-- CART (partagée avec l'onglet Débit instantané) -->
+  <div class="card" id="card-cart">
     <div class="cart-header">
       <div class="card-lbl">Stations sélectionnées (<span id="cartCount">0</span>)</div>
       <button class="btn-deselect" id="btnDeselect" onclick="deselectAll()">✕ Tout désélectionner</button>
@@ -463,6 +462,7 @@
     <div id="cartItems"><div class="cart-empty">Aucune station - recherchez ci-dessus et cliquez sur <strong>+ Ajouter</strong>.</div></div>
     <button class="btn-gen" id="btnGenerate" onclick="generateBilan()" disabled>⚡ Générer le bilan</button>
   </div>
+  </div><!-- /sel-slot-bilan -->
 
   <div id="loader"><div class="ring"></div><div class="loader-msg" id="loaderMsg">Récupération des données…</div></div>
   <div id="bilan"></div>
@@ -472,7 +472,8 @@
 <!-- PAGE DÉBIT INSTANTANÉ -->
 <div class="page-section" id="page-qi">
 <div class="main">
-  <div class="card">
+  <div id="sel-slot-qi"></div>
+  <div class="card" id="qi-ctrl-card">
     <div class="card-lbl">Débit instantané - Hub'eau temps réel</div>
     <div class="qi-ctrl">
       <div class="tabs" id="qi-periods">
@@ -487,8 +488,8 @@
       </div>
       <button class="btn btn-primary" id="qi-refresh" onclick="loadQI(true)">↻ Actualiser</button>
     </div>
-    <p class="hint">Stations : celles sélectionnées dans <a href="#" style="color:var(--accent)" onclick="switchPage('bilan');return false">Bilan terrain</a>.
-      Historique disponible : <b>30 derniers jours</b> (limite Hub'eau), pas de 5 min ou plus selon la station. Données brutes temps réel, non validées.</p>
+    <p class="hint">Historique disponible : <b>30 derniers jours</b> (limite Hub'eau), pas de 5 min ou plus selon la station. Données brutes temps réel, non validées.
+      La sélection de stations est commune avec Bilan terrain.</p>
   </div>
   <div id="qi-loader"><div class="ring"></div><div class="loader-msg" id="qi-loader-msg">Récupération des débits instantanés…</div></div>
   <div id="qi-list"></div>
@@ -948,6 +949,7 @@ function removeFromCart(code) {
 
 function updateCartUI() {
   const n = state.selected.length;
+  if (pageActive() === 'page-qi') setTimeout(() => loadQI(false), 0);
   document.getElementById('cartCount').textContent = n;
   document.getElementById('btnGenerate').disabled = n===0;
   const desel = document.getElementById('btnDeselect');
@@ -1602,8 +1604,18 @@ function switchPage(page) {
   document.getElementById('page-' + page).classList.add('active');
   document.getElementById('nav-' + page).classList.add('active');
   if (page === 'carte') initCarteNationale();
+  // Recherche et stations sélectionnées : mêmes cartes (et même sélection) dans Bilan terrain et Débit instantané
+  if (page === 'bilan' || page === 'qi') {
+    const slot = document.getElementById('sel-slot-' + page);
+    ['card-search', 'card-cart'].forEach(id => slot.appendChild(document.getElementById(id)));
+    const gen = document.getElementById('btnGenerate');
+    gen.textContent = page === 'qi' ? '⏱️ Afficher les débits instantanés' : '⚡ Générer le bilan';
+    gen.onclick = page === 'qi' ? () => loadQI(false, true) : generateBilan;
+    if (map) setTimeout(() => map.invalidateSize(), 0);
+  }
   if (page === 'qi') loadQI(false);
 }
+const pageActive = () => (document.querySelector('.page-section.active') || {}).id;
 
 // ═══════════════════════════════════════════════════════════
 // DÉBIT INSTANTANÉ (observations_tr : 30 jours glissants)
@@ -1660,13 +1672,12 @@ function initQIControls() {
   at.addEventListener('change', () => renderQI());
 }
 
-async function loadQI(force) {
+async function loadQI(force, defiler) {
   initQIControls();
   const list = document.getElementById('qi-list');
   if (!state.selected.length) {
     Object.values(qiState.charts).forEach(c => c.destroy()); qiState.charts = {};
-    list.innerHTML = `<div class="card"><div class="cart-empty">Aucune station sélectionnée.<br>Rechercher et ajouter des stations dans
-      <a href="#" style="color:var(--accent)" onclick="switchPage('bilan');return false">Bilan terrain</a>, puis revenir ici.</div></div>`;
+    list.innerHTML = '';
     return;
   }
   const now = Date.now(), from = now - qiState.days * 864e5;
@@ -1685,6 +1696,7 @@ async function loadQI(force) {
     ld.classList.remove('show');
   }
   renderQI();
+  if (defiler) document.getElementById('qi-ctrl-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function renderQI() {
@@ -1716,25 +1728,27 @@ function renderQI() {
         <div class="stat-box sm"><div class="stat-val">${rnd(s.max.q)} <span class="stat-u">m³/s</span></div><div class="stat-lbl">Max (${fmtHour(s.max.t)})</div></div>
       </div>
       <div class="chart-wrap"><canvas id="qi_chart_${i}"></canvas></div>
-      <div class="qi-foot"><span>Mesure la plus ancienne : ${fmtHour(rows[0].t)}</span>
-        <button class="btn-sm" onclick="exportQICsv(${i})">⤓ Export CSV (${jours})</button></div>
+      <div class="qi-foot"><span>Mesure la plus ancienne : ${fmtHour(rows[0].t)}</span><span>▲ max · ▼ min</span></div>
     </div>`;
   }).join('');
   state.selected.forEach((st, i) => {
     const c = qiState.cache[st.code_station]; if (!c || c.err) return;
     const rows = qiPeriode(c.rows, qiState.days, now); if (!rows.length) return;
-    buildQIChart(`qi_chart_${i}`, rows, csvData && csvData[st.code_station], atT);
+    buildQIChart(`qi_chart_${i}`, rows, atT);
   });
 }
 
-function buildQIChart(id, rows, ref, atT) {
+function buildQIChart(id, rows, atT) {
   const canvas = document.getElementById(id); if (!canvas || typeof Chart === 'undefined') return;
-  const labels = rows.map(r => fmtHour(r.t)), values = rows.map(r => r.q);
-  const dataMax = Math.max(...values), ann = {};
-  // étiquettes réparties (début / fin / centre) pour ne pas se chevaucher quand les seuils sont proches
-  const seuil = (k, v, col, txt, pos) => { if (v != null && v <= dataMax * 1.6) ann[k] = { type: 'line', yMin: v, yMax: v, borderColor: col, borderWidth: 1.5, borderDash: [7, 4],
-    label: { display: true, content: `${txt} : ${rnd(v)} m³/s`, position: pos, backgroundColor: 'rgba(13,27,42,.75)', color: col, font: { size: 10, weight: '600', family: 'Barlow' }, padding: { x: 5, y: 2 } } }; };
-  if (ref) { seuil('mod', ref.module, '#2ecc71', 'Module', 'end'); seuil('q25', ref.q25, '#f1c40f', 'Q25', 'start'); seuil('q5', ref.qmna5, '#e74c3c', 'QMNA5', 'center'); }
+  const labels = rows.map(r => fmtHour(r.t)), values = rows.map(r => r.q), ann = {};
+  // Min et max de la période marqués sur la courbe
+  const st = qiStats(rows), iMin = rows.indexOf(st.min), iMax = rows.indexOf(st.max);
+  const repere = (i, col) => ({ type: 'point', xValue: i, yValue: rows[i].q, radius: 5, backgroundColor: col, borderColor: '#0d1b2a', borderWidth: 2 });
+  ann.max = repere(iMax, '#2ecc71'); ann.min = repere(iMin, '#e74c3c');
+  ann.maxLbl = { type: 'label', xValue: iMax, yValue: rows[iMax].q, yAdjust: -14, content: `▲ ${rnd(st.max.q)}`, color: '#2ecc71',
+    font: { size: 11, weight: '600', family: 'JetBrains Mono' }, position: { x: iMax > rows.length * 0.8 ? 'end' : iMax < rows.length * 0.2 ? 'start' : 'center' } };
+  ann.minLbl = { type: 'label', xValue: iMin, yValue: rows[iMin].q, yAdjust: 14, content: `▼ ${rnd(st.min.q)}`, color: '#e74c3c',
+    font: { size: 11, weight: '600', family: 'JetBrains Mono' }, position: { x: iMin > rows.length * 0.8 ? 'end' : iMin < rows.length * 0.2 ? 'start' : 'center' } };
   if (atT != null && atT >= rows[0].t && atT <= rows[rows.length - 1].t) {
     const k = rows.reduce((b, r, j) => Math.abs(r.t - atT) < Math.abs(rows[b].t - atT) ? j : b, 0);
     ann.at = { type: 'line', xMin: k, xMax: k, borderColor: '#ffffff', borderWidth: 1.5, borderDash: [3, 3] };
@@ -1755,17 +1769,6 @@ function buildQIChart(id, rows, ref, atT) {
         y: { beginAtZero: true, grid: { color: 'rgba(44,64,96,.5)' }, ticks: { color: '#7a9ec0', font: { size: 11, family: 'JetBrains Mono' }, callback: v => v === 0 ? '0' : rnd(v) },
           title: { display: true, text: 'Débit (m³/s)', color: '#7a9ec0', font: { size: 11 } } } } }
   });
-}
-
-function exportQICsv(i) {
-  const st = state.selected[i], c = st && qiState.cache[st.code_station]; if (!c) return;
-  const rows = qiPeriode(c.rows, qiState.days, Date.now());
-  const csv = ['date_heure_locale;date_utc;debit_m3s']
-    .concat(rows.map(r => `${new Date(r.t).toLocaleString('fr-FR')};${new Date(r.t).toISOString()};${String(r.q).replace('.', ',')}`)).join('\r\n');
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' }));
-  a.download = `debit_instantane_${st.code_station}_${qiState.days}j.csv`;
-  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
 }
 
 // ═══════════════════════════════════════════════════════════
