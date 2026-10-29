@@ -916,7 +916,7 @@ const App = {
   // ============================================================
   // ----------- Carte de localisation de la station -----------
   // Un seul élément carte, créé une fois et réinséré à chaque rendu de l'onglet Station.
-  carte: { el: null, map: null, me: null, acc: null, amont: null, aval: null, ligne: null, watch: null, pos: null, cadree: false },
+  carte: { el: null, map: null, me: null, acc: null, amont: null, aval: null, watch: null, pos: null, cadree: false },
   gpsTexte() {
     const p = this.carte.pos;
     if (!p) return navigator.geolocation ? 'GPS : recherche de la position…' : 'GPS : non disponible';
@@ -965,8 +965,6 @@ const App = {
       else if (c[cle]) { c[cle].remove(); c[cle] = null; }
     };
     const am = this.pointStation('amont'), av = this.pointStation('aval');
-    if (am && av) { if (!c.ligne) c.ligne = L.polyline([av, am], { color: '#0d8a6e', weight: 3, dashArray: '6 5' }).addTo(m); else c.ligne.setLatLngs([av, am]); }
-    else if (c.ligne) { c.ligne.remove(); c.ligne = null; }
     point('amont', am, '#0d8a6e', 'Amont'); point('aval', av, '#e0564f', 'Aval');
     const p = c.pos;
     if (p) {
