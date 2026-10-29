@@ -200,3 +200,25 @@ test('CARHYCE pente : la visée aval reprend la visée amont du tronçon précé
     assert.deepEqual(r.t3refus, { fh: 1, fm: 2, fb: 3 }, 'visée existante conservée si refus');
   });
 });
+
+test('CARHYCE station : position GPS vers l’aval puis l’amont, conversion Lambert 93, carte conservée', { skip }, async () => {
+  await withBrowser(async ({ open }) => {
+    const page = await open('/apps/carhyce/index.html');
+    await page.context().grantPermissions(['geolocation']);
+    await page.context().setGeolocation({ latitude: 44.0001, longitude: 4.5001, accuracy: 6 });
+    page.on('dialog', d => d.accept());
+    await page.evaluate(async () => { const op = DB.newOperation(); await DB.put(op); await App.openOperation(op.id); App.scheduleSave = () => {}; App.renderStation(); App.showScreen('station'); window._carte = App.carte.el; });
+    assert.match(await page.textContent('#form-station .station-map'), /Carte indisponible/);   // fond de carte bloqué en test
+    await page.click('text=Ma position → aval');
+    await page.waitForFunction(() => App.state.op.station.lat_aval != null);
+    await page.context().setGeolocation({ latitude: 44.0012, longitude: 4.5009, accuracy: 5 });
+    await page.click('text=Ma position → amont');
+    await page.waitForFunction(() => App.state.op.station.lat_amont != null);
+    const st = await page.evaluate(() => { const s = App.state.op.station; return { aval: [s.lat_aval, s.lon_aval], amont: [s.lat_amont, s.lon_amont], l93: [s.x_amont, s.y_amont, s.x_aval].every(v => v > 100000), meme: document.querySelector('#form-station .station-map') === window._carte }; });
+    assert.deepEqual(st.aval, [44.0001, 4.5001]); assert.deepEqual(st.amont, [44.0012, 4.5009]);
+    assert.equal(st.l93, true, 'converties en Lambert 93'); assert.equal(st.meme, true, 'carte réutilisée après le nouveau rendu');
+    await page.evaluate(() => App.showScreen('home'));
+    assert.equal(await page.evaluate(() => App.carte.watch), null, 'GPS arrêté hors de l’onglet Station');
+    assert.deepEqual(page.errors, []);
+  });
+});
