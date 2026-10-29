@@ -64,6 +64,14 @@ self.APPS = [
   accent:  "#6f7fd6",
   icone:   "./apps/habitat-stat/icon.svg",
   offline: true
-  } 
+  },
+  {
+    slug:    "ice",
+    nom:     "ICE",
+    desc:    "Continuité écologique : saisie terrain",
+    accent:  "#4cb39a",
+    icone:   "./apps/ice/icon.svg",
+    offline: true
+  }
     
 ];
