@@ -183,6 +183,7 @@ input[type=file]{ display:none; }
   <section class="screen" id="scr-parties"></section>
   <section class="screen" id="scr-partie"></section>
   <section class="screen" id="scr-struct"></section>
+  <section class="screen" id="scr-c2"></section>
   <section class="screen" id="scr-export"></section>
 </main>
 
@@ -362,6 +363,7 @@ function manquants(op) {
   req(vide(b.l_amont), "2", "Cote ligne d'eau amont"); req(vide(b.l_aval), "2", "Cote ligne d'eau aval");
   req(vide(b.larg_mouillee), "2", "Largeur mouillée hors influence");
   req(!op.parties.length, "P", "Au moins une partie d'ouvrage");
+  req(c2Saisie(op) && vide(op.c2.ref_lecture), "C2", "C2 : lecture du point de référence (recalage)");
   op.parties.forEach((p, i) => {
     const P = "Partie " + (i + 1);
     req(vide(p.largeur), "P" + i, P + " : largeur"); req(vide(p.ecoulement), "P" + i, P + " : écoulement"); req(vide(p.reptation), "P" + i, P + " : voie de reptation");
@@ -476,6 +478,7 @@ function go(where, arg) {
   if (where === "parties") { renderParties(); show("parties"); $("btnBack").onclick = () => go("op"); return; }
   if (where === "partie") { pIdx = arg; renderPartie(); show("partie"); $("btnBack").onclick = () => go("parties"); return; }
   if (where === "struct") { sIdx = arg; renderStruct(); show("struct"); $("btnBack").onclick = () => go("partie", pIdx); return; }
+  if (where === "c2") { renderC2(); show("c2"); $("btnBack").onclick = () => go("op"); return; }
   if (where === "export") { renderExport(); show("export"); $("btnBack").onclick = () => go("op"); return; }
 }
 
@@ -507,6 +510,7 @@ function renderOp() {
       <button class="nav-card" data-go="form" data-arg="1b"><span class="ic">🗂️</span><span class="lb">1b · Référence ICE</span><small>facultatif</small></button>
       <button class="nav-card" data-go="form" data-arg="2"><span class="ic">📏</span><span class="lb">2 · Visite et ligne d'eau</span>${etat(nb("2"))}</button>
       <button class="nav-card" data-go="parties"><span class="ic">🧱</span><span class="lb">Parties (${op.parties.length})</span>${etat(nb("P"))}</button>
+      <button class="nav-card" data-go="c2"><span class="ic">🔁</span><span class="lb">C2 · 2e campagne</span><small>${c2Saisie(op) ? `saisie (${esc(op.c2.date || "")})` : "autre débit, facultatif"}</small></button>
       <button class="nav-card" data-go="export"><span class="ic">📤</span><span class="lb">Export</span><small>${m.length ? "relevé incomplet" : "prêt"}</small></button>
     </div>
     ${m.length ? `<section class="card"><div class="hd"><span class="ttl"><span class="bar"></span>Champs obligatoires à compléter</span></div><div class="bd">
@@ -757,6 +761,7 @@ function renderPartie() {
         f.num("d", "Diamètre", { u: "m", show: x => x.forme === "Circulaire" })]),
       f.calc(x => { const lo = num(x.forme === "Circulaire" ? x.d : x.l), lm = num(op.f2.larg_mouillee); if (lo == null || lm == null || !lm) return '<span class="lab">Largeur ouvrage / largeur mouillée du cours d\'eau :</span> -';
         const r = 100 * lo / lm; return `<span class="lab">Largeur ouvrage / largeur mouillée hors influence :</span> ${fmt(r, 0)} %${r < 75 || r > 125 ? ' <span class="w">hors 75-125 %</span>' : ""}`; }),
+      f.yn("noye", "Ouvrage noyé par l'aval sur toute sa longueur"),
       f.yn("enfonce", "Enfoncement de toute la longueur sous le terrain naturel"), f.num("enf_prof", "Profondeur d'enfoncement", { u: "m", show: x => x.enfonce === "Oui" }),
       f.opt("lit", "Matériaux du lit dans l'ouvrage", ["Absence", "Limons-sables", "Graviers", "Galets", "Autre"], { select: true }),
       f.yn("surplomb", "Présence d'un surplomb aval")
@@ -930,6 +935,57 @@ function redansSpecs() {
     ...one(0), ...one(1), ...one(2)];
 }
 
+/* ---------- Campagne 2 : autre débit ----------
+   Protocole : pour un relevé complémentaire (ouvrage non modifié), seules les lignes d'eau amont et
+   aval et les tirants d'eau / charges sont relevés, puis recalés sur le point de référence :
+   lecture recalée = lecture C2 + (lecture du point de référence C1 - lecture C2). */
+function c2Saisie(op) { return !!(op.c2 && !vide(op.c2.l_amont) && !vide(op.c2.l_aval)); }
+function decalageC2(op) { const r1 = num(op.f2.ref_cote), r2 = num(op.c2 && op.c2.ref_lecture); return r1 == null || r2 == null ? null : r1 - r2; }
+function recaleC2(op, v) { const d = decalageC2(op), x = num(v); return d == null || x == null ? null : x + d; }
+// mesures dépendant du débit, par type de structure (mêmes clés que la campagne 1)
+function champsC2(s) {
+  const t = s.type, prof = s.profil_ok !== "Non";
+  if (t === "vertical") return [prof ? f.num("tirant_charge", "Charge sur l'obstacle", { u: "m" }) : f.num("charge", "Charge sur l'obstacle", { u: "m" })];
+  if (t === "incline") return [prof ? f.num("tirant_charge", "Tirant d'eau minimal sur la voie de passage", { u: "m" }) : f.num("tirant", "Tirant d'eau minimal sur la voie de passage", { u: "m" }),
+    ...(prof ? [] : [f.num("chute_aval_tirant", "Tirant d'eau de chute aval", { u: "m" })])];
+  if (t === "enrochement") return [f.num("tirant_min", "Tirant d'eau minimal dans la voie de passage", { u: "m" })];
+  if (t === "routier") return [f.row([f.num("tirant_min", "Tirant d'eau minimal", { u: "m" }), f.num("vitesse", "Vitesse en sortie", { u: "m/s" })]),
+    ...(s.chute_aval === "Oui" ? [f.row([f.num("ch_amont", "Cote niveau amont de la chute", { u: "m" }), f.num("ch_aval", "Cote niveau aval", { u: "m" }), f.num("ch_charge", "Charge", { u: "m" })])] : [])];
+  return [];
+}
+function renderC2() {
+  const op = cur;
+  op.c2 = op.c2 || { structures: {} };
+  op.c2.structures = op.c2.structures || {};
+  const c2 = op.c2;
+  mountForm($("scr-c2"), F => {
+    let h = `<div class="st-title">C2 · deuxième campagne</div>
+      <div class="st-sub">Relevé à un autre débit, ouvrage non modifié : seules les lignes d'eau et les tirants d'eau / charges sont relevés à nouveau. Le reste vient de la campagne 1.</div>`;
+    h += card("Conditions et opération", "2-2/3", [f.opt("hydro", "Hydrologie le jour de la visite", ["Etiage", "Proche module"]),
+      f.row([f.num("debit", "Débit (si disponible)", { u: "m³/s" }), f.num("echelle_val", "Échelle limnimétrique", { u: "m" })]),
+      f.row([f.date("date", "Date de relevé"), f.time("heure", "Heure de relevé")]), f.txt("observateurs", "Observateurs"), f.area("remarques", "Remarques")], c2, F);
+    h += card("Recalage sur le point de référence", "4.2", [
+      f.html(() => `<div class="info">Point de référence (C1) : <b>${esc(op.f2.ref_desc || "non décrit")}</b>, lecture C1 = <b>${esc(op.f2.ref_cote || "-")}</b> m.</div>`),
+      f.num("ref_lecture", "Lecture du point de référence (C2)", { u: "m", req: true }),
+      f.calc(() => { const d = decalageC2(op); return `<span class="lab">Décalage appliqué aux lectures C2 :</span> ${d == null ? "-" : (d >= 0 ? "+" : "") + fmt(d, 3) + " m"}`; })], c2, F);
+    h += card("Ligne d'eau", "2-4", [
+      f.row([f.num("l_amont", "Cote ligne d'eau amont (lecture C2)", { u: "m", req: true }), f.num("l_aval", "Cote ligne d'eau aval (lecture C2)", { u: "m", req: true })]),
+      f.calc(() => { const a = recaleC2(op, c2.l_amont), b = recaleC2(op, c2.l_aval), dh1 = chute(op.f2.l_amont, op.f2.l_aval);
+        return `<span class="lab">Recalées :</span> amont ${fmt(a, 3)} / aval ${fmt(b, 3)} m · <span class="lab">chute C2 :</span> ${a == null || b == null ? "-" : fmt(b - a, 2) + " m"} (C1 : ${fmt(dh1, 2)} m)`; })], c2, F);
+    op.parties.forEach((p, i) => p.structures.forEach((s, j) => {
+      const cle = i + "." + j, o = (c2.structures[cle] = c2.structures[cle] || {});
+      const specs = [...(p.structures.length > 1 ? [f.row([f.num("l_amont", "Ligne d'eau amont (lecture C2)", { u: "m" }), f.num("l_aval", "Ligne d'eau aval (lecture C2)", { u: "m" })])] : []), ...champsC2(s)];
+      if (specs.length) h += card(`Partie ${i + 1}${p.structures.length > 1 ? ", structure " + (j + 1) : ""} · ${NOM.structures[s.type].split(" (")[0]}`, "3", specs, o, F);
+    }));
+    h += `<div class="hint">Profondeur de fosse : déduite de la campagne 1 et de la variation de la ligne d'eau aval lors de l'exploitation.</div>
+      <div class="btn-row" style="margin-top:8px">${c2Saisie(op) ? '<button class="btn danger ghost sm" id="btnDelC2">Effacer la campagne 2</button>' : ""}</div>`;
+    return h;
+  }, root => {
+    const d = root.querySelector("#btnDelC2");
+    if (d) d.onclick = () => confirmDialog("Effacer toutes les saisies de la campagne 2 ?", () => { delete op.c2; touch(); go("op"); });
+  });
+}
+
 /* ---------- Export ---------- */
 function buildExport(op) {
   const calc = {
@@ -937,6 +993,7 @@ function buildExport(op) {
     parties: op.parties.map(p => ({ structures: p.structures.map(s => calcStructure(s, p, op)),
       reptation: p.reptation === "Oui" && p.reptation_profil.specifique === "Oui" && p.reptation_profil.realisable === "Oui" ? (() => { const r = profil(p.reptation_profil.points, p.reptation_profil.methode); return { pente_max_pct: r.penteMax === Infinity ? "verticale" : rnd(r.penteMax, 1), longueur_m: rnd(r.longueur, 2) }; })() : null }))
   };
+  if (c2Saisie(op)) calc.c2 = { decalage_m: rnd(decalageC2(op), 3), chute_globale_m: rnd(recaleC2(op, op.c2.l_aval) - recaleC2(op, op.c2.l_amont), 3) };
   const brut = JSON.parse(JSON.stringify(op)); delete brut.updated;
   return { format: FORMAT, version: VERSION, exporte_le: new Date().toISOString(),
     convention_cotes: "lectures de mire au niveau : valeur plus grande = point plus bas (chute = aval - amont)",

@@ -147,3 +147,30 @@ test('ICE fiche 1a : carte de localisation sous « Utiliser ma position », cons
     assert.deepEqual(page.errors, []);
   });
 });
+
+test('ICE C2 : deuxième campagne, recalage sur le point de référence, mesures dépendant du débit', { skip }, async () => {
+  await withBrowser(async ({ open }) => {
+    const page = await open('/apps/ice/index.html');
+    await page.evaluate(() => {
+      cur = newOuvrage(); Object.assign(cur.f2, { ref_cote: '0.500', l_amont: '0.80', l_aval: '2.00' });
+      const p = newPartie(); p.structures = [newStructure('vertical'), newStructure('routier')]; p.structures[1].chute_aval = 'Oui';
+      cur.parties.push(p); Store.put(cur); go('op');
+    });
+    await page.click('[data-go="c2"]');
+    const txt = await page.textContent('#scr-c2');
+    assert.match(txt, /Crête|non décrit/); assert.match(txt, /Charge sur l'obstacle/); assert.match(txt, /Vitesse en sortie/);
+    assert.match(txt, /Cote niveau amont de la chute/, 'chute aval saisie en C1 : mesures de chute demandées');
+    // niveau déplacé : point de référence lu 0,300 au lieu de 0,500 -> décalage +0,200
+    const champ = lib => page.locator('#scr-c2 .field', { hasText: lib }).locator('input').first();
+    await champ('Lecture du point de référence (C2)').fill('0.300');
+    await champ("Cote ligne d'eau amont (lecture C2)").fill('0.50');
+    await champ("Cote ligne d'eau aval (lecture C2)").fill('1.60');
+    assert.match(await page.textContent('#scr-c2'), /chute C2 :\s*1\.10 m \(C1 : 1\.20 m\)/);
+    const exp = await page.evaluate(() => buildExport(cur));
+    assert.equal(exp.calculs.c2.decalage_m, 0.2);
+    assert.equal(exp.calculs.c2.chute_globale_m, 1.1);
+    assert.deepEqual(Object.keys(exp.ouvrage.c2.structures).sort(), ['0.0', '0.1']);
+    assert.ok(!exp.manquants.some(m => /C2/.test(m)));
+    assert.deepEqual(page.errors, []);
+  });
+});
