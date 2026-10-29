@@ -68,7 +68,7 @@ self.APPS = [
   {
     slug:    "ice",
     nom:     "ICE",
-    desc:    "Continuité écologique : saisie terrain",
+    desc:    "Continuité écologique",
     accent:  "#4cb39a",
     icone:   "./apps/ice/icon.svg",
     offline: true

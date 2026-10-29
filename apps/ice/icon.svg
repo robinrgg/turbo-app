@@ -1,13 +1,39 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <defs><clipPath id="r"><rect width="512" height="512" rx="96"/></clipPath></defs>
+  <defs>
+    <clipPath id="r"><rect width="512" height="512" rx="96"/></clipPath>
+    <linearGradient id="ciel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#16303f"/><stop offset="1" stop-color="#0e1622"/></linearGradient>
+    <linearGradient id="eau" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2f7fa8"/><stop offset="1" stop-color="#174a66"/></linearGradient>
+    <linearGradient id="corps" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7f8f54"/><stop offset=".55" stop-color="#c9b77a"/><stop offset="1" stop-color="#f1e7cf"/></linearGradient>
+  </defs>
   <g clip-path="url(#r)">
-    <rect width="512" height="512" fill="#0e1622"/>
-    <path d="M0 196 H200 L272 340 H512 V512 H0 Z" fill="#1d4f63"/>
-    <path d="M200 196 L272 340" stroke="#4cb39a" stroke-width="22" stroke-linecap="round" fill="none"/>
-    <path d="M60 196 H200" stroke="#4cb39a" stroke-width="22" stroke-linecap="round"/>
-    <path d="M272 340 H452" stroke="#4cb39a" stroke-width="22" stroke-linecap="round"/>
-    <path d="M330 300 c18 -34 52 -50 86 -40 c-8 10 -10 20 -6 30 c-30 -2 -56 6 -80 22 z" fill="#e9c23f"/>
-    <circle cx="398" cy="270" r="5" fill="#0e1622"/>
-    <path d="M96 150 c30 -18 60 -18 90 0 M96 118 c30 -18 60 -18 90 0" stroke="#5aa9f0" stroke-width="12" fill="none" stroke-linecap="round"/>
+    <rect width="512" height="512" fill="url(#ciel)"/>
+    <!-- bief amont, au-dessus du seuil -->
+    <rect x="330" y="214" width="182" height="298" fill="url(#eau)"/>
+    <!-- seuil vertical (maçonnerie) -->
+    <rect x="314" y="214" width="46" height="298" fill="#8a96a3"/>
+    <rect x="314" y="214" width="46" height="14" fill="#b9c2cb"/>
+    <path d="M314 262 H360 M314 310 H360 M314 358 H360 M314 406 H360 M337 228 V262 M337 310 V358 M337 406 V454 M325 262 V310 M349 358 V406" stroke="#5e6b78" stroke-width="5"/>
+    <!-- lame déversante -->
+    <path d="M314 216 C290 230 284 270 286 330" stroke="#8fd3f4" stroke-width="12" fill="none" stroke-linecap="round" opacity=".85"/>
+    <!-- bief aval et remous -->
+    <path d="M0 382 C60 370 120 392 180 380 C230 370 270 388 314 378 V512 H0 Z" fill="url(#eau)"/>
+    <path d="M262 380 c10 -14 26 -14 34 0 M226 392 c8 -10 20 -10 28 0" stroke="#bfe6f7" stroke-width="7" fill="none" stroke-linecap="round"/>
+    <circle cx="282" cy="352" r="7" fill="#bfe6f7"/><circle cx="300" cy="340" r="5" fill="#bfe6f7"/><circle cx="268" cy="336" r="4" fill="#bfe6f7"/>
+    <!-- truite en saut : arc vers la crête -->
+    <g transform="translate(206 268) rotate(-38)">
+      <path d="M-120 0 L-160 -30 L-150 0 L-160 30 Z" fill="#6f7d47"/>
+      <path d="M-128 0 C-100 -36 -20 -52 50 -40 C90 -33 118 -14 126 0 C118 14 90 33 50 40 C-20 52 -100 36 -128 0 Z" fill="url(#corps)"/>
+      <path d="M-110 4 C-60 -6 20 -8 110 2" stroke="#e58a8a" stroke-width="9" fill="none" stroke-linecap="round" opacity=".85"/>
+      <path d="M-30 -42 L-8 -66 L18 -44 Z" fill="#6f7d47"/>
+      <path d="M-20 36 L-6 56 L10 38 Z M40 36 L54 52 L64 34 Z" fill="#c9b77a"/>
+      <circle cx="-70" cy="-16" r="5" fill="#2c3320"/><circle cx="-40" cy="-26" r="5" fill="#2c3320"/><circle cx="-10" cy="-14" r="6" fill="#c0392b"/>
+      <circle cx="16" cy="-28" r="5" fill="#2c3320"/><circle cx="44" cy="-18" r="5" fill="#2c3320"/><circle cx="-54" cy="-34" r="4" fill="#2c3320"/>
+      <circle cx="26" cy="-6" r="5" fill="#c0392b"/><circle cx="-84" cy="10" r="4" fill="#2c3320"/>
+      <path d="M78 -26 C88 -8 88 8 78 26" stroke="#7f8f54" stroke-width="5" fill="none"/>
+      <circle cx="100" cy="-10" r="8" fill="#f8f4e8"/><circle cx="102" cy="-10" r="4.5" fill="#111"/>
+      <path d="M126 0 L112 6" stroke="#5a4a3a" stroke-width="4" stroke-linecap="round"/>
+    </g>
+    <!-- trajectoire du saut -->
+    <path d="M120 360 C120 330 128 310 140 296" stroke="#bfe6f7" stroke-width="6" stroke-dasharray="2 14" stroke-linecap="round" fill="none" opacity=".7"/>
   </g>
 </svg>
