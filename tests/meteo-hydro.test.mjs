@@ -81,17 +81,16 @@ test('erreur non passagère (404) : pas de relance', async () => {
 });
 
 // ---- Débit instantané (observations_tr, 30 jours glissants)
-const qi = loadFunctions(src, ['qiPeriode', 'qiStats', 'qiAt', 'qiVariation', 'fetchQISerie'],
+const qi = loadFunctions(src, ['qiPeriode', 'qiStats', 'qiAt', 'qiGraduations', 'fetchQISerie'],
   { HUBEAU: 'https://hubeau.eaufrance.fr/api/v2/hydrometrie', enc: encodeURIComponent });
 const H = 3600e3, T0 = Date.parse('2026-10-28T00:00:00Z');
 const serie = Array.from({ length: 49 }, (_, i) => ({ t: T0 + i * H / 2, q: 1 + i / 10 }));   // 24 h au pas de 30 min
 
-test('débit instantané : période, min / max / moyenne, dernier', () => {
+test('débit instantané : période, min / max, dernier', () => {
   const r = qi.qiPeriode(serie, 0.5, T0 + 24 * H);            // 12 dernières heures
   assert.equal(r.length, 25); assert.equal(r[0].t, T0 + 12 * H);
   const s = qi.qiStats(serie);
   assert.equal(s.last, serie[48]); assert.equal(s.min, serie[0]); assert.equal(s.max, serie[48]);
-  assert.ok(Math.abs(s.moy - 3.4) < 1e-9); assert.equal(s.n, 49);
   assert.equal(qi.qiStats([]), null);
 });
 
@@ -101,11 +100,25 @@ test('débit instantané : valeur la plus proche d’une heure donnée, à 30 mi
   assert.equal(qi.qiAt(serie, T0 + 25 * H), null, 'au-delà de 30 min : pas de valeur');
 });
 
-test('débit instantané : variation sur 1 h et 24 h', () => {
-  const v1 = qi.qiVariation(serie, 1);
-  assert.ok(Math.abs(v1.dq - 0.2) < 1e-9);
-  assert.ok(Math.abs(qi.qiVariation(serie, 24).dq - 4.8) < 1e-9);
-  assert.equal(qi.qiVariation(serie.slice(0, 1), 1), null);
+test('débit instantané : graduations de l’axe des temps calées sur l’heure locale', () => {
+  const t = (j, h) => new Date(2026, 9, j, h, 0, 0).getTime();          // octobre 2026, heure locale
+  const hm = g => { const d = new Date(g.t); return [d.getDate(), d.getHours()]; };
+  // 24 h : toutes les heures, étiquette toutes les 3 h (date à minuit)
+  let g = qi.qiGraduations(t(28, 18) + 5 * 60e3, t(29, 18) + 5 * 60e3);
+  assert.equal(g.length, 24); assert.deepEqual(hm(g[0]), [28, 19]);
+  assert.deepEqual(g.filter(x => x.label).map(x => x.label).join(' ').split(' '), ['21h', '29/10', '3h', '6h', '9h', '12h', '15h', '18h']);
+  // 3 jours : toutes les 3 h, étiquettes à 0 h et 12 h
+  g = qi.qiGraduations(t(26, 18) + 60e3, t(29, 18));
+  assert.ok(g.every(x => new Date(x.t).getHours() % 3 === 0));
+  assert.deepEqual(g.filter(x => x.label).map(x => x.label).join(' ').split(' '), ['27/10', '12h', '28/10', '12h', '29/10', '12h']);
+  // 7 jours : toutes les 6 h, étiquette à minuit
+  g = qi.qiGraduations(t(22, 20), t(29, 19));
+  assert.ok(g.every(x => new Date(x.t).getHours() % 6 === 0));
+  assert.deepEqual(g.filter(x => x.label).map(x => x.label).join(' ').split(' '), ['23/10', '24/10', '25/10', '26/10', '27/10', '28/10', '29/10']);
+  // 30 jours : tous les jours, étiquette tous les 4 jours
+  g = qi.qiGraduations(new Date(2026, 8, 29, 20).getTime(), t(29, 19));
+  assert.equal(g.length, 30); assert.equal(g.filter(x => x.label).length, 8);
+  assert.ok(g.every(x => new Date(x.t).getHours() === 0));
 });
 
 test('débit instantané : requête Hub’eau depuis une date, L/s → m³/s, pages suivies, valeurs nulles ignorées', async () => {

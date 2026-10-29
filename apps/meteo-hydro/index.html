@@ -251,6 +251,8 @@
     .qi-at label{font-size:.72rem;color:var(--muted)}
     .qi-at input{background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);
       padding:8px 10px;font-family:'JetBrains Mono',monospace;font-size:.85rem;color-scheme:dark}
+    .stats-row.qi-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+    .qi-stats .stat-box{min-width:0;padding:12px 6px}
     #qi-loader{display:none;text-align:center;padding:40px}
     #qi-loader.show{display:block}
     .qi-at-res{font-family:'JetBrains Mono',monospace;font-size:.82rem;background:var(--accent-dim);
@@ -362,6 +364,9 @@
       .search-row{flex-direction:column;gap:8px}
       .btn{padding:12px;font-size:.95rem;width:100%}
       .qi-ctrl{flex-direction:column;align-items:stretch}
+      .stats-row.qi-stats{grid-template-columns:repeat(3,1fr)}
+      .qi-stats .stat-val{font-size:1.05rem}
+      .qi-stats .stat-lbl{font-size:.66rem}
       .qi-at input{width:100%}
       .search-input{font-size:1rem;padding:12px 14px}
       #split-panel{flex-direction:column!important}
@@ -1640,9 +1645,9 @@ async function fetchQISerie(code, fromMs) {
 function qiPeriode(rows, days, now) { return rows.filter(r => r.t >= now - days * 864e5); }
 function qiStats(rows) {
   if (!rows.length) return null;
-  let min = rows[0], max = rows[0], sum = 0;
-  rows.forEach(r => { if (r.q < min.q) min = r; if (r.q > max.q) max = r; sum += r.q; });
-  return { last: rows[rows.length - 1], min, max, moy: sum / rows.length, n: rows.length };
+  let min = rows[0], max = rows[0];
+  rows.forEach(r => { if (r.q < min.q) min = r; if (r.q > max.q) max = r; });
+  return { last: rows[rows.length - 1], min, max };
 }
 // Valeur la plus proche d'un instant, à 30 min près au plus (sinon null)
 function qiAt(rows, t, tolMin = 30) {
@@ -1650,14 +1655,7 @@ function qiAt(rows, t, tolMin = 30) {
   rows.forEach(r => { if (!best || Math.abs(r.t - t) < Math.abs(best.t - t)) best = r; });
   return best && Math.abs(best.t - t) <= tolMin * 60000 ? best : null;
 }
-// Variation du dernier débit par rapport à `heures` plus tôt
-function qiVariation(rows, heures) {
-  if (!rows.length) return null;
-  const last = rows[rows.length - 1], ref = qiAt(rows, last.t - heures * 3600e3);
-  return ref && ref !== last ? { dq: last.q - ref.q, pct: ref.q ? 100 * (last.q - ref.q) / ref.q : null } : null;
-}
 const fmtAge = ms => { const m = Math.round(ms / 60000); return m < 60 ? `il y a ${m} min` : m < 2880 ? `il y a ${Math.round(m / 60)} h` : `il y a ${Math.round(m / 1440)} j`; };
-const fmtVar = v => !v ? '-' : v.dq === 0 ? '0' : (v.dq > 0 ? '+' : '-') + rnd(Math.abs(v.dq));
 
 function initQIControls() {
   if (initQIControls.done) return; initQIControls.done = true;
@@ -1708,7 +1706,6 @@ function renderQI() {
   list.innerHTML = state.selected.map((st, i) => {
     const c = qiState.cache[st.code_station] || { rows: [] };
     const rows = qiPeriode(c.rows, qiState.days, now), s = qiStats(rows);
-    const v1 = qiVariation(c.rows, 1), v24 = qiVariation(c.rows, 24);
     const at = atT != null ? qiAt(c.rows, atT) : null;
     const head = `<div class="bilan-name">📍 ${esc(st.libelle_station)}</div>
       <div class="bilan-meta"><div class="mkv">Cours d'eau : <span>${esc(st.libelle_cours_eau || '-')}</span></div>
@@ -1718,14 +1715,11 @@ function renderQI() {
     return `<div class="card">${head}
       <div class="sec-lbl">⏱️ Débit instantané - ${jours}</div>
       ${atT != null ? `<div class="qi-at-res">Le ${fmtHour(atT)} : ${at ? `<b>${rnd(at.q)} m³/s</b> (mesure de ${fmtHour(at.t)})` : 'aucune mesure à moins de 30 min'}</div>` : ''}
-      <div class="stats-row">
+      <div class="stats-row qi-stats">
         <div class="stat-box sc"><div class="stat-val">${rnd(s.last.q)} <span class="stat-u">m³/s</span></div>
-          <div class="stat-lbl">Dernier QI (${fmtHour(s.last.t)}, ${fmtAge(now - s.last.t)})</div></div>
-        <div class="stat-box"><div class="stat-val">${fmtVar(v1)}</div><div class="stat-lbl">Variation sur 1 h (m³/s)</div></div>
-        <div class="stat-box"><div class="stat-val">${fmtVar(v24)}</div><div class="stat-lbl">Variation sur 24 h (m³/s)</div></div>
-        <div class="stat-box"><div class="stat-val">${rnd(s.moy)} <span class="stat-u">m³/s</span></div><div class="stat-lbl">Moyenne (${s.n} mesures)</div></div>
-        <div class="stat-box sq"><div class="stat-val">${rnd(s.min.q)} <span class="stat-u">m³/s</span></div><div class="stat-lbl">Min (${fmtHour(s.min.t)})</div></div>
-        <div class="stat-box sm"><div class="stat-val">${rnd(s.max.q)} <span class="stat-u">m³/s</span></div><div class="stat-lbl">Max (${fmtHour(s.max.t)})</div></div>
+          <div class="stat-lbl">Dernier QI<br>${fmtHour(s.last.t)} · ${fmtAge(now - s.last.t)}</div></div>
+        <div class="stat-box sq"><div class="stat-val">${rnd(s.min.q)} <span class="stat-u">m³/s</span></div><div class="stat-lbl">Min<br>${fmtHour(s.min.t)}</div></div>
+        <div class="stat-box sm"><div class="stat-val">${rnd(s.max.q)} <span class="stat-u">m³/s</span></div><div class="stat-lbl">Max<br>${fmtHour(s.max.t)}</div></div>
       </div>
       <div class="chart-wrap"><canvas id="qi_chart_${i}"></canvas></div>
       <div class="qi-foot"><span>Mesure la plus ancienne : ${fmtHour(rows[0].t)}</span><span>▲ max · ▼ min</span></div>
@@ -1738,35 +1732,65 @@ function renderQI() {
   });
 }
 
+// Graduations de l'axe des temps, calées sur l'heure locale : pas et étiquettes selon la durée affichée
+//   ≤ 1 j : toutes les heures, étiquette toutes les 3 h ; ≤ 3,5 j : toutes les 3 h, étiquette à 0 h et 12 h ;
+//   ≤ 8 j : toutes les 6 h, étiquette à 0 h ; au-delà : tous les jours, étiquette tous les 4 jours.
+function qiGraduations(t0, t1) {
+  const jours = (t1 - t0) / 864e5;
+  const pasH = jours <= 1.1 ? 1 : jours <= 3.5 ? 3 : jours <= 8 ? 6 : 24;
+  const jj = d => d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+  const d = new Date(t0); d.setMinutes(0, 0, 0);
+  if (pasH === 24) d.setHours(0); else d.setHours(d.getHours() - d.getHours() % pasH);
+  if (d.getTime() < t0) d.setHours(d.getHours() + pasH);
+  const out = [];
+  for (let n = 0; d.getTime() <= t1; n++, d.setHours(d.getHours() + pasH)) {
+    const h = d.getHours();
+    let label = '';
+    if (pasH === 1) label = h % 3 ? '' : h === 0 ? jj(d) : `${h}h`;
+    else if (pasH === 3) label = h === 0 ? jj(d) : h === 12 ? '12h' : '';
+    else if (pasH === 6) label = h === 0 ? jj(d) : '';
+    else label = n % 4 ? '' : jj(d);
+    out.push({ t: d.getTime(), label });
+  }
+  return out;
+}
+
 function buildQIChart(id, rows, atT) {
   const canvas = document.getElementById(id); if (!canvas || typeof Chart === 'undefined') return;
-  const labels = rows.map(r => fmtHour(r.t)), values = rows.map(r => r.q), ann = {};
-  // Min et max de la période marqués sur la courbe
-  const st = qiStats(rows), iMin = rows.indexOf(st.min), iMax = rows.indexOf(st.max);
-  const repere = (i, col) => ({ type: 'point', xValue: i, yValue: rows[i].q, radius: 5, backgroundColor: col, borderColor: '#0d1b2a', borderWidth: 2 });
-  ann.max = repere(iMax, '#2ecc71'); ann.min = repere(iMin, '#e74c3c');
-  ann.maxLbl = { type: 'label', xValue: iMax, yValue: rows[iMax].q, yAdjust: -14, content: `▲ ${rnd(st.max.q)}`, color: '#2ecc71',
-    font: { size: 11, weight: '600', family: 'JetBrains Mono' }, position: { x: iMax > rows.length * 0.8 ? 'end' : iMax < rows.length * 0.2 ? 'start' : 'center' } };
-  ann.minLbl = { type: 'label', xValue: iMin, yValue: rows[iMin].q, yAdjust: 14, content: `▼ ${rnd(st.min.q)}`, color: '#e74c3c',
-    font: { size: 11, weight: '600', family: 'JetBrains Mono' }, position: { x: iMin > rows.length * 0.8 ? 'end' : iMin < rows.length * 0.2 ? 'start' : 'center' } };
-  if (atT != null && atT >= rows[0].t && atT <= rows[rows.length - 1].t) {
-    const k = rows.reduce((b, r, j) => Math.abs(r.t - atT) < Math.abs(rows[b].t - atT) ? j : b, 0);
-    ann.at = { type: 'line', xMin: k, xMax: k, borderColor: '#ffffff', borderWidth: 1.5, borderDash: [3, 3] };
-  }
+  const t0 = rows[0].t, t1 = rows[rows.length - 1].t, st = qiStats(rows), ann = {};
+  // Échelle des débits avec de la marge au-dessus du max et sous le min pour leurs étiquettes
+  const ecart = (st.max.q - st.min.q) || st.max.q * 0.1 || 0.1;
+  const bas = Math.max(0, st.min.q - ecart * 0.25), haut = st.max.q + ecart * 0.25;
+  const brut = (haut - bas) / 5, p10 = Math.pow(10, Math.floor(Math.log10(brut)));
+  const pasY = [1, 2, 2.5, 5, 10].map(k => k * p10).find(v => v >= brut * 0.999);       // pas rond, bornes sur ce pas
+  const yMin = Math.floor(bas / pasY) * pasY, yMax = Math.ceil(haut / pasY) * pasY;
+  const xPos = t => (t - t0) / ((t1 - t0) || 1);
+  const ancrage = t => ({ x: xPos(t) > 0.8 ? 'end' : xPos(t) < 0.2 ? 'start' : 'center' });   // reste dans le cadre en largeur
+  const point = (r, col) => ({ type: 'point', xValue: r.t, yValue: r.q, radius: 5, backgroundColor: col, borderColor: '#0d1b2a', borderWidth: 2 });
+  const etiquette = (r, col, txt, dessous) => ({ type: 'label', xValue: r.t, yValue: r.q, yAdjust: dessous ? 15 : -15, position: ancrage(r.t),
+    content: txt, color: col, font: { size: 11, weight: '600', family: 'JetBrains Mono' }, padding: 2 });
+  ann.max = point(st.max, '#2ecc71'); ann.min = point(st.min, '#e74c3c');
+  ann.maxLbl = etiquette(st.max, '#2ecc71', `▲ ${rnd(st.max.q)}`, false);
+  // min collé au bas de l'échelle (débit proche de 0) : étiquette au-dessus du point
+  ann.minLbl = etiquette(st.min, '#e74c3c', `▼ ${rnd(st.min.q)}`, (st.min.q - yMin) / (yMax - yMin) >= 0.12);
+  if (atT != null && atT >= t0 && atT <= t1)
+    ann.at = { type: 'line', xMin: atT, xMax: atT, borderColor: '#ffffff', borderWidth: 1.5, borderDash: [3, 3] };
+  const grads = qiGraduations(t0, t1), lbl = new Map(grads.map(g => [g.t, g.label]));
   qiState.charts[id] = new Chart(canvas.getContext('2d'), {
     type: 'line',
-    data: { labels, datasets: [{ data: values, borderColor: '#4fc3f7', backgroundColor: 'rgba(79,195,247,.08)', borderWidth: 2,
+    data: { datasets: [{ data: rows.map(r => ({ x: r.t, y: r.q })), borderColor: '#4fc3f7', backgroundColor: 'rgba(79,195,247,.08)', borderWidth: 2,
       tension: 0.15, fill: true, pointRadius: 0, pointHitRadius: 6 }] },
-    options: { responsive: true, maintainAspectRatio: false, animation: false, interaction: { mode: 'index', intersect: false },
+    options: { responsive: true, maintainAspectRatio: false, animation: false, parsing: false, interaction: { mode: 'index', intersect: false },
+      layout: { padding: { top: 4, right: 8 } },
       plugins: { legend: { display: false }, annotation: { annotations: ann },
         tooltip: { backgroundColor: '#1c2d40', borderColor: '#2c4060', borderWidth: 1, titleFont: { family: 'Barlow', size: 12 },
-          bodyFont: { family: 'JetBrains Mono', size: 12 }, callbacks: { label: c => `  QI : ${rnd(c.parsed.y)} m³/s` } } },
+          bodyFont: { family: 'JetBrains Mono', size: 12 }, callbacks: { title: it => fmtHour(it[0].parsed.x), label: c => `  QI : ${rnd(c.parsed.y)} m³/s` } } },
       scales: {
-        x: { grid: { color: 'rgba(44,64,96,.5)' }, ticks: { color: '#7a9ec0', font: { size: 11, family: 'Barlow' }, maxRotation: 0, autoSkip: true, maxTicksLimit: 4,
-            callback: (v, j) => { const d = new Date(rows[j].t);           // 24 h / 3 j : jour + heure ; au-delà : jour seul
-              return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) + (rows[rows.length - 1].t - rows[0].t <= 4 * 864e5 ? ' ' + d.getHours() + 'h' : ''); } },
+        x: { type: 'linear', min: t0, max: t1, afterBuildTicks: ax => { ax.ticks = grads.map(g => ({ value: g.t })); },
+          grid: { color: c => c.tick && lbl.get(c.tick.value) ? 'rgba(44,64,96,.9)' : 'rgba(44,64,96,.35)' },
+          ticks: { color: '#7a9ec0', font: { size: 11, family: 'Barlow' }, maxRotation: 0, autoSkip: false, callback: v => lbl.get(v) || '' },
           title: { display: true, text: 'Date et heure (heure locale)', color: '#7a9ec0', font: { size: 11 } } },
-        y: { beginAtZero: true, grid: { color: 'rgba(44,64,96,.5)' }, ticks: { color: '#7a9ec0', font: { size: 11, family: 'JetBrains Mono' }, callback: v => v === 0 ? '0' : rnd(v) },
+        y: { min: yMin, max: yMax, grid: { color: 'rgba(44,64,96,.5)' }, ticks: { stepSize: pasY, color: '#7a9ec0', font: { size: 11, family: 'JetBrains Mono' }, callback: v => v === 0 ? '0' : rnd(v) },
           title: { display: true, text: 'Débit (m³/s)', color: '#7a9ec0', font: { size: 11 } } } } }
   });
 }
