@@ -125,6 +125,13 @@ test('ICE : seuil incliné, profil en long saisi point par point, contrôle du t
     assert.match(resume, /Pente la plus raide :\s*140\.0 %/);
     assert.equal(await page.locator('svg.profil circle').count(), 3);
     assert.deepEqual(await page.evaluate(() => cur.parties[0].structures[0].points.map(p => p.z)), z);
+    // profil réalisable : redans et chute aval déclarés (obligatoires), dimensions affichées sur « Oui »
+    let txt = await page.textContent('#scr-struct');
+    assert.match(txt, /Présence de redans/); assert.match(txt, /Présence de chute aval/); assert.doesNotMatch(txt, /Hauteur de chute aval/);
+    assert.deepEqual(await page.evaluate(() => manquants(cur).map(m => m.lib).filter(l => /redans|chute aval/.test(l))),
+      ['Partie 1 : présence de redans', 'Partie 1 : présence de chute aval']);
+    await page.evaluate(() => { Object.assign(cur.parties[0].structures[0], { chute_aval_oui: 'Oui' }); FORM.rerender(); });
+    assert.match(await page.textContent('#scr-struct'), /Hauteur de chute aval/);
     // profil non réalisable : champs d'estimation du seuil incliné (tirant d'eau, redan, chute aval)
     await page.click('#scr-struct .chip[data-v="Non"]');
     const t = await page.textContent('#scr-struct');
