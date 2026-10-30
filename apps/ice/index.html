@@ -339,10 +339,8 @@ function calcStructure(s, partie, op) {
     const crete = num(op && op.f2.crete_basse), am = num(partie && partie.structures.length > 1 ? s.l_amont : op && op.f2.l_amont);
     if (s.type === "vertical" && crete != null && am != null) c.charge_fiche2 = rnd(crete - am, 3);
   }
-  if (s.type === "enrochement" || s.type === "routier") {
-    c.pente_pct = rnd(penteOuvrage(s.longueur, s.radier_am, s.radier_av), 2);
-    if (s.redans_oui === "Oui") c.redans_c = (s.redans || []).map(r => rnd(diagonale(r.a, r.b), 3));
-  }
+  if (s.type === "enrochement" || s.type === "routier") c.pente_pct = rnd(penteOuvrage(s.longueur, s.radier_am, s.radier_av), 2);
+  if (s.redans_oui === "Oui" && (s.type !== "incline" || s.profil_ok !== "Non")) c.redans_c = (s.redans || []).map(r => rnd(diagonale(r.a, r.b), 3));
   if (s.type === "vanne") c.ouverture = rnd(ouvertureVanne(s.contact, s.haut, s.hauteur_v), 3);
   if (s.type === "routier" && s.chute_aval === "Oui") {
     c.chute_aval = rnd(chute(s.ch_amont, s.ch_aval), 3);
@@ -374,6 +372,7 @@ function manquants(op) {
         if (s.profil_ok !== "Non") {
           req(vide(s.methode), e, S + " : méthode de mesure des distances"); req((s.points || []).filter(x => !vide(x.z)).length < 2, e, S + " : profil en long (2 points mini)");
           req(vide(s.fosse), e, S + " : profondeur de fosse aval"); req(vide(s.tirant_charge), e, S + (s.type === "vertical" ? " : charge" : " : tirant d'eau minimal"));
+          if (s.type === "incline") { req(vide(s.redans_oui), e, S + " : présence de redans"); req(vide(s.chute_aval_oui), e, S + " : présence de chute aval"); }
         } else if (s.type === "vertical") { req(vide(s.charge), e, S + " : charge"); req(vide(s.fosse), e, S + " : profondeur de fosse aval"); }
         else { req(vide(s.tirant), e, S + " : tirant d'eau minimal"); req(vide(s.fosse), e, S + " : profondeur de fosse aval"); }
       }
@@ -887,7 +886,14 @@ function renderStruct() {
         f.row([f.num("redan_a", "Hauteur a", { u: "m" }), f.num("redan_b", "Longueur b", { u: "m" })], { show: x => x.profil_ok === "Non" && !vert }),
         f.calc(x => `<span class="lab">Diagonale c = √(a² + b²) :</span> ${fmt(diagonale(x.redan_a, x.redan_b), 3)} m`, { show: x => x.profil_ok === "Non" && !vert }),
         f.h("En présence de chute aval", { show: x => x.profil_ok === "Non" && !vert }),
-        f.row([f.num("chute_aval_h", "Hauteur de chute aval", { u: "m" }), f.num("chute_aval_tirant", "Tirant d'eau de chute aval", { u: "m" })], { show: x => x.profil_ok === "Non" && !vert })
+        f.row([f.num("chute_aval_h", "Hauteur de chute aval", { u: "m" }), f.num("chute_aval_tirant", "Tirant d'eau de chute aval", { u: "m" })], { show: x => x.profil_ok === "Non" && !vert }),
+        // profil réalisable : redans et chute aval constatés sur le terrain (le profil sert de contrôle)
+        ...(vert ? [] : [
+          f.hint("Redans et chute aval : ne compter que la partie au-dessus de la ligne d'eau aval (la partie noyée relève de la fosse)."),
+          ...redansSpecs(),
+          f.yn("chute_aval_oui", "Présence de chute aval", { req: true }),
+          f.row([f.num("chute_aval_h", "Hauteur de chute aval", { u: "m" }), f.num("chute_aval_tirant", "Tirant d'eau de chute aval", { u: "m" })], { show: x => x.chute_aval_oui === "Oui" })
+        ].map(sp => ({ ...sp, show: x => x.profil_ok !== "Non" && (!sp.show || sp.show(x)) })))
       ], s, F);
     }
     if (s.type === "enrochement") h += card("Seuil en enrochements", "3 recto-3", [
@@ -947,7 +953,7 @@ function champsC2(s) {
   const t = s.type, prof = s.profil_ok !== "Non";
   if (t === "vertical") return [prof ? f.num("tirant_charge", "Charge sur l'obstacle", { u: "m" }) : f.num("charge", "Charge sur l'obstacle", { u: "m" })];
   if (t === "incline") return [prof ? f.num("tirant_charge", "Tirant d'eau minimal sur la voie de passage", { u: "m" }) : f.num("tirant", "Tirant d'eau minimal sur la voie de passage", { u: "m" }),
-    ...(prof ? [] : [f.num("chute_aval_tirant", "Tirant d'eau de chute aval", { u: "m" })])];
+    ...(prof && s.chute_aval_oui !== "Oui" ? [] : [f.num("chute_aval_tirant", "Tirant d'eau de chute aval", { u: "m" })])];
   if (t === "enrochement") return [f.num("tirant_min", "Tirant d'eau minimal dans la voie de passage", { u: "m" })];
   if (t === "routier") return [f.row([f.num("tirant_min", "Tirant d'eau minimal", { u: "m" }), f.num("vitesse", "Vitesse en sortie", { u: "m/s" })]),
     ...(s.chute_aval === "Oui" ? [f.row([f.num("ch_amont", "Cote niveau amont de la chute", { u: "m" }), f.num("ch_aval", "Cote niveau aval", { u: "m" }), f.num("ch_charge", "Charge", { u: "m" })])] : [])];
