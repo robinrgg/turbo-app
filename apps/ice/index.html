@@ -312,6 +312,7 @@ function profil(points, methode) {
   let x = 0;
   for (let i = 1; i < pts.length; i++) {
     const dz = pts[i].z - pts[i - 1].z, d = pts[i].d == null ? 0 : pts[i].d;
+    if (d < 0) out.negatif = true;
     let dx, le;
     if (methode === "Horizontale") { dx = d; le = Math.sqrt(d * d + dz * dz); }
     else { if (d < Math.abs(dz) - 1e-9) out.incoherent = true; dx = Math.sqrt(Math.max(d * d - dz * dz, 0)); le = Math.max(d, Math.abs(dz)); }
@@ -340,7 +341,7 @@ function calcStructure(s, partie, op) {
     if (s.type === "vertical" && crete != null && am != null) c.charge_fiche2 = rnd(crete - am, 3);
   }
   if (s.type === "enrochement" || s.type === "routier") c.pente_pct = rnd(penteOuvrage(s.longueur, s.radier_am, s.radier_av), 2);
-  if (s.redans_oui === "Oui" && (s.type !== "incline" || s.profil_ok !== "Non")) c.redans_c = (s.redans || []).map(r => rnd(diagonale(r.a, r.b), 3));
+  if (s.redans_oui === "Oui" && (s.type !== "incline" || s.profil_ok !== "Non")) c.redans_c = (s.redans || []).map(r => rnd(diagonale(r.a, r.b), 3)).filter(v => v != null);
   if (s.type === "vanne") c.ouverture = rnd(ouvertureVanne(s.contact, s.haut, s.hauteur_v), 3);
   if (s.type === "routier" && s.chute_aval === "Oui") {
     c.chute_aval = rnd(chute(s.ch_amont, s.ch_aval), 3);
@@ -786,7 +787,7 @@ function renderPartie() {
     const add = root.querySelector("#btnAddS");
     if (add) add.onclick = () => choisirType("Type de la structure ajoutée (en amont des précédentes)", t => { p.structures.push(newStructure(t)); touch(); go("struct", p.structures.length - 1); });
     const del = root.querySelector("#btnDelP");
-    if (del) del.onclick = () => confirmDialog(`Supprimer la partie ${pIdx + 1} et ses mesures ?`, () => { op.parties.splice(pIdx, 1); touch(); go("parties"); });
+    if (del) del.onclick = () => confirmDialog(`Supprimer la partie ${pIdx + 1} et ses mesures ?`, () => { op.parties.splice(pIdx, 1); renumeroterC2(op, pIdx, null); touch(); go("parties"); });
     bindPoints(root, p.reptation_profil, "rep", null);
   });
 }
@@ -821,7 +822,8 @@ function profilResume(p) {
   if (p.n < 2) return '<span class="lab">Profil :</span> au moins 2 points';
   return `<span class="lab">Dénivelé :</span> ${fmt(p.dh, 2)} m · <span class="lab">longueur suivant l'ouvrage :</span> ${fmt(p.longueur, 2)} m<br>
     <span class="lab">Pente la plus raide :</span> ${fmtPente(p.penteMax)}${p.vertical ? " (> 150 % : partie verticale ou quasi verticale)" : ""}
-    ${p.incoherent ? '<br><span class="w">Distance suivant l\'ouvrage inférieure au dénivelé : vérifier les mesures</span>' : ""}`;
+    ${p.incoherent ? '<br><span class="w">Distance suivant l\'ouvrage inférieure au dénivelé : vérifier les mesures</span>' : ""}
+    ${p.negatif ? '<br><span class="w">Distance négative : saisir une distance positive</span>' : ""}`;
 }
 // Dessin du profil : abscisse horizontale cumulée, cote inversée (lecture de mire), lignes d'eau amont et aval
 function drawProfil(svg, p, lignes) {
@@ -928,7 +930,7 @@ function renderStruct() {
     return h;
   }, root => {
     const del = root.querySelector("#btnDelS");
-    if (del) del.onclick = () => confirmDialog(`Supprimer la structure ${sIdx + 1} ?`, () => { p.structures.splice(sIdx, 1); touch(); go("partie", pIdx); });
+    if (del) del.onclick = () => confirmDialog(`Supprimer la structure ${sIdx + 1} ?`, () => { p.structures.splice(sIdx, 1); renumeroterC2(cur, pIdx, sIdx); touch(); go("partie", pIdx); });
     bindPoints(root, s, "st", lignes());
   });
 }
@@ -949,6 +951,18 @@ function c2Saisie(op) { return !!(op.c2 && !vide(op.c2.l_amont) && !vide(op.c2.l
 function decalageC2(op) { const r1 = num(op.f2.ref_cote), r2 = num(op.c2 && op.c2.ref_lecture); return r1 == null || r2 == null ? null : r1 - r2; }
 function recaleC2(op, v) { const d = decalageC2(op), x = num(v); return d == null || x == null ? null : x + d; }
 // mesures dépendant du débit, par type de structure (mêmes clés que la campagne 1)
+// Saisies C2 repérées « partie.structure » : suivent la suppression d'une partie (s = null) ou d'une structure
+function renumeroterC2(op, p, s) {
+  if (!op.c2 || !op.c2.structures) return;
+  const n = {};
+  for (const [k, v] of Object.entries(op.c2.structures)) {
+    let [i, j] = k.split(".").map(Number);
+    if (s == null) { if (i === p) continue; if (i > p) i--; }
+    else if (i === p) { if (j === s) continue; if (j > s) j--; }
+    n[i + "." + j] = v;
+  }
+  op.c2.structures = n;
+}
 function champsC2(s) {
   const t = s.type, prof = s.profil_ok !== "Non";
   if (t === "vertical") return [prof ? f.num("tirant_charge", "Charge sur l'obstacle", { u: "m" }) : f.num("charge", "Charge sur l'obstacle", { u: "m" })];

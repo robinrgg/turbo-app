@@ -5,7 +5,7 @@ import { inlineScripts, loadFunctions } from './helpers.mjs';
 import { hasBrowser, withBrowser } from './browser.mjs';
 
 const src = inlineScripts('apps/ice/index.html');
-const c = loadFunctions(src, ['num', 'chute', 'penteOuvrage', 'diagonale', 'ouvertureVanne', 'typeJet', 'profil']);
+const c = loadFunctions(src, ['num', 'chute', 'penteOuvrage', 'diagonale', 'ouvertureVanne', 'typeJet', 'profil', 'renumeroterC2']);
 const close = (a, b, tol = 1e-6) => assert.ok(Math.abs(a - b) < tol, `${a} ≠ ${b}`);
 const skip = !hasBrowser && 'Playwright absent';
 
@@ -23,6 +23,20 @@ test('pente d’un coursier : 100 × DHouv / √(L² - DHouv²), longueur suivan
 test('redan : c = √(a² + b²) ; vanne : OV = contact - (haut + hauteur)', () => {
   close(c.diagonale(0.3, 0.4), 0.5);
   close(c.ouvertureVanne(3.2, 1.5, 1.2), 0.5);           // lectures : bas de vanne à 2,7, radier à 3,2
+});
+
+test('campagne 2 : saisies renumérotées quand une partie ou une structure est supprimée', () => {
+  const op = { c2: { structures: { '0.0': { a: 1 }, '1.0': { a: 2 }, '1.1': { a: 3 }, '2.0': { a: 4 } } } };
+  c.renumeroterC2(op, 0, null);                           // partie 1 supprimée : ses saisies disparaissent, les autres remontent
+  assert.equal(JSON.stringify(op.c2.structures), JSON.stringify({ '0.0': { a: 2 }, '0.1': { a: 3 }, '1.0': { a: 4 } }));
+  c.renumeroterC2(op, 0, 0);                              // structure 1 de la (nouvelle) partie 1 supprimée
+  assert.equal(JSON.stringify(op.c2.structures), JSON.stringify({ '0.0': { a: 3 }, '1.0': { a: 4 } }));
+  c.renumeroterC2({}, 0, null);                           // sans campagne 2 : rien à faire
+});
+
+test('profil : distance négative signalée', () => {
+  assert.equal(c.profil([{ z: '1' }, { z: '1,2', d: '-0,5' }], 'Horizontale').negatif, true);
+  assert.equal(!!c.profil([{ z: '1' }, { z: '1,2', d: '0,5' }], 'Horizontale').negatif, false);
 });
 
 test('type de jet : surface < 0,5 × tirant, quasi-surface ≤ 1 ×, plongeant au-delà', () => {
