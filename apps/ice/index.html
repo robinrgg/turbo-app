@@ -183,6 +183,8 @@ input[type=file]{ display:none; }
   <section class="screen" id="scr-parties"></section>
   <section class="screen" id="scr-partie"></section>
   <section class="screen" id="scr-struct"></section>
+  <section class="screen" id="scr-passes"></section>
+  <section class="screen" id="scr-passe"></section>
   <section class="screen" id="scr-c2"></section>
   <section class="screen" id="scr-export"></section>
 </main>
@@ -257,7 +259,7 @@ function newOuvrage() {
     f1a: { usages: [], passes: {}, navigation: [] },
     f1b: { prop: {}, expl: {} },
     f2: { date: todayISO(), heure: nowHHMM(), photos: {} },
-    parties: [] };
+    parties: [], passes: [] };
 }
 function newPartie() { return { photo: false, mobile: { }, enro: {}, rout: {}, reptation_profil: { points: [] }, structures: [newStructure("vertical")] }; }
 function newStructure(type) { return { type, profil_ok: "Oui", methode: "", points: [], redans: [] }; }
@@ -271,7 +273,7 @@ const Store = {
   put(op) { op.updated = Date.now(); this.data.ouvrages[op.id] = op; this.persist(); },
   del(id) { delete this.data.ouvrages[id]; this.persist(); }
 };
-let cur = null, pIdx = -1, sIdx = -1;     // ouvrage, partie et structure ouvertes
+let cur = null, pIdx = -1, sIdx = -1, psIdx = -1;     // ouvrage, partie, structure et dispositif de franchissement ouverts
 function touch() { if (cur) { cur.updated = Date.now(); Store.persist(); blink(); } }
 function blink() { const d = $("saveDot"); d.classList.add("on"); clearTimeout(blink._t); blink._t = setTimeout(() => d.classList.remove("on"), 600); }
 
@@ -385,6 +387,7 @@ function manquants(op) {
       }
     });
   });
+  (op.passes || []).forEach((p, i) => manquantsPasse(p).forEach(lib => req(true, "F5", `Dispositif ${i + 1} : ${lib}`)));
   return m.filter((x, i, t) => t.findIndex(y => y.lib === x.lib) === i);
 }
 
@@ -478,6 +481,8 @@ function go(where, arg) {
   if (where === "parties") { renderParties(); show("parties"); $("btnBack").onclick = () => go("op"); return; }
   if (where === "partie") { pIdx = arg; renderPartie(); show("partie"); $("btnBack").onclick = () => go("parties"); return; }
   if (where === "struct") { sIdx = arg; renderStruct(); show("struct"); $("btnBack").onclick = () => go("partie", pIdx); return; }
+  if (where === "passes") { renderPasses(); show("passes"); $("btnBack").onclick = () => go("op"); return; }
+  if (where === "passe") { psIdx = arg; renderPasse(); show("passe"); $("btnBack").onclick = () => go("passes"); return; }
   if (where === "c2") { renderC2(); show("c2"); $("btnBack").onclick = () => go("op"); return; }
   if (where === "export") { renderExport(); show("export"); $("btnBack").onclick = () => go("op"); return; }
 }
@@ -510,6 +515,7 @@ function renderOp() {
       <button class="nav-card" data-go="form" data-arg="1b"><span class="ic">🗂️</span><span class="lb">1b · Référence ICE</span><small>facultatif</small></button>
       <button class="nav-card" data-go="form" data-arg="2"><span class="ic">📏</span><span class="lb">2 · Visite et ligne d'eau</span>${etat(nb("2"))}</button>
       <button class="nav-card" data-go="parties"><span class="ic">🧱</span><span class="lb">Parties (${op.parties.length})</span>${etat(nb("P"))}</button>
+      <button class="nav-card" data-go="passes"><span class="ic">🐟</span><span class="lb">5 · Dispositifs de franchissement (${(op.passes || []).length})</span>${(op.passes || []).length ? etat(nb("F5")) : "<small>si présent</small>"}</button>
       <button class="nav-card" data-go="c2"><span class="ic">🔁</span><span class="lb">C2 · 2e campagne</span><small>${c2Saisie(op) ? `saisie (${esc(op.c2.date || "")})` : "autre débit, facultatif"}</small></button>
       <button class="nav-card" data-go="export"><span class="ic">📤</span><span class="lb">Export</span><small>${m.length ? "relevé incomplet" : "prêt"}</small></button>
     </div>
@@ -951,6 +957,229 @@ function c2Saisie(op) { return !!(op.c2 && !vide(op.c2.l_amont) && !vide(op.c2.l
 function decalageC2(op) { const r1 = num(op.f2.ref_cote), r2 = num(op.c2 && op.c2.ref_lecture); return r1 == null || r2 == null ? null : r1 - r2; }
 function recaleC2(op, v) { const d = decalageC2(op), x = num(v); return d == null || x == null ? null : x + d; }
 // mesures dépendant du débit, par type de structure (mêmes clés que la campagne 1)
+/* ============================================================
+   Fiche 5 : dispositifs de franchissement piscicole (protocole de terrain, § 5.3)
+   ============================================================ */
+const PASSE = {
+  types: ["Passe à bassins successifs", "Rivière de contournement", "Ascenseur", "Passe à ralentisseurs", "Rampe en enrochements", "Ecluse", "Prébarrages", "Passe à anguilles", "Autre"],
+  jetMes: ["Plongeant", "Surface", "Quasi-surface"],
+  jetVisuel: ["Plongeant marqué", "Surface marqué", "Indéterminé"],
+  // groupes du tableau de vitesse de la fiche 5 (rampes à singularités) : clé, libellé, tirant d'eau minimum (m)
+  vitesses: [["1", "1", 0.40], ["2", "2", 0.30], ["3ab", "3a, 3b", 0.40], ["3c", "3c", 0.15], ["4a", "4a", 0.30], ["4b", "4b", 0.20], ["5", "5", 0.30],
+    ["6", "6", 0.30], ["7a", "7a", 0.30], ["7b", "7b", 0.15], ["8", "8", 0.30], ["9", "9", 0.20], ["10", "10", 0.20], ["11a", "11a", 0.05]]
+};
+function newPasse(type) { return { type, aval: {}, volees: [{}, {}, {}], vitesses: {}, dissip_types: [], protection_type: [] }; }
+const avecChuteMax = t => ["Passe à bassins successifs", "Prébarrages", "Rivière de contournement"].includes(t);
+function deversLateral(largeur, haut, bas) { const l = num(largeur), dh = chute(haut, bas); return l == null || dh == null || l <= 0 ? null : 100 * dh / l; }
+/* Valeurs calculées d'un dispositif (affichage + export) */
+function calcPasse(p) {
+  const c = { type: p.type }, a = p.aval || {};
+  if (a.chute_aval === "Oui") { c.chute_aval = rnd(chute(a.ca_amont, a.ca_aval), 3); c.jet_aval_suggere = typeJet(c.chute_aval, a.ca_charge); }
+  if (avecChuteMax(p.type) || (p.type === "Rampe en enrochements" && p.rampe_type === "Rangées périodiques")) {
+    c.chute_max = rnd(chute(p.cm_amont, p.cm_aval), 3); c.jet_suggere = typeJet(c.chute_max, p.cm_charge);
+  }
+  if (p.type === "Rivière de contournement") { c.chute_totale = rnd(chute(p.ligne_am, p.ligne_av), 3); c.pente_pct = rnd(penteOuvrage(p.longueur, p.ligne_am, p.ligne_av), 2); }
+  if (p.type === "Passe à ralentisseurs" && p.volees_mes !== "Non") c.pentes_volees_pct = (p.volees || []).map(v => rnd(penteOuvrage(v.longueur, v.radier_am, v.radier_av), 2));
+  if (p.type === "Passe à anguilles") c.pente_volee_pct = rnd(penteOuvrage(p.pv_longueur, p.pv_radier_am, p.pv_radier_av), 2);
+  if (p.type === "Rampe en enrochements") {
+    c.pente_pct = rnd(penteOuvrage(p.longueur, p.radier_am, p.radier_av), 2);
+    if (p.rampe_type === "Singularités régulièrement réparties") c.chute_totale = rnd(chute(p.ct_amont, p.ct_aval), 3);
+  }
+  if (p.devers === "Oui") c.devers_pct = rnd(deversLateral(p.dv_largeur, p.dv_haut, p.dv_bas), 2);
+  return c;
+}
+/* Champs obligatoires de la fiche 5 (astérisques du modèle OFB) */
+function manquantsPasse(p) {
+  const r = [], req = (cond, lib) => { if (cond) r.push(lib); }, a = p.aval || {};
+  req(vide(p.type), "type de dispositif");
+  if (["Ascenseur", "Ecluse", "Autre"].includes(p.type) || vide(p.type)) return r;
+  req(vide(a.chute_aval), "présence de chute aval");
+  const chuteMax = () => req(p.cm_mes === "Non" ? vide(p.cm_h) : vide(p.cm_amont) || vide(p.cm_aval), "chute maximale entre bassins");
+  if (p.type === "Passe à bassins successifs") {
+    chuteMax(); req(vide(p.largeur_min), "largeur minimale des sections de passage"); req(vide(p.charge_min), "charge minimale sur les sections de passage");
+    req(vide(p.bassin_long), "longueur du bassin le plus court"); req(vide(p.prof_min), "profondeur du bassin le moins profond");
+  }
+  if (p.type === "Prébarrages") {
+    req(vide(p.charge_min), "charge minimale sur les seuils"); chuteMax();
+    req(vide(p.bassin_long), "longueur du bassin le plus court"); req(vide(p.prof_min), "profondeur du bassin le moins profond");
+  }
+  if (p.type === "Rivière de contournement") chuteMax();
+  if (p.type === "Passe à ralentisseurs") {
+    const v = (p.volees || [])[0] || {};
+    if (p.volees_mes === "Non") req(vide(v.tirant_est), "tirant d'eau estimé sur les ralentisseurs (volée 1)");
+    else { req(vide(v.longueur) || vide(v.radier_am) || vide(v.radier_av), "longueur et cotes de radier (volée 1)"); req(vide(v.tirant), "tirant d'eau sur les ralentisseurs (volée 1)"); }
+  }
+  if (p.type === "Passe à anguilles") {
+    req(vide(p.reptation_continue), "zone continue propice à la reptation"); req(vide(p.pv_longueur) || vide(p.pv_radier_am) || vide(p.pv_radier_av), "pente de la volée la plus forte");
+    req(vide(p.substrat), "nature du substrat"); req(vide(p.devers), "présence d'un dévers latéral");
+  }
+  if (p.type === "Rampe en enrochements") {
+    req(vide(p.rampe_type), "type de rampe"); req(vide(p.reptation_voie), "voie continue pour la reptation");
+    if (p.rampe_type === "Singularités régulièrement réparties") {
+      req(vide(p.tirant_blocs), "tirant d'eau entre les blocs"); req(!Object.values(p.vitesses || {}).some(v => !vide(v)), "vitesse mesurée dans les jets");
+    }
+    if (p.rampe_type === "Rangées périodiques") { req(vide(p.charge_min), "charge minimale sur les rangées"); req(vide(p.prof_min), "profondeur du bassin le moins profond"); chuteMax(); }
+  }
+  return r;
+}
+function resumePasse(p) {
+  const c = calcPasse(p), t = [];
+  if (c.chute_max != null) t.push(`chute max ${fmt(c.chute_max, 2)} m`);
+  if (c.pente_pct != null) t.push(`pente ${fmt(c.pente_pct, 1)} %`);
+  if (c.pente_volee_pct != null) t.push(`pente ${fmt(c.pente_volee_pct, 1)} %`);
+  if (p.aval && p.aval.chute_aval === "Oui") t.push("chute aval" + (c.chute_aval != null ? ` ${fmt(c.chute_aval, 2)} m` : ""));
+  return t.join(" · ") || "à renseigner";
+}
+function renderPasses() {
+  const op = cur; op.passes = op.passes || [];
+  mountForm($("scr-passes"), F => {
+    let h = `<div class="st-title">Fiche 5 · Dispositifs de franchissement</div>
+      <div class="st-sub">Un relevé par dispositif. Hydrologie, date, observateurs et point de référence : ceux de la fiche 2.</div>`;
+    h += `<ul class="st-list">${op.passes.map((p, i) => `<li class="st-card" data-ps="${i}"><span class="num">${i + 1}</span><div class="body">
+      <div class="nm">${esc(p.type || "Type à préciser")}</div><div class="mt">${esc(resumePasse(p))}</div>
+      <div class="badges">${manquantsPasse(p).length ? '<span class="pill warn">à compléter</span>' : '<span class="pill on">complète</span>'}</div></div><span class="chev">›</span></li>`).join("")}</ul>`;
+    if (!op.passes.length) h += `<p class="empty" style="margin-bottom:12px">Aucun dispositif de franchissement relevé.</p>`;
+    h += `<button class="btn primary block" id="btnAddPs">＋ Ajouter un dispositif</button>`;
+    return h;
+  }, root => {
+    root.querySelectorAll("[data-ps]").forEach(li => li.onclick = () => go("passe", +li.getAttribute("data-ps")));
+    $("btnAddPs").onclick = () => {
+      confirmDialog("Type de dispositif de franchissement", () => { const s = document.querySelector('input[name="typePasse"]:checked'); if (!s) { toast("Choisir un type", "err"); return false; }
+        op.passes.push(newPasse(s.value)); touch(); go("passe", op.passes.length - 1); }, "Valider",
+        PASSE.types.map((t, i) => `<label class="chk"><input type="radio" name="typePasse" value="${esc(t)}" ${i ? "" : "checked"}> ${esc(t)}</label>`).join(""));
+      $("modalOk").className = "btn primary sm";
+      const restore = () => { $("modalOk").className = "btn danger sm"; };
+      $("modalCancel").addEventListener("click", restore, { once: true }); $("modalOk").addEventListener("click", restore, { once: true });
+    };
+  });
+}
+// Chute maximale entre bassins (ou rangées) : cotes de niveaux d'eau, ou estimation visuelle si non mesurable
+function specsChuteMax(titre) {
+  return [f.h(titre + ' <span class="star">*</span>'), f.yn("cm_mes", "Mesures réalisables"),
+    f.row([f.num("cm_amont", "Cote niveau d'eau amont", { u: "m" }), f.num("cm_aval", "Cote niveau d'eau aval", { u: "m" }), f.num("cm_charge", "Charge", { u: "m" })], { show: x => x.cm_mes !== "Non" }),
+    f.calc(x => { const c = chute(x.cm_amont, x.cm_aval), j = typeJet(c, x.cm_charge); return `<span class="lab">Chute maximale :</span> ${fmt(c, 2)} m · <span class="lab">jet suggéré :</span> ${j || "-"}`; }, { show: x => x.cm_mes !== "Non" }),
+    f.opt("cm_jet", "Définition du type de jet", PASSE.jetMes, { show: x => x.cm_mes !== "Non" }),
+    f.row([f.num("cm_h", "Chute max estimée", { u: "m" }), f.opt("cm_jet_vis", "Type de jet de la chute max", PASSE.jetVisuel, { select: true })], { show: x => x.cm_mes === "Non" })];
+}
+function specsDevers() {
+  return [f.yn("devers", "Présence d'un dévers latéral"),
+    f.row([f.num("dv_largeur", "Largeur", { u: "m" }), f.num("dv_haut", "Cote dévers haut", { u: "m" }), f.num("dv_bas", "Cote dévers bas", { u: "m" })], { show: x => x.devers === "Oui" }),
+    f.calc(x => `<span class="lab">Dévers latéral = 100 × (dévers bas - dévers haut) / largeur :</span> ${fmt(deversLateral(x.dv_largeur, x.dv_haut, x.dv_bas), 1)} %`, { show: x => x.devers === "Oui" })];
+}
+const specsPente = (lib) => [f.row([f.num("longueur", "Longueur (suivant l'ouvrage)", { u: "m" }), f.num("radier_am", "Cote radier amont", { u: "m" }), f.num("radier_av", "Cote radier aval", { u: "m" })]),
+  f.calc(x => `<span class="lab">${lib} = 100 × DH / √(L² - DH²) :</span> ${fmt(penteOuvrage(x.longueur, x.radier_am, x.radier_av), 2)} %`)];
+function renderPasse() {
+  const op = cur, p = op.passes[psIdx]; p.aval = p.aval || {}; p.volees = p.volees || [{}, {}, {}]; p.vitesses = p.vitesses || {};
+  mountForm($("scr-passe"), F => {
+    let h = `<div class="st-title">Dispositif ${psIdx + 1} / ${op.passes.length}</div><div class="st-sub">${esc(p.type || "")}</div>`;
+    h += card("Généralités sur le dispositif", "5 recto-2", [
+      f.opt("type", "Type de dispositif", PASSE.types, { req: true, select: true }), f.txt("type_autre", "Autre, préciser", { show: x => x.type === "Autre" }),
+      f.opt("attrait", "Dispositif de débit complémentaire d'attrait", ["Aucun", "Extérieur", "Injecté dans le dispositif"]),
+      f.yn("protection", "Système de protection de prise d'eau"),
+      f.multi("protection_type", "Type de protection", ["Grilles", "Déflecteur d'embâcles / Drome", "Autres"], { show: x => x.protection === "Oui" }),
+      f.num("grilles_esp", "Espacement interbarreaux", { u: "mm", show: x => x.protection === "Oui" && (x.protection_type || []).includes("Grilles") }),
+      f.txt("protection_autre", "Autre protection, préciser", { show: x => x.protection === "Oui" && (x.protection_type || []).includes("Autres") }),
+      f.opt("regulation", "Organe de régulation du niveau d'eau du dispositif", ["Aucun", "Sortie hydraulique aval", "Entrée hydraulique amont"]),
+      f.yn("comptage", "Dispositif de comptage permanent"), f.txt("comptage_prec", "Préciser (vidéo, piège…)", { show: x => x.comptage === "Oui" }),
+      f.opt("genie_civil", "Etat général du génie civil", ["Normal", "Dégradé"]), f.txt("genie_prec", "Préciser les problèmes", { show: x => x.genie_civil === "Dégradé" }),
+      f.yn("alimentation", "Alimentation en eau normale de la passe"),
+      f.h("Etat d'entretien"),
+      f.opt("obstr_amont", "Obstruction de l'entrée amont", ["Nulle", "Partielle", "Complète"]), f.txt("obstr_amont_prec", "Préciser", { show: x => ["Partielle", "Complète"].includes(x.obstr_amont) }),
+      f.opt("obstr_int", "Obstruction visible à l'intérieur du dispositif", ["Nulle", "Partielle", "Complète"]), f.txt("obstr_int_prec", "Préciser", { show: x => ["Partielle", "Complète"].includes(x.obstr_int) }),
+      f.yn("atterrissements", "Atterrissements importants dans un ou plusieurs bassins"),
+      f.chk("photo", "Photos du dispositif (amont, aval, entrées)"),
+      f.calc(x => x.genie_civil === "Dégradé" || x.alimentation === "Non" || x.obstr_amont === "Complète" || x.obstr_int === "Complète"
+        ? '<span class="w">Avertissement : ne pas procéder à la suite du pré-diagnostic si le mauvais état d\'entretien altère le fonctionnement normal du dispositif.</span>' : "")
+    ], p, F);
+    if (["Ascenseur", "Ecluse", "Autre"].includes(p.type)) {
+      h += `<div class="info">Pas de critère simple de pré-diagnostic pour ce type de dispositif : une expertise des conditions de fonctionnement est nécessaire (guide ICE).</div>`;
+    } else if (p.type) {
+      h += card("Partie aval du dispositif", "5 verso-1", [
+        f.num("fosse", "Profondeur utile de fosse aval", { u: "m" }),
+        f.yn("chute_aval", "Présence de chute aval", { req: true }), f.yn("ca_mes", "Mesures réalisables", { show: x => x.chute_aval === "Oui" }),
+        f.row([f.num("ca_amont", "Cote niveau d'eau amont", { u: "m" }), f.num("ca_aval", "Cote niveau d'eau aval", { u: "m" }), f.num("ca_charge", "Charge", { u: "m" })], { show: x => x.chute_aval === "Oui" && x.ca_mes !== "Non" }),
+        f.calc(x => { const c = chute(x.ca_amont, x.ca_aval), j = typeJet(c, x.ca_charge); return `<span class="lab">Chute aval :</span> ${fmt(c, 2)} m · <span class="lab">jet suggéré :</span> ${j || "-"}`; }, { show: x => x.chute_aval === "Oui" && x.ca_mes !== "Non" }),
+        f.opt("ca_jet", "Définition du type de jet", PASSE.jetMes, { show: x => x.chute_aval === "Oui" && x.ca_mes !== "Non" }),
+        f.row([f.num("ca_h", "Chute aval estimée", { u: "m" }), f.opt("ca_jet_vis", "Type de jet entrée piscicole aval", PASSE.jetVisuel, { select: true })], { show: x => x.chute_aval === "Oui" && x.ca_mes === "Non" })
+      ], p.aval, F);
+    }
+    if (p.type === "Rivière de contournement") h += card("Rivière de contournement", "5 verso-1", [
+      f.h("Pente moyenne"),
+      f.row([f.num("longueur", "Longueur (suivant l'ouvrage)", { u: "m" }), f.num("ligne_am", "Cote niveau d'eau amont", { u: "m" }), f.num("ligne_av", "Cote niveau d'eau aval", { u: "m" })]),
+      f.calc(x => `<span class="lab">Chute totale :</span> ${fmt(chute(x.ligne_am, x.ligne_av), 2)} m · <span class="lab">pente moyenne :</span> ${fmt(penteOuvrage(x.longueur, x.ligne_am, x.ligne_av), 2)} %`),
+      f.num("largeur_moy", "Largeur moyenne", { u: "m" }),
+      f.yn("dissipateurs", "Présence de dissipateurs"), f.multi("dissip_types", "Type", ["Bloc", "Epis", "Seuil"], { show: x => x.dissipateurs === "Oui" }),
+      f.opt("jet_dominant", "Seuil(s) : type de jet dominant", PASSE.jetVisuel, { show: x => (x.dissip_types || []).includes("Seuil") }),
+      ...specsChuteMax("Chute maximale entre bassins")], p, F);
+    if (p.type === "Passe à bassins successifs") h += card("Passe à bassins successifs", "5 verso-1", [
+      f.opt("communication", "Type de communication entre bassins", ["Echancrure latérale", "Fente verticale", "Seuil triangulaire", "Orifice noyé", "Autre"], { select: true }),
+      f.txt("communication_autre", "Autre, préciser", { show: x => x.communication === "Autre" }),
+      f.row([f.num("nb_bassins", "Nombre de bassins"), f.num("nb_chutes", "Nombre de chutes")]),
+      f.opt("orifices_fond", "Présence d'orifices de fond", ["Oui", "Non", "Ne sait pas"]),
+      f.opt("jet_dominant", "Type de jet dominant", PASSE.jetVisuel),
+      ...specsChuteMax("Chute maximale entre bassins"),
+      f.num("largeur_min", "Largeur minimale des sections de passage", { u: "m", req: true }),
+      f.num("charge_min", "Charge minimale sur les sections de passage", { u: "m", req: true }),
+      f.row([f.num("bassin_long", "Bassin le plus court : longueur", { u: "m", req: true }), f.num("bassin_larg", "largeur", { u: "m" })]),
+      f.num("prof_min", "Profondeur du bassin le moins profond", { u: "m", req: true })], p, F);
+    if (p.type === "Prébarrages") h += card("Prébarrages", "5 recto-2", [
+      f.row([f.num("nb_bassins", "Nombre de bassins"), f.num("nb_chutes", "Nombre de chutes")]),
+      f.num("charge_min", "Charge minimale sur les seuils", { u: "m", req: true }),
+      f.opt("jet_dominant", "Type de jet dominant", PASSE.jetVisuel),
+      ...specsChuteMax("Chute maximale entre bassins"),
+      f.row([f.num("bassin_long", "Bassin le plus court : longueur", { u: "m", req: true }), f.num("bassin_larg", "largeur", { u: "m" })]),
+      f.num("prof_min", "Profondeur du bassin le moins profond", { u: "m", req: true })], p, F);
+    if (p.type === "Passe à ralentisseurs") {
+      const vol = i => x => (x.volees[i] = x.volees[i] || {});
+      h += card("Passe à ralentisseurs", "5 recto-2", [
+        f.opt("ral_type", "Type de ralentisseurs", ["Plan", "Suractif de fond", "Chevron épais", "Autre"]), f.txt("ral_type_autre", "Autre, préciser", { show: x => x.ral_type === "Autre" }),
+        f.opt("ral_mat", "Matériaux des ralentisseurs", ["Béton", "Métal", "Bois", "Autre"]),
+        f.yn("volees_mes", "Mesures réalisables sur les volées"),
+        ...[0, 1, 2].flatMap(i => [f.h(`Volée ${i + 1} (de l'amont vers l'aval)${i ? "" : ' <span class="star">*</span>'}`),
+          f.row([f.num("largeur", "Largeur", { u: "m", obj: vol(i) }), f.num("longueur", "Longueur", { u: "m", obj: vol(i) })], { show: x => x.volees_mes !== "Non" }),
+          f.row([f.num("radier_am", "Cote radier amont", { u: "m", obj: vol(i) }), f.num("radier_av", "Cote radier aval", { u: "m", obj: vol(i) }), f.num("tirant", "Tirant d'eau sur les ralentisseurs", { u: "m", obj: vol(i) })], { show: x => x.volees_mes !== "Non" }),
+          f.calc(x => `<span class="lab">Pente du génie civil :</span> ${fmt(penteOuvrage(vol(i)(x).longueur, vol(i)(x).radier_am, vol(i)(x).radier_av), 2)} %`, { show: x => x.volees_mes !== "Non" }),
+          f.row([f.num("pente_est", "Pente estimée", { u: "%", obj: vol(i) }), f.num("tirant_est", "Tirant d'eau estimé sur les ralentisseurs", { u: "m", obj: vol(i) })], { show: x => x.volees_mes === "Non" })])], p, F);
+    }
+    if (p.type === "Passe à anguilles") h += card("Passe à anguilles", "5 recto-2", [
+      f.yn("reptation_continue", "Zone continue propice à la reptation", { req: true }),
+      f.hint("Tirant d'eau ≤ 0,5 cm pour les civelles, ≤ 1 cm pour les anguillettes, entre les brosses ou plots."),
+      f.row([f.num("longueur_rampe", "Longueur", { u: "m" }), f.num("largeur", "Largeur", { u: "m" }), f.num("nb_volees", "Nombre de volées")]),
+      f.h('Pente de la volée la plus forte <span class="star">*</span>'),
+      f.row([f.num("pv_longueur", "Longueur (suivant l'ouvrage)", { u: "m" }), f.num("pv_radier_am", "Cote radier amont", { u: "m" }), f.num("pv_radier_av", "Cote radier aval", { u: "m" })]),
+      f.calc(x => `<span class="lab">Pente :</span> ${fmt(penteOuvrage(x.pv_longueur, x.pv_radier_am, x.pv_radier_av), 2)} %`),
+      f.opt("substrat", "Nature du substrat", ["Brosse", "Plot", "Autre"], { req: true }), f.txt("substrat_autre", "Autre, préciser", { show: x => x.substrat === "Autre" }),
+      f.opt("materiaux", "Matériaux", ["Béton", "Polyuréthane", "Autre"]), f.opt("alim_type", "Système d'alimentation", ["Gravitaire", "Pompage"]),
+      ...specsDevers().map((s, i) => i ? s : { ...s, req: true })], p, F);
+    if (p.type === "Rampe en enrochements") {
+      const sing = x => x.rampe_type === "Singularités régulièrement réparties", rang = x => x.rampe_type === "Rangées périodiques";
+      h += card("Passe dite « rampe en enrochements »", "5 verso-2", [
+        f.yn("reptation_voie", "Voie continue pour la reptation", { req: true }),
+        f.opt("rampe_type", "Type de rampe", ["Singularités régulièrement réparties", "Rangées périodiques", "Enrochements jointifs"], { req: true, select: true }),
+        f.hint("Rampe en enrochements jointifs : la décrire comme un seuil en enrochements (fiches 2 et 3, parties de l'ouvrage).", { show: x => x.rampe_type === "Enrochements jointifs" }),
+        f.h("Chute totale", { show: sing }),
+        f.row([f.num("ct_amont", "Cote niveau d'eau amont", { u: "m" }), f.num("ct_aval", "Cote niveau d'eau aval", { u: "m" })], { show: sing }),
+        f.calc(x => `<span class="lab">Chute totale :</span> ${fmt(chute(x.ct_amont, x.ct_aval), 2)} m`, { show: sing }),
+        f.row([f.num("nb_rangees", "Nombre de rangées"), f.num("long_rangees", "Longueur entre rangées", { u: "m" })], { show: rang }),
+        f.h("Pente moyenne", { show: x => sing(x) || rang(x) }),
+        ...specsPente("Pente moyenne").map(s => ({ ...s, show: x => sing(x) || rang(x) })),
+        f.num("largeur", "Largeur de la rampe", { u: "m", show: x => sing(x) || rang(x) }),
+        f.num("tirant_blocs", "Tirant d'eau entre les blocs", { u: "m", req: true, show: sing }),
+        f.row([f.num("ax", "Distance ax", { u: "m" }), f.num("ay", "Distance ay", { u: "m" }), f.num("D", "Largeur singularités D", { u: "m" })], { show: sing }),
+        f.h('Vitesse mesurée dans les jets <span class="star">*</span> (dans le tirant d\'eau minimal acceptable du groupe)', { show: sing }),
+        ...[0, 4, 8, 12].map(k => f.row(PASSE.vitesses.slice(k, k + 4).map(([g, lib, t]) => f.num(g, `Gr. ${lib} (h ${fmt(t, 2)} m)`, { u: "m/s", obj: x => x.vitesses })), { show: sing })),
+        f.num("charge_min", "Charge minimale sur les rangées", { u: "m", req: true, show: rang }),
+        f.num("prof_min", "Profondeur du bassin le moins profond", { u: "m", req: true, show: rang }),
+        f.opt("jet_surface_toutes", "Jet de surface marqué sur toutes les rangées", ["Oui", "Non", "Indéterminé"], { show: rang }),
+        ...specsChuteMax("Chute maximale entre bassins").map(s => ({ ...s, show: x => rang(x) && (!s.show || s.show(x)) })),
+        ...specsDevers().map(s => ({ ...s, show: x => (sing(x) || rang(x)) && (!s.show || s.show(x)) }))], p, F);
+    }
+    h += `<div class="btn-row"><button class="btn danger ghost sm" id="btnDelPs">Supprimer le dispositif ${psIdx + 1}</button></div>`;
+    return h;
+  }, root => {
+    $("btnDelPs").onclick = () => confirmDialog(`Supprimer le dispositif ${psIdx + 1} et ses mesures ?`, () => { op.passes.splice(psIdx, 1); touch(); go("passes"); });
+  });
+}
 // Saisies C2 repérées « partie.structure » : suivent la suppression d'une partie (s = null) ou d'une structure
 function renumeroterC2(op, p, s) {
   if (!op.c2 || !op.c2.structures) return;
@@ -1013,6 +1242,7 @@ function buildExport(op) {
     parties: op.parties.map(p => ({ structures: p.structures.map(s => calcStructure(s, p, op)),
       reptation: p.reptation === "Oui" && p.reptation_profil.specifique === "Oui" && p.reptation_profil.realisable === "Oui" ? (() => { const r = profil(p.reptation_profil.points, p.reptation_profil.methode); return { pente_max_pct: r.penteMax === Infinity ? "verticale" : rnd(r.penteMax, 1), longueur_m: rnd(r.longueur, 2) }; })() : null }))
   };
+  if ((op.passes || []).length) calc.passes = op.passes.map(calcPasse);
   if (c2Saisie(op)) calc.c2 = { decalage_m: rnd(decalageC2(op), 3), chute_globale_m: rnd(recaleC2(op, op.c2.l_aval) - recaleC2(op, op.c2.l_amont), 3) };
   const brut = JSON.parse(JSON.stringify(op)); delete brut.updated;
   return { format: FORMAT, version: VERSION, exporte_le: new Date().toISOString(),
@@ -1037,7 +1267,7 @@ function normalize(obj) {
   const o = obj && obj.format === FORMAT ? obj.ouvrage : obj;
   if (!o || !o.f1a || !o.f2 || !Array.isArray(o.parties)) return null;
   const n = newOuvrage();
-  return Object.assign(n, o, { id: n.id, f1b: Object.assign(n.f1b, o.f1b || {}) });
+  return Object.assign(n, o, { id: n.id, f1b: Object.assign(n.f1b, o.f1b || {}), passes: Array.isArray(o.passes) ? o.passes : [] });
 }
 function importOuvrage() {
   pickFile(txt => { try { const op = normalize(JSON.parse(txt)); if (!op) throw 0; Store.put(op); toast("Relevé importé", "ok"); renderHome(); }

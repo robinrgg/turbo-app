@@ -154,6 +154,34 @@ test('ICE : seuil incliné, profil en long saisi point par point, contrôle du t
   });
 });
 
+test('ICE fiche 5 : dispositifs de franchissement, champs selon le type, calculs et export', { skip }, async () => {
+  await withBrowser(async ({ open }) => {
+    const page = await open('/apps/ice/index.html');
+    await page.evaluate(() => { cur = newOuvrage(); Store.put(cur); go('op'); });
+    await page.click('#scr-op [data-go="passes"]');
+    await page.click('#btnAddPs');
+    await page.check('input[name="typePasse"][value="Passe à bassins successifs"]');
+    await page.click('#modalOk');
+    let t = await page.textContent('#scr-passe');
+    assert.match(t, /Largeur minimale des sections de passage/); assert.match(t, /Chute maximale entre bassins/); assert.doesNotMatch(t, /Type de ralentisseurs/);
+    assert.deepEqual(await page.evaluate(() => manquantsPasse(cur.passes[0]).length), 6);
+    await page.evaluate(() => { Object.assign(cur.passes[0], { cm_amont: '1,10', cm_aval: '1,32', cm_charge: '0,55' }); cur.passes[0].aval.chute_aval = 'Oui';
+      Object.assign(cur.passes[0].aval, { ca_amont: '1,75', ca_aval: '1,97' }); FORM.rerender(); });
+    const c = await page.evaluate(() => calcPasse(cur.passes[0]));
+    assert.equal(c.chute_max, 0.22); assert.equal(c.jet_suggere, 'Surface'); assert.equal(c.chute_aval, 0.22);
+    // passe à anguilles : pente de la volée et dévers latéral = 100 × (bas - haut) / largeur
+    await page.evaluate(() => { cur.passes.push(Object.assign(newPasse('Passe à anguilles'), { pv_longueur: '4', pv_radier_am: '0,7', pv_radier_av: '2', devers: 'Oui', dv_largeur: '0,5', dv_haut: '1', dv_bas: '1,15' })); go('passe', 1); });
+    assert.match(await page.textContent('#scr-passe'), /Nature du substrat/);
+    const a = await page.evaluate(() => calcPasse(cur.passes[1]));
+    assert.equal(a.devers_pct, 30); assert.equal(a.pente_volee_pct, 34.37);
+    const exp = await page.evaluate(() => buildExport(cur));
+    assert.equal(exp.ouvrage.passes.length, 2); assert.equal(exp.calculs.passes.length, 2);
+    assert.ok(exp.manquants.some(m => m.startsWith('Dispositif 2 : ')));
+    assert.equal(await page.evaluate(e => normalize(e).passes.length, exp), 2);
+    assert.deepEqual(page.errors, []);
+  });
+});
+
 test('ICE fiche 1a : carte de localisation sous « Utiliser ma position », conservée quand la fiche se redessine', { skip }, async () => {
   await withBrowser(async ({ open }) => {
     const page = await open('/apps/ice/index.html');                 // fond de carte bloqué en test : message de repli
