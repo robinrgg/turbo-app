@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>ROE - Recensement des obstacles</title>
+<meta name="theme-color" content="#0b1014">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" href="./icon.svg">
+<link rel="apple-touch-icon" href="./icon.svg">
+<link rel="stylesheet" href="../../shared/tokens.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+:root{ --accent:#d0735f; --accent-dim:#93503f; --ttl:#eaeef3; --sub:#a3aebb; }
+*{ box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+html,body{ background:var(--bg); color:var(--text); }
+body{ font-family:var(--font-sans); min-height:100vh; min-height:100dvh;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+
+/* ---- En-tête ---- */
+header.app{ display:flex; align-items:center; gap:8px; padding:12px 14px; border-bottom:1px solid var(--border);
+  position:sticky; top:0; background:var(--bg); z-index:20; }
+header.app .hbtn{ background:var(--surface-2); border:1px solid var(--border-strong); color:var(--text);
+  width:38px; height:38px; border-radius:9px; font-size:20px; line-height:1; cursor:pointer; flex:0 0 auto; }
+header.app .hbtn[hidden]{ display:none; }
+header.app .mark{ width:32px; height:32px; border-radius:8px; overflow:hidden; flex:0 0 auto; }
+header.app .mark img{ width:100%; height:100%; display:block; }
+header.app h1{ flex:1; font-size:1rem; font-weight:800; letter-spacing:.3px; color:var(--ttl); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+header.app h1 .accent{ color:var(--accent); }
+header.app .dot{ width:8px; height:8px; border-radius:50%; background:transparent; flex:0 0 auto; transition:background .3s; }
+header.app .dot.on{ background:var(--ok); }
+
+main{ max-width:900px; margin:0 auto; padding:14px 12px 40px; }
+.screen{ display:none; }
+.screen.active{ display:block; }
+
+/* ---- Boutons ---- */
+.btn{ background:var(--surface-2); border:1px solid var(--border-strong); color:var(--text); border-radius:var(--radius-sm);
+  padding:10px 12px; min-height:var(--tap); font-family:var(--font-sans); font-size:.85rem; font-weight:600; cursor:pointer;
+  display:inline-flex; align-items:center; justify-content:center; gap:6px; }
+.btn:active{ transform:translateY(1px); }
+.btn.primary{ background:var(--accent); border-color:var(--accent); color:#0b1014; }
+.btn.ghost{ background:transparent; }
+.btn.danger{ color:var(--err); border-color:rgba(217,102,102,.4); }
+.btn.sm{ min-height:36px; padding:6px 10px; font-size:.78rem; }
+.btn.block{ width:100%; }
+.btn-row{ display:flex; gap:8px; flex-wrap:wrap; }
+.btn-row .btn{ flex:1; }
+
+/* ---- Liste des fiches ---- */
+.home-actions{ display:flex; flex-direction:column; gap:8px; margin-bottom:16px; }
+h2.sec{ font-size:.72rem; text-transform:uppercase; letter-spacing:.08em; color:var(--ttl); margin:6px 2px 8px; }
+.st-list{ list-style:none; display:flex; flex-direction:column; gap:8px; margin-bottom:12px; }
+.st-card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:12px; cursor:pointer;
+  display:flex; align-items:center; gap:10px; }
+.st-card:active{ border-color:var(--accent); }
+.st-card .body{ flex:1; min-width:0; }
+.st-card .nm{ font-weight:700; font-size:.95rem; }
+.st-card .mt{ font-size:.72rem; color:var(--text-mute); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.st-card .badges{ display:flex; gap:5px; margin-top:6px; flex-wrap:wrap; }
+.st-card .chev{ color:var(--text-mute); font-size:18px; }
+.st-card .thumb{ width:48px; height:48px; border-radius:8px; object-fit:cover; flex:0 0 auto; background:var(--surface-2); }
+.pill{ font-family:var(--font-mono); font-size:.62rem; padding:2px 7px; border-radius:20px; background:var(--surface-2);
+  border:1px solid var(--border); color:var(--text-dim); }
+.pill.on{ color:var(--accent); border-color:var(--accent-dim); }
+.pill.ok{ color:var(--ok); border-color:rgba(108,194,108,.45); }
+.pill.warn{ color:var(--warn); border-color:rgba(217,165,102,.45); }
+.empty{ padding:22px; text-align:center; color:var(--text-mute); font-size:.82rem; border:1px dashed var(--border); border-radius:var(--radius-sm); }
+.note{ font-size:.7rem; color:var(--text-mute); line-height:1.5; margin-top:14px; text-align:center; }
+
+/* ---- Fiche ---- */
+.st-title{ font-size:1.05rem; font-weight:800; color:var(--ttl); margin-bottom:2px; }
+.st-sub{ font-size:.75rem; color:var(--sub); margin-bottom:10px; line-height:1.45; }
+.toc{ display:flex; gap:6px; overflow-x:auto; padding-bottom:6px; margin-bottom:10px; scrollbar-width:none; }
+.toc::-webkit-scrollbar{ display:none; }
+.toc button{ flex:0 0 auto; background:var(--surface); border:1px solid var(--border); color:var(--text-dim); border-radius:20px;
+  padding:6px 11px; font-family:var(--font-sans); font-size:.74rem; cursor:pointer; }
+.toc button.warn{ color:var(--warn); border-color:rgba(217,165,102,.45); }
+section.card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); margin-bottom:12px; overflow:hidden; scroll-margin-top:72px; }
+section.card>.hd{ padding:10px 12px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:8px; background:var(--surface-2); }
+section.card>.hd .ttl{ flex:1; font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--ttl); }
+section.card>.hd .ttl .bar{ display:inline-block; width:3px; height:11px; background:var(--accent); margin-right:7px; vertical-align:middle; border-radius:2px; }
+section.card>.bd{ padding:12px; }
+.field{ display:flex; flex-direction:column; gap:3px; margin-bottom:10px; min-width:0; }
+.field>label, .field>.lbl{ font-size:.63rem; color:var(--text-mute); text-transform:uppercase; letter-spacing:.05em; font-weight:600; }
+.star{ color:var(--accent); font-weight:800; }
+.field input:not([type=checkbox]), .field select, .field textarea{ background:var(--bg); border:1px solid var(--border-strong); border-radius:var(--radius-sm);
+  padding:9px 10px; min-height:var(--tap); color:var(--text); outline:none; width:100%; font-family:var(--font-sans); font-size:.95rem; }
+.field textarea{ min-height:80px; resize:vertical; }
+.field input.mono{ font-family:var(--font-mono); }
+.field input:focus, .field select:focus, .field textarea:focus{ border-color:var(--accent); }
+.field.miss input, .field.miss select{ border-color:rgba(217,165,102,.55); }
+.field.miss .chips .chip{ border-color:rgba(217,165,102,.55); }
+.unit-in{ display:flex; align-items:center; gap:6px; }
+.unit-in input{ flex:1; min-width:0; }
+.unit-in span{ font-family:var(--font-mono); font-size:.75rem; color:var(--text-mute); }
+.row{ display:grid; gap:8px; align-items:end; grid-template-columns:1fr 1fr; }
+.hint{ font-size:.68rem; color:var(--text-mute); line-height:1.45; margin:-4px 0 10px; }
+.sub-h{ font-size:.68rem; font-weight:800; color:var(--accent); text-transform:uppercase; letter-spacing:.07em; margin:14px 0 8px; padding-top:10px; border-top:1px dashed var(--border); }
+.sub-h:first-child{ margin-top:0; padding-top:0; border-top:none; }
+.chips{ display:flex; flex-wrap:wrap; gap:6px; }
+.chip, .tog{ background:var(--bg); border:1px solid var(--border-strong); color:var(--text-dim); border-radius:20px; padding:7px 12px; min-height:36px;
+  font-family:var(--font-sans); font-size:.8rem; cursor:pointer; }
+.chip.on, .tog.on{ background:var(--accent); border-color:var(--accent); color:#0b1014; font-weight:700; }
+.checks{ display:flex; flex-direction:column; gap:2px; }
+.checks label, .chk{ display:flex; align-items:center; gap:9px; font-size:.85rem; color:var(--text); padding:5px 0; cursor:pointer; text-transform:none; letter-spacing:0; font-weight:400; }
+.checks label.sub{ padding-left:28px; color:var(--text-dim); }
+.checks input, .chk input{ width:20px; height:20px; flex:0 0 auto; accent-color:var(--accent); }
+.passe{ display:grid; grid-template-columns:1fr auto; gap:6px; align-items:center; padding:6px 0; border-bottom:1px solid var(--border); }
+.passe:last-child{ border-bottom:none; }
+.passe .lb{ font-size:.82rem; }
+.passe .chips{ flex-wrap:nowrap; gap:4px; }
+.passe .tog{ padding:5px 8px; min-height:32px; font-size:.72rem; }
+.info{ font-size:.72rem; color:var(--text-dim); line-height:1.5; background:rgba(208,115,95,.07); border:1px solid rgba(208,115,95,.25);
+  border-radius:var(--radius-sm); padding:8px 10px; margin-bottom:10px; }
+.warnbox{ font-size:.72rem; line-height:1.45; padding:7px 10px; border-radius:var(--radius-sm); border-left:3px solid var(--warn);
+  background:rgba(217,165,102,.1); color:#f0d5a8; margin-bottom:10px; }
+
+/* ---- Photos ---- */
+.photos{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px; }
+.ph{ background:var(--bg); border:1px solid var(--border-strong); border-radius:var(--radius-sm); overflow:hidden; display:flex; flex-direction:column; }
+.ph img{ width:100%; aspect-ratio:4/3; object-fit:cover; display:block; background:#000; cursor:zoom-in; }
+.ph .pb{ padding:8px; display:flex; flex-direction:column; gap:6px; }
+.ph input{ background:var(--surface); border:1px solid var(--border-strong); border-radius:6px; padding:7px 8px; color:var(--text); font-family:var(--font-sans); font-size:.82rem; width:100%; outline:none; }
+.ph small{ font-family:var(--font-mono); font-size:.62rem; color:var(--text-mute); }
+.ph .btn-row{ gap:6px; }
+.ph .btn{ padding:5px 6px; min-height:32px; font-size:.72rem; }
+@media (max-width:420px){ .photos{ grid-template-columns:1fr; } }
+.viewer{ position:fixed; inset:0; background:rgba(0,0,0,.92); z-index:250; display:flex; align-items:center; justify-content:center; }
+.viewer[hidden]{ display:none; }
+.viewer img{ max-width:100%; max-height:100%; }
+
+/* ---- Carte ---- */
+.mapbox{ height:260px; border:1px solid var(--border-strong); border-radius:var(--radius-sm); overflow:hidden; background:var(--bg); position:relative; z-index:0; }
+.mapbox .empty{ height:100%; display:flex; align-items:center; justify-content:center; border:none; }
+.gps-info{ font-family:var(--font-mono); font-size:.66rem; color:var(--text-mute); margin:6px 0 10px; }
+.gps-info .w{ color:var(--warn); }
+
+/* ---- Divers ---- */
+.modal-bg{ position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:200; display:flex; align-items:center; justify-content:center; padding:20px; }
+.modal-bg[hidden]{ display:none; }
+.modal{ background:var(--surface); border:1px solid var(--border-strong); border-radius:var(--radius); max-width:380px; width:100%; overflow:hidden; }
+.modal .mhd{ padding:16px 16px 8px; font-size:.9rem; line-height:1.5; color:var(--ttl); }
+.modal .mft{ padding:12px 16px 14px; display:flex; gap:8px; justify-content:flex-end; }
+.toast{ position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:var(--surface-2); color:var(--text);
+  border:1px solid var(--border-strong); padding:10px 16px; border-radius:var(--radius); z-index:300; opacity:0; pointer-events:none;
+  transition:opacity .2s; font-size:.82rem; max-width:90%; text-align:center; }
+.toast.show{ opacity:1; } .toast.ok{ border-left:3px solid var(--ok); } .toast.err{ border-left:3px solid var(--err); }
+input[type=file]{ display:none; }
+</style>
+</head>
+<body>
+
+<header class="app">
+  <button class="hbtn" id="btnBack" hidden>‹</button>
+  <span class="mark"><img src="./icon.svg" alt=""></span>
+  <h1 id="appTitle">ROE <span class="accent">·</span> Obstacles à l'écoulement</h1>
+  <span class="dot" id="saveDot"></span>
+</header>
+
+<main>
+  <section class="screen active" id="scr-home">
+    <div class="home-actions">
+      <button class="btn primary block" id="btnNew">＋ Nouvelle fiche ROE</button>
+      <div class="btn-row">
+        <button class="btn ghost sm" id="btnImport">⤓ Importer (.json)</button>
+        <button class="btn ghost sm" id="btnExportAll">⤒ Exporter toutes les fiches</button>
+      </div>
+    </div>
+    <h2 class="sec">Fiches enregistrées</h2>
+    <ul class="st-list" id="ficheList"></ul>
+    <p class="empty" id="ficheEmpty" hidden>Aucune fiche. Créer une nouvelle fiche pour commencer.</p>
+    <p class="note">Fiche n°1a « Référence ROE » (protocole ICE, Onema, décembre 2015).
+      Fiches et photos stockées dans ce navigateur, hors connexion : exporter régulièrement (.json),
+      puis importer le fichier sur l'ordinateur pour la saisie dans l'interface ROE de l'OFB.</p>
+  </section>
+  <section class="screen" id="scr-fiche"></section>
+</main>
+
+<input type="file" id="fileInput" accept=".json,application/json" multiple>
+<input type="file" id="photoCam" accept="image/*" capture="environment">
+<input type="file" id="photoGal" accept="image/*">
+<div class="modal-bg" id="modalBg" hidden><div class="modal">
+  <div class="mhd" id="modalMsg"></div>
+  <div class="mft"><button class="btn ghost sm" id="modalCancel">Annuler</button><button class="btn danger sm" id="modalOk">Supprimer</button></div>
+</div></div>
+<div class="viewer" id="viewer" hidden><img id="viewerImg" alt=""></div>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+/* ============================================================
+   ROE - recensement terrain des obstacles à l'écoulement
+   Reprend la fiche n°1a « Référence ROE » (protocole ICE, Onema,
+   décembre 2015) et l'ordre des rubriques de l'interface de saisie
+   ROE de l'OFB. Fonctionne hors connexion.
+   Stockage : IndexedDB (une entrée par fiche, photos comprises).
+   Photos : 2 au plus par fiche, réduites à 1600 px (JPEG 0,8) et
+   conservées en data-URL, donc intégrées telles quelles à l'export.
+   Export / import : JSON { format, version, fiches: [...] }.
+   ============================================================ */
+const DB_NAME = "roe.saisie", DB_STORE = "fiches", FORMAT = "roe-saisie", VERSION = 1;
+const MAX_PHOTOS = 2, PHOTO_MAX_PX = 1600, PHOTO_QUALITE = 0.8;
+const $ = id => document.getElementById(id);
+
+/* ---------- Nomenclatures (fiche 1a, valeurs exclusives) ---------- */
+const NOM = {
+  etat: ["En projet", "En construction", "Existant", "Détruit partiellement", "Détruit entièrement"],
+  typo: {
+    "Barrage": ["Barrage poids", "Barrage voûte", "Barrage poids-voûte", "Barrage à contreforts", "Barrage à voûtes multiples", "Barrage mobile", "Barrage en remblais", "Sous type inconnu", "Autre sous type"],
+    "Seuil en rivière": ["Déversoir", "Radier", "Enrochement", "Sous type inconnu", "Autre sous type"],
+    "Obstacle induit par un pont": ["Radier de pont", "Buse(s)", "Passage à gué", "Sous type inconnu", "Autre sous type"],
+    "Digue": ["Digue (longitudinale) de canaux", "Digue (longitudinale) de protection contre les inondations", "Digue (longitudinale) mixte"],
+    "Grille de pisciculture": [],
+    "Epis en rivière": []
+  },
+  mobiles: ["Absence", "Clapet basculant", "Vannes levantes", "Autre type de vannes", "Aiguilles", "Hausses", "Batardeau", "Portes à flots", "Clapets à marée", "Type inconnu", "Autre type"],
+  chuteClasses: ["Indéterminée", "≤ 0,5 m", "De 0,5 m à < 1 m", "De 1 m à < 1,5 m", "De 1,5 m à < 2 m", "De 2 m à < 3 m", "De 3 m à < 5 m", "De 5 m à < 10 m", "≥ 10 m"],
+  // [usage, sous-usages] : cocher un sous-usage coche l'usage parent
+  usages: [
+    ["Inconnu"], ["Alimentation en eau potable"], ["Industrie", ["Extraction granulats"]],
+    ["Agriculture (irrigation, abreuvage)"], ["Loisirs", ["Baignade"]], ["Energie et hydroélectricité"],
+    ["Activité aquacole", ["Pisciculture", "Pêche professionnelle"]], ["Transports et soutien de navigation"],
+    ["Sécurité des biens et des personnes", ["Défense contre les crues", "Soutien d'étiage", "Stockage de l'eau pour l'incendie"]],
+    ["Stabilisation du profil en long du lit, lutte contre l'érosion"], ["Suivis technique et scientifique (débit, température)"],
+    ["Aucun"], ["Obsolète"], ["Autre usage"]
+  ],
+  passes: ["Passe à ralentisseurs", "Passe à bassins successifs", "Ecluse à poissons", "Passe à anguille : tapis brosse", "Passe à anguille : substrat rugueux",
+    "Passe à anguille : passe piège", "Ascenseur à poissons", "Prébarrage", "Rampe : sur partie de la largeur", "Rampe : sur totalité de la largeur",
+    "Rivière de contournement", "Exutoire de dévalaison", "Type inconnu", "Autre type de passe"],
+  positions: ["Rive gauche", "Milieu", "Rive droite"],
+  navigation: ["Ecluse", "Ascenseur", "Passe à canoë"]
+};
+
+/* ---------- Modèle ---------- */
+function todayISO() { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+function newFiche() {
+  const t = Date.now();
+  return { id: "roe_" + t.toString(36) + Math.random().toString(36).slice(2, 6), cree: t, updated: t,
+    date: todayISO(), organisme: "", observateurs: "",
+    nom: "", roe_id: "", cours_eau: "", lat: "", lon: "", gps_precision: null,
+    etat: "", typo_type: "", typo_sous: "", typo_autre: "", mobiles: [], mobile_autre: "",
+    chute_mode: "", chute_m: "", chute_classe: "",
+    usages: [], usage_autre: "",
+    passe_presence: "", passes: {}, passe_autre: "", navigation: [],
+    photos: [], commentaire: "", saisie_ofb: false };
+}
+
+/* ---------- Utils ---------- */
+function num(v) { const n = parseFloat(String(v == null ? "" : v).replace(",", ".")); return isFinite(n) ? n : null; }
+function vide(v) { return v == null || String(v).trim() === "" || (Array.isArray(v) && !v.length); }
+function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[m])); }
+function coordsValides(lat, lon) { const a = num(lat), o = num(lon); return a != null && o != null && Math.abs(a) <= 90 && Math.abs(o) <= 180 ? [a, o] : null; }
+function toast(m, t) { const e = $("toast"); e.textContent = m; e.className = "toast show " + (t || ""); clearTimeout(toast._t); toast._t = setTimeout(() => e.className = "toast", 2200); }
+function confirmDialog(msg, onOK, okLabel) {
+  const bg = $("modalBg"); $("modalMsg").textContent = msg; $("modalOk").textContent = okLabel || "Supprimer"; bg.hidden = false;
+  const close = () => { bg.hidden = true; $("modalOk").onclick = null; $("modalCancel").onclick = null; bg.onclick = null; };
+  $("modalOk").onclick = () => { close(); onOK(); }; $("modalCancel").onclick = close; bg.onclick = e => { if (e.target === bg) close(); };
+}
+
+/* Champs obligatoires (astérisques de la fiche 1a) */
+function manquants(fi) {
+  const m = [];
+  if (vide(fi.nom)) m.push({ sec: "id", lib: "Nom de l'ouvrage" });
+  if (!coordsValides(fi.lat, fi.lon)) m.push({ sec: "id", lib: "Coordonnées GPS (WGS84)" });
+  if (vide(fi.etat)) m.push({ sec: "etat", lib: "Etat" });
+  if (vide(fi.typo_type)) m.push({ sec: "typo", lib: "Typologie" });
+  return m;
+}
+
+function ficheVierge(fi) {
+  return ["nom", "roe_id", "cours_eau", "lat", "lon", "etat", "typo_type", "chute_mode", "commentaire", "passe_presence"].every(k => vide(fi[k]))
+    && ["mobiles", "usages", "navigation", "photos"].every(k => !fi[k].length) && !fi.saisie_ofb;
+}
+
+/* ---------- Stockage (IndexedDB) ---------- */
+const DB = {
+  db: null,
+  open() {
+    return new Promise((res, rej) => {
+      const r = indexedDB.open(DB_NAME, 1);
+      r.onupgradeneeded = () => r.result.createObjectStore(DB_STORE, { keyPath: "id" });
+      r.onsuccess = () => { this.db = r.result; res(); };
+      r.onerror = () => rej(r.error);
+    });
+  },
+  tx(mode, fn) {
+    return new Promise((res, rej) => {
+      const t = this.db.transaction(DB_STORE, mode), st = t.objectStore(DB_STORE), r = fn(st);
+      t.oncomplete = () => res(r && r.result); t.onerror = () => rej(t.error); t.onabort = () => rej(t.error);
+    });
+  },
+  all() { return this.tx("readonly", st => st.getAll()); },
+  put(o) { return this.tx("readwrite", st => st.put(o)); },
+  del(id) { return this.tx("readwrite", st => st.delete(id)); }
+};
+const Store = {
+  data: {},
+  async load() { (await DB.all() || []).forEach(f => { this.data[f.id] = normalizeFiche(f); }); },
+  list() { return Object.values(this.data).sort((a, b) => (b.updated || 0) - (a.updated || 0)); },
+  save(fi) {
+    this.data[fi.id] = fi;
+    if (!Store._persist && navigator.storage && navigator.storage.persist) { Store._persist = true; navigator.storage.persist().catch(() => {}); }
+    return DB.put(fi).catch(e => { toast("Enregistrement impossible : " + (e && e.name === "QuotaExceededError" ? "stockage plein" : "erreur du navigateur"), "err"); throw e; });
+  },
+  del(id) { delete this.data[id]; return DB.del(id); }
+};
+let cur = null;
+// Enregistrement différé pendant la frappe, immédiat à la sortie de la fiche
+function touch() { if (!cur) return; cur.updated = Date.now(); blink(); clearTimeout(touch._t); const fi = cur; touch._t = setTimeout(() => Store.save(fi).catch(() => {}), 300); }
+function flush() { clearTimeout(touch._t); return cur ? Store.save(cur).catch(() => {}) : Promise.resolve(); }
+function blink() { const d = $("saveDot"); d.classList.add("on"); clearTimeout(blink._t); blink._t = setTimeout(() => d.classList.remove("on"), 600); }
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") flush(); });
+
+/* ============================================================
+   Moteur de formulaire : champs décrits par des objets liés à la
+   fiche ; un choix (liste, case, puce) redessine l'écran pour les
+   champs conditionnels.
+   ============================================================ */
+let FORM = null;
+const f = {
+  num: (k, l, o) => ({ t: "num", k, l, ...o }), txt: (k, l, o) => ({ t: "txt", k, l, ...o }), area: (k, l, o) => ({ t: "area", k, l, ...o }),
+  date: (k, l, o) => ({ t: "date", k, l, ...o }), opt: (k, l, opts, o) => ({ t: "opt", k, l, opts, ...o }),
+  yn: (k, l, o) => ({ t: "opt", k, l, opts: ["Oui", "Non"], ...o }), multi: (k, l, opts, o) => ({ t: "multi", k, l, opts, ...o }),
+  chk: (k, l, o) => ({ t: "chk", k, l, ...o }), h: (l, o) => ({ t: "h", l, ...o }), hint: (l, o) => ({ t: "hint", l, ...o }),
+  row: (items, o) => ({ t: "row", items, ...o }), html: (fn, o) => ({ t: "html", fn, ...o })
+};
+function fieldHTML(s, obj, F) {
+  if (s.show && !s.show(obj)) return "";
+  if (s.t === "row") { const inner = s.items.map(x => fieldHTML(x, obj, F)).filter(Boolean); return inner.length ? `<div class="row">${inner.join("")}</div>` : ""; }
+  if (s.t === "h") return `<div class="sub-h">${s.l}</div>`;
+  if (s.t === "hint") return `<div class="hint">${s.l}</div>`;
+  if (s.t === "html") return s.fn(obj);
+  F.binds.push({ key: s.k, excl: s.excl }); const b = F.binds.length - 1, v = obj[s.k];
+  const lab = `<label>${s.l}${s.req ? ' <span class="star">*</span>' : ""}</label>`, miss = s.req && vide(v) ? " miss" : "";
+  const id = s.id ? ` id="${s.id}"` : "";
+  if (s.t === "num" || s.t === "txt") {
+    const inp = `<input${id} data-b="${b}" ${s.t === "num" ? 'inputmode="decimal" class="mono"' : ""} value="${esc(v)}" placeholder="${esc(s.ph || "")}">`;
+    return `<div class="field${miss}">${lab}${s.u ? `<div class="unit-in">${inp}<span>${s.u}</span></div>` : inp}</div>`;
+  }
+  if (s.t === "area") return `<div class="field">${lab}<textarea data-b="${b}" placeholder="${esc(s.ph || "")}">${esc(v)}</textarea></div>`;
+  if (s.t === "date") return `<div class="field">${lab}<input type="date" data-b="${b}" data-ch="1" value="${esc(v)}"></div>`;
+  if (s.t === "chk") return `<label class="chk"><input type="checkbox" data-b="${b}" data-ch="1" ${v ? "checked" : ""}> ${s.l}</label>`;
+  if (s.t === "multi") return `<div class="field">${lab}<div class="checks">${s.opts.map(x => `<label><input type="checkbox" data-b="${b}" data-m="${esc(x)}" data-ch="1" ${(v || []).includes(x) ? "checked" : ""}> ${esc(x)}</label>`).join("")}</div></div>`;
+  if (s.t === "opt") {
+    const opts = typeof s.opts === "function" ? s.opts(obj) : s.opts;
+    if (!s.select)
+      return `<div class="field${miss}">${lab}<div class="chips">${opts.map(x => `<button type="button" class="chip${v === x ? " on" : ""}" data-b="${b}" data-v="${esc(x)}">${esc(x)}</button>`).join("")}</div></div>`;
+    return `<div class="field${miss}">${lab}<select data-b="${b}" data-ch="1"><option value=""></option>${opts.map(x => `<option${v === x ? " selected" : ""}>${esc(x)}</option>`).join("")}</select></div>`;
+  }
+  return "";
+}
+function card(id, titre, specs, obj, F) {
+  return `<section class="card" id="sec-${id}"><div class="hd"><span class="ttl"><span class="bar"></span>${titre}</span></div><div class="bd">${specs.map(s => fieldHTML(s, obj, F)).join("")}</div></section>`;
+}
+function mountForm(root, obj, build, after) {
+  const F = { binds: [] };
+  root.innerHTML = build(F);
+  FORM = { rerender: () => { const y = window.scrollY; mountForm(root, obj, build, after); window.scrollTo(0, y); } };
+  root.oninput = e => {
+    const t = e.target, b = t.getAttribute && t.getAttribute("data-b"); if (b == null || t.getAttribute("data-ch")) return;
+    obj[F.binds[+b].key] = t.value; touch();
+    const fl = t.closest(".field"); if (fl && !vide(t.value)) fl.classList.remove("miss");
+    if (after) after(root, false, t);
+  };
+  root.onchange = e => {
+    const t = e.target, b = t.getAttribute && t.getAttribute("data-b"); if (b == null || !t.getAttribute("data-ch")) return;
+    const { key, excl } = F.binds[+b];
+    if (t.hasAttribute("data-m")) {
+      const m = t.getAttribute("data-m"); let arr = obj[key] = obj[key] || [];
+      const i = arr.indexOf(m); if (t.checked && i < 0) arr.push(m); if (!t.checked && i >= 0) arr.splice(i, 1);
+      // Valeur exclusive (ex. « Absence » d'élément mobile)
+      if (excl && t.checked) obj[key] = m === excl ? [excl] : arr.filter(x => x !== excl);
+    } else obj[key] = t.type === "checkbox" ? t.checked : t.value;
+    touch(); FORM.rerender();
+  };
+  root.onclick = e => {
+    const c = e.target.closest(".chip"); if (!c || !root.contains(c) || c.getAttribute("data-b") == null) return;
+    const key = F.binds[+c.getAttribute("data-b")].key, v = c.getAttribute("data-v");
+    obj[key] = obj[key] === v ? "" : v; touch(); FORM.rerender();
+  };
+  if (after) after(root, true);
+}
+
+/* ---------- Navigation ---------- */
+function go(where) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  if (where === "home") {
+    if (cur && ficheVierge(cur)) { clearTimeout(touch._t); Store.del(cur.id).catch(() => {}); }   // fiche ouverte puis abandonnée
+    else flush();
+    cur = null; CARTE.cadree = false;
+    $("appTitle").innerHTML = 'ROE <span class="accent">·</span> Obstacles à l\'écoulement';
+    $("btnBack").hidden = true; renderHome(); $("scr-home").classList.add("active");
+  } else {
+    $("btnBack").hidden = false; renderFiche(); $("scr-fiche").classList.add("active");
+  }
+  window.scrollTo(0, 0);
+}
+function titreFiche(fi) { return fi.nom || fi.roe_id || "Ouvrage sans nom"; }
+
+/* ---------- Accueil ---------- */
+function renderHome() {
+  const list = Store.list(), ul = $("ficheList"); ul.innerHTML = "";
+  $("ficheEmpty").hidden = list.length > 0; $("btnExportAll").hidden = !list.length;
+  list.forEach(fi => {
+    const m = manquants(fi).length, li = document.createElement("li"); li.className = "st-card";
+    li.innerHTML = `${fi.photos.length ? `<img class="thumb" src="${fi.photos[0].data}" alt="">` : ""}<div class="body"><div class="nm">${esc(fi.nom || "(sans nom)")}</div>
+      <div class="mt">${[fi.roe_id, fi.cours_eau, fi.typo_type, fi.date].filter(Boolean).map(esc).join(" · ") || "-"}</div>
+      <div class="badges">${m ? `<span class="pill warn">${m} à compléter</span>` : '<span class="pill on">complète</span>'}
+        ${fi.photos.length ? `<span class="pill">${fi.photos.length} photo(s)</span>` : ""}${fi.saisie_ofb ? '<span class="pill ok">saisie OFB ✓</span>' : ""}</div></div>
+      <span class="chev">›</span>`;
+    li.onclick = () => { cur = fi; go("fiche"); };
+    ul.appendChild(li);
+  });
+}
+
+/* ---------- Fiche ---------- */
+const SECTIONS = [["op", "Opération"], ["id", "Identification"], ["etat", "Etat"], ["typo", "Typologie"], ["chute", "Chute"],
+  ["usages", "Usages"], ["dfp", "Franch. piscicole"], ["dfn", "Navigation"], ["photos", "Photos"], ["com", "Commentaire"]];
+function renderFiche() {
+  const fi = cur;
+  $("appTitle").textContent = titreFiche(fi);
+  mountForm($("scr-fiche"), fi, F => {
+    const m = manquants(fi), secs = new Set(m.map(x => x.sec));
+    let h = `<div class="st-title">Fiche n°1a · Référence ROE</div>
+      <div class="st-sub">Champs <span class="star">*</span> obligatoires.${m.length ? ` Reste à compléter : ${m.map(x => esc(x.lib)).join(", ")}.` : " Fiche complète."}</div>
+      <nav class="toc">${SECTIONS.map(([k, l]) => `<button type="button" data-sec="${k}"${secs.has(k) ? ' class="warn"' : ""}>${l}</button>`).join("")}</nav>`;
+    h += card("op", "Opération", [
+      f.date("date", "Date du relevé"), f.row([f.txt("organisme", "Organisme"), f.txt("observateurs", "Observateurs")])
+    ], fi, F);
+    h += card("id", "Identification et implantation de l'ouvrage", [
+      f.txt("nom", "Nom de l'ouvrage", { req: true }),
+      f.txt("roe_id", "Identifiant ROE (à compléter après validation)", { ph: "ROE…" }),
+      f.txt("cours_eau", "Nom du cours d'eau à l'aval de l'obstacle"),
+      f.h("Coordonnées GPS de l'ouvrage (WGS84, degrés décimaux)"),
+      f.row([f.num("lon", "Longitude (X)", { req: true, id: "inLon", ph: "ex. 5.098666" }), f.num("lat", "Latitude (Y)", { req: true, id: "inLat", ph: "ex. 43.869668" })]),
+      f.html(() => `<button type="button" class="btn sm block" id="btnGps" style="margin-bottom:8px">📍 Utiliser ma position actuelle</button>
+        <div id="mapSlot"></div><div class="gps-info" id="gpsInfo">${gpsTexte()}</div>`)
+    ], fi, F);
+    h += card("etat", "Etat ROE", [f.opt("etat", "Etat", NOM.etat, { req: true })], fi, F);
+    h += card("typo", "Typologie ROE", [
+      f.h("Eléments fixes"),
+      f.opt("typo_type", "Type", Object.keys(NOM.typo), { req: true, select: true }),
+      f.opt("typo_sous", "Sous type", x => NOM.typo[x.typo_type] || [], { select: true, show: x => (NOM.typo[x.typo_type] || []).length > 0 }),
+      f.txt("typo_autre", "Autre sous type, préciser", { show: x => (NOM.typo[x.typo_type] || []).length > 0 && x.typo_sous === "Autre sous type" }),
+      f.h("Eléments mobiles"),
+      f.multi("mobiles", "Eléments mobiles", NOM.mobiles, { excl: "Absence" }),
+      f.txt("mobile_autre", "Autre type, préciser", { show: x => (x.mobiles || []).includes("Autre type") })
+    ], fi, F);
+    h += card("chute", "Hauteur de chute à l'étiage", [
+      f.opt("chute_mode", "Hauteur de chute", ["Mesurée", "Evaluée"]),
+      f.num("chute_m", "Hauteur mesurée", { u: "m", show: x => x.chute_mode === "Mesurée" }),
+      f.opt("chute_classe", "Classe évaluée", NOM.chuteClasses, { select: true, show: x => x.chute_mode === "Evaluée" })
+    ], fi, F);
+    h += card("usages", "Usages ROE", [
+      f.html(x => `<div class="field"><div class="checks">${NOM.usages.map(([u, subs]) => [u, ...(subs || [])].map((v, i) =>
+        `<label${i ? ' class="sub"' : ""}><input type="checkbox" data-usage="${esc(v)}" ${x.usages.includes(v) ? "checked" : ""}> ${esc(v)}</label>`).join("")).join("")}</div></div>`),
+      f.txt("usage_autre", "Autre usage, préciser", { show: x => x.usages.includes("Autre usage") })
+    ], fi, F);
+    h += card("dfp", "Dispositif de franchissement piscicole", [
+      f.yn("passe_presence", "Présence de dispositif de franchissement piscicole"),
+      f.html(x => x.passe_presence !== "Oui" ? "" : `<div class="field"><label>Type de passe et position</label>${NOM.passes.map(t => {
+        const pos = x.passes[t] || [];
+        return `<div class="passe"><span class="lb">${esc(t)}</span><span class="chips">${NOM.positions.map(p =>
+          `<button type="button" class="tog${pos.includes(p) ? " on" : ""}" data-pt="${esc(t)}" data-pp="${esc(p)}">${p === "Milieu" ? "Milieu" : p === "Rive gauche" ? "RG" : "RD"}</button>`).join("")}</span></div>`; }).join("")}</div>
+        <div class="hint">RG / RD : rive gauche / rive droite (en regardant vers l'aval).</div>`),
+      f.txt("passe_autre", "Autre type de passe, préciser", { show: x => x.passe_presence === "Oui" && (x.passes["Autre type de passe"] || []).length > 0 })
+    ], fi, F);
+    h += card("dfn", "Dispositif de franchissement pour la navigation", [f.multi("navigation", "Dispositifs présents", NOM.navigation)], fi, F);
+    h += `<section class="card" id="sec-photos"><div class="hd"><span class="ttl"><span class="bar"></span>Photos (${fi.photos.length} / ${MAX_PHOTOS})</span></div><div class="bd">
+      ${fi.photos.length ? `<div class="photos">${fi.photos.map((p, i) => `<div class="ph"><img src="${p.data}" data-view="${i}" alt="">
+        <div class="pb"><input data-leg="${i}" value="${esc(p.legende)}" placeholder="Légende (ex. vue amont)">
+        <small>${p.w} × ${p.h} px · ${tailleKo(p.data)} Ko</small>
+        <div class="btn-row"><button type="button" class="btn sm" data-dl="${i}">⤓ Télécharger</button><button type="button" class="btn sm danger" data-delph="${i}">Suppr.</button></div></div></div>`).join("")}</div>` : ""}
+      ${fi.photos.length < MAX_PHOTOS ? `<div class="btn-row"><button type="button" class="btn sm" id="btnCam">📷 Prendre une photo</button><button type="button" class="btn sm" id="btnGal">🖼️ Galerie</button></div>
+        <div class="hint" style="margin:8px 0 0">Photos réduites à ${PHOTO_MAX_PX} px (environ 300 à 500 Ko) et incluses dans l'export JSON.</div>` : `<div class="hint" style="margin:0">${MAX_PHOTOS} photos au plus : en supprimer une pour la remplacer.</div>`}
+      </div></section>`;
+    h += card("com", "Commentaire sur l'obstacle", [f.area("commentaire", "Commentaire", { ph: "Accès, particularités, éléments utiles à la saisie…" })], fi, F);
+    h += card("suivi", "Saisie au bureau", [
+      f.chk("saisie_ofb", "Fiche saisie dans l'interface ROE de l'OFB"),
+      f.html(() => `<div class="btn-row" style="margin-top:8px"><button type="button" class="btn primary" id="btnExpFiche">⤒ Exporter cette fiche</button>
+        <button type="button" class="btn danger ghost" id="btnDelFiche">Supprimer la fiche</button></div>`)
+    ], fi, F);
+    return h;
+  }, (root, init, cible) => {
+    if (!init) {   // frappe : titre, coordonnées -> repère sur la carte
+      if (cible && cible.closest("#sec-id")) { $("appTitle").textContent = titreFiche(fi); if (cible.id === "inLat" || cible.id === "inLon") majCarte(false); }
+      return;
+    }
+    root.querySelectorAll("[data-sec]").forEach(b => b.onclick = () => { const s = $("sec-" + b.getAttribute("data-sec")); if (s) s.scrollIntoView({ behavior: "smooth", block: "start" }); });
+    root.querySelectorAll("[data-usage]").forEach(c => c.onchange = () => { basculerUsage(fi, c.getAttribute("data-usage"), c.checked); touch(); FORM.rerender(); });
+    root.querySelectorAll("[data-pt]").forEach(b => b.onclick = () => { basculerPasse(fi, b.getAttribute("data-pt"), b.getAttribute("data-pp")); touch(); FORM.rerender(); });
+    root.querySelectorAll("[data-leg]").forEach(i => i.oninput = () => { fi.photos[+i.getAttribute("data-leg")].legende = i.value; touch(); });
+    root.querySelectorAll("[data-dl]").forEach(b => b.onclick = () => { const i = +b.getAttribute("data-dl"); telecharger(nomPhoto(fi, i), dataURLversBlob(fi.photos[i].data)); });
+    root.querySelectorAll("[data-delph]").forEach(b => b.onclick = () => confirmDialog("Supprimer cette photo ?", () => { fi.photos.splice(+b.getAttribute("data-delph"), 1); touch(); FORM.rerender(); }));
+    root.querySelectorAll("[data-view]").forEach(im => im.onclick = () => { $("viewerImg").src = im.src; $("viewer").hidden = false; });
+    const cam = $("btnCam"), gal = $("btnGal");
+    if (cam) cam.onclick = () => choisirPhoto("photoCam");
+    if (gal) gal.onclick = () => choisirPhoto("photoGal");
+    $("btnGps").onclick = useMyPosition;
+    $("btnExpFiche").onclick = () => { flush(); exporter([fi]); };
+    $("btnDelFiche").onclick = () => confirmDialog("Supprimer définitivement cette fiche et ses photos ?", () => { clearTimeout(touch._t); Store.del(fi.id); cur = null; go("home"); });
+    attacherCarte(root);
+  });
+}
+// Cocher un sous-usage coche l'usage parent ; décocher un usage décoche ses sous-usages
+function basculerUsage(fi, u, on) {
+  const set = new Set(fi.usages);
+  const grp = NOM.usages.find(([p, s]) => p === u || (s || []).includes(u));
+  if (on) { set.add(u); if (grp && grp[0] !== u) set.add(grp[0]); }
+  else { set.delete(u); if (grp && grp[0] === u) (grp[1] || []).forEach(s => set.delete(s)); }
+  // Ordre de la fiche conservé
+  fi.usages = NOM.usages.flatMap(([p, s]) => [p, ...(s || [])]).filter(x => set.has(x));
+}
+function basculerPasse(fi, type, pos) {
+  const arr = (fi.passes[type] || []).slice(), i = arr.indexOf(pos);
+  if (i < 0) arr.push(pos); else arr.splice(i, 1);
+  if (arr.length) fi.passes[type] = NOM.positions.filter(p => arr.includes(p)); else delete fi.passes[type];
+}
+
+/* ---------- Carte : placer l'ouvrage au doigt ou par GPS ----------
+   Un seul élément carte, créé une fois et réinséré à chaque rendu
+   (pas de rechargement des tuiles quand un choix redessine la fiche). */
+const CARTE = { el: null, map: null, ouv: null, me: null, cadree: false, pos: null };
+function gpsTexte() {
+  if (typeof L === "undefined") return "Carte indisponible hors connexion au premier usage : saisir les coordonnées ou utiliser le GPS.";
+  const p = CARTE.pos;
+  return "Toucher la carte pour placer l'ouvrage ; le repère se déplace au doigt." + (p ? ` · Dernière position GPS ±${Math.round(p.acc)} m` : "");
+}
+function attacherCarte(root) {
+  const slot = root.querySelector("#mapSlot"); if (!slot) return;
+  if (!CARTE.el) {
+    CARTE.el = document.createElement("div"); CARTE.el.className = "mapbox";
+    if (typeof L === "undefined") CARTE.el.innerHTML = '<div class="empty">🗺️ Carte indisponible (réseau requis au premier usage).</div>';
+    else {
+      CARTE.map = L.map(CARTE.el, { center: [46.6, 2.5], zoom: 5 });
+      L.tileLayer("https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png", { attribution: "© OpenStreetMap France · © contributeurs OSM", subdomains: "abc", maxZoom: 20 }).addTo(CARTE.map);
+      CARTE.map.on("click", e => placerOuvrage(e.latlng.lat, e.latlng.lng, null));
+    }
+  }
+  slot.appendChild(CARTE.el);
+  if (CARTE.map) setTimeout(() => CARTE.map.invalidateSize(), 0);
+  majCarte(!CARTE.cadree);
+}
+function majCarte(cadrer) {
+  const m = CARTE.map; if (!m || !cur) return;
+  const o = coordsValides(cur.lat, cur.lon);
+  if (o) {
+    if (!CARTE.ouv) {
+      CARTE.ouv = L.marker(o, { draggable: true, title: "Ouvrage" }).addTo(m);
+      CARTE.ouv.on("dragend", () => { const ll = CARTE.ouv.getLatLng(); placerOuvrage(ll.lat, ll.lng, null); });
+    } else CARTE.ouv.setLatLng(o);
+  } else if (CARTE.ouv) { CARTE.ouv.remove(); CARTE.ouv = null; }
+  if (!cadrer) return;
+  CARTE.cadree = true;
+  if (o) return m.setView(o, 17);
+  // Fiche sans coordonnées : vue sur le dernier ouvrage localisé (même secteur probable)
+  const prec = Store.list().map(x => coordsValides(x.lat, x.lon)).find(Boolean);
+  if (prec) m.setView(prec, 14); else m.setView([46.6, 2.5], 5);
+}
+function placerOuvrage(lat, lon, precision) {
+  if (!cur) return;
+  cur.lat = lat.toFixed(6); cur.lon = lon.toFixed(6); cur.gps_precision = precision == null ? null : Math.round(precision);
+  touch();
+  const a = $("inLat"), o = $("inLon");
+  if (a) { a.value = cur.lat; a.closest(".field").classList.remove("miss"); }
+  if (o) { o.value = cur.lon; o.closest(".field").classList.remove("miss"); }
+  majCarte(false);
+}
+function useMyPosition() {
+  if (!navigator.geolocation) return toast("GPS non disponible", "err");
+  toast("Recherche de la position…");
+  navigator.geolocation.getCurrentPosition(p => {
+    CARTE.pos = { acc: p.coords.accuracy };
+    const apply = () => {
+      placerOuvrage(p.coords.latitude, p.coords.longitude, p.coords.accuracy);
+      if (CARTE.map) CARTE.map.setView([p.coords.latitude, p.coords.longitude], 17);
+      const i = $("gpsInfo"); if (i) i.textContent = gpsTexte();
+      toast(`Position enregistrée (±${Math.round(p.coords.accuracy)} m)`, "ok");
+    };
+    if (coordsValides(cur.lat, cur.lon)) confirmDialog(`Remplacer les coordonnées saisies par votre position (±${Math.round(p.coords.accuracy)} m) ?`, apply, "Remplacer");
+    else apply();
+  }, e => toast(e.code === 1 ? "GPS : autorisation refusée" : "Position indisponible", "err"), { enableHighAccuracy: true, timeout: 20000, maximumAge: 5000 });
+}
+
+/* ---------- Photos ---------- */
+function dimensionsReduites(w, h, max) { const k = Math.min(1, max / Math.max(w, h)); return { w: Math.round(w * k), h: Math.round(h * k) }; }
+function tailleKo(data) { return Math.round((data.length - data.indexOf(",") - 1) * 3 / 4 / 1024); }
+// Réduction et recompression JPEG (l'orientation EXIF est appliquée par le navigateur au décodage)
+async function compresserPhoto(file) {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error("image illisible")); i.src = url; });
+    const { w, h } = dimensionsReduites(img.naturalWidth, img.naturalHeight, PHOTO_MAX_PX);
+    const c = document.createElement("canvas"); c.width = w; c.height = h;
+    c.getContext("2d").drawImage(img, 0, 0, w, h);
+    return { data: c.toDataURL("image/jpeg", PHOTO_QUALITE), w, h };
+  } finally { URL.revokeObjectURL(url); }
+}
+async function ajouterPhoto(fi, file) {
+  if (fi.photos.length >= MAX_PHOTOS) { toast(`${MAX_PHOTOS} photos au plus`, "err"); return false; }
+  const p = await compresserPhoto(file);
+  fi.photos.push({ data: p.data, w: p.w, h: p.h, legende: "", date: new Date().toISOString() });
+  return true;
+}
+function choisirPhoto(inputId) {
+  const inp = $(inputId), fi = cur; inp.value = "";
+  inp.onchange = async () => {
+    const file = inp.files[0]; if (!file) return;
+    try { if (await ajouterPhoto(fi, file)) { touch(); await flush(); if (cur === fi) FORM.rerender(); toast("Photo ajoutée", "ok"); } }
+    catch (e) { toast("Photo non lisible (format non pris en charge)", "err"); }
+  };
+  inp.click();
+}
+function dataURLversBlob(d) {
+  const [tete, b64] = d.split(","), bin = atob(b64), u8 = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+  return new Blob([u8], { type: (tete.match(/data:([^;]+)/) || [])[1] || "image/jpeg" });
+}
+$("viewer").onclick = () => { $("viewer").hidden = true; };
+
+/* ---------- Export / import ---------- */
+function sansAccents(s) { return String(s).normalize("NFD").replace(/[̀-ͯ]/g, ""); }
+function baseNom(fi) { return sansAccents("ROE_" + (fi.roe_id || fi.nom || "ouvrage") + "_" + (fi.date || todayISO())).replace(/[^\w\-]+/g, "_").replace(/_+/g, "_"); }
+function nomFichier(fiches) { return fiches.length === 1 ? baseNom(fiches[0]) + ".json" : "ROE_fiches_" + todayISO() + ".json"; }
+function nomPhoto(fi, i) { return baseNom(fi) + "_photo" + (i + 1) + ".jpg"; }
+function paquet(fiches) {
+  return { format: FORMAT, version: VERSION, exporte_le: new Date().toISOString(), nb_fiches: fiches.length,
+    fiches: fiches.map(x => JSON.parse(JSON.stringify(x))) };
+}
+function telecharger(nom, blob) {
+  const u = URL.createObjectURL(blob), a = document.createElement("a"); a.href = u; a.download = nom;
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(u); a.remove(); }, 500);
+}
+function exporter(fiches) {
+  if (!fiches.length) return toast("Aucune fiche à exporter", "err");
+  telecharger(nomFichier(fiches), new Blob([JSON.stringify(paquet(fiches), null, 1)], { type: "application/json;charset=utf-8" }));
+  toast(fiches.length > 1 ? `${fiches.length} fiches exportées` : "Fiche exportée", "ok");
+}
+// Fiche lue dans un fichier : complétée avec les valeurs par défaut, types vérifiés
+function normalizeFiche(o) {
+  if (!o || typeof o !== "object" || Array.isArray(o)) return null;
+  const n = newFiche(), r = Object.assign(n, o);
+  ["mobiles", "usages", "navigation", "photos"].forEach(k => { if (!Array.isArray(r[k])) r[k] = []; });
+  if (!r.passes || typeof r.passes !== "object" || Array.isArray(r.passes)) r.passes = {};
+  r.photos = r.photos.filter(p => p && typeof p.data === "string" && p.data.startsWith("data:image/"))
+    .slice(0, MAX_PHOTOS).map(p => ({ legende: "", ...p }));
+  r.id = typeof o.id === "string" && o.id ? o.id : n.id;
+  r.updated = typeof o.updated === "number" ? o.updated : n.updated;
+  return r;
+}
+function lireImport(obj) {
+  if (!obj || obj.format !== FORMAT || !Array.isArray(obj.fiches)) throw new Error("format");
+  return obj.fiches.map(normalizeFiche).filter(Boolean);
+}
+// Même fiche (même id) déjà présente : la version la plus récente l'emporte
+function fusionner(existantes, fiches) {
+  const r = { aEcrire: [], ajout: 0, maj: 0, ignore: 0 };
+  fiches.forEach(fi => {
+    const ex = existantes[fi.id];
+    if (!ex) { r.aEcrire.push(fi); r.ajout++; }
+    else if ((fi.updated || 0) > (ex.updated || 0)) { r.aEcrire.push(fi); r.maj++; }
+    else r.ignore++;
+  });
+  return r;
+}
+async function importerTextes(textes) {
+  const tot = { ajout: 0, maj: 0, ignore: 0, err: 0 };
+  for (const txt of textes) {
+    let fiches;
+    try { fiches = lireImport(JSON.parse(txt)); } catch (e) { tot.err++; continue; }
+    const r = fusionner(Store.data, fiches);
+    for (const fi of r.aEcrire) await Store.save(fi);
+    tot.ajout += r.ajout; tot.maj += r.maj; tot.ignore += r.ignore;
+  }
+  return tot;
+}
+function importer() {
+  const inp = $("fileInput"); inp.value = "";
+  inp.onchange = async () => {
+    const files = [...inp.files]; if (!files.length) return;
+    const t = await importerTextes(await Promise.all(files.map(fl => fl.text())));
+    const msg = [t.ajout && `${t.ajout} ajoutée(s)`, t.maj && `${t.maj} mise(s) à jour`, t.ignore && `${t.ignore} déjà à jour`, t.err && `${t.err} fichier(s) non reconnu(s)`].filter(Boolean).join(", ");
+    toast(msg ? "Import : " + msg : "Aucune fiche dans le fichier", t.err && !t.ajout && !t.maj ? "err" : "ok");
+    renderHome();
+  };
+  inp.click();
+}
+
+/* ---------- Liaisons et démarrage ---------- */
+$("btnNew").onclick = () => { cur = newFiche(); Store.save(cur).catch(() => {}); go("fiche"); };
+$("btnImport").onclick = importer;
+$("btnExportAll").onclick = () => exporter(Store.list());
+$("btnBack").onclick = () => go("home");
+(async () => {
+  try { await DB.open(); await Store.load(); }
+  catch (e) { toast("Stockage local indisponible : les fiches ne seront pas conservées", "err"); DB.put = DB.del = () => Promise.resolve(); }
+  go("home");
+})();
+</script>
+</body>
+</html>
