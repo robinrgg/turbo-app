@@ -2,7 +2,7 @@
 // FICHIER GÉNÉRÉ - NE PAS ÉDITER À LA MAIN.
 // Régénérer avec :  python build_sw_assets.py
 // ============================================================
-self.PRECACHE_VERSION = "turbo-20261031-1131";
+self.PRECACHE_VERSION = "turbo-20261123-0834";
 self.PRECACHE = [
   "./",
   "./index.html",
@@ -41,5 +41,7 @@ self.PRECACHE = [
   "./apps/habitat-stat/index.html",
   "./apps/ice/icon.svg",
   "./apps/ice/index.html",
+  "./apps/roe/icon.svg",
+  "./apps/roe/index.html",
   "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"
 ];

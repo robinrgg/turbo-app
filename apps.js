@@ -72,6 +72,13 @@ self.APPS = [
     accent:  "#4cb39a",
     icone:   "./apps/ice/icon.svg",
     offline: true
+  },
+  {
+    slug:    "roe",
+    nom:     "ROE",
+    desc:    "Recensement des obstacles",
+    accent:  "#d0735f",
+    icone:   "./apps/roe/icon.svg",
+    offline: true
   }
-    
 ];
