@@ -20,6 +20,7 @@ test('SW : les API temps réel ne sont jamais servies depuis le cache', () => {
     'https://hubeau.eaufrance.fr/api/v2/hydrometrie/referentiel/stations',
     'https://api.open-meteo.com/v1/forecast?latitude=43&longitude=6',
     'https://geo.api.gouv.fr/communes?nom=Riez',
+    'https://services.sandre.eaufrance.fr/geo/obs?SERVICE=WFS&REQUEST=GetFeature',
   ]) assert.equal(strategy(u), 'live', u);
 });
 
