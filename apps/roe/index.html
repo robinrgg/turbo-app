@@ -150,6 +150,27 @@ section.card>.bd{ padding:12px; }
   transition:opacity .2s; font-size:.82rem; max-width:90%; text-align:center; }
 .toast.show{ opacity:1; } .toast.ok{ border-left:3px solid var(--ok); } .toast.err{ border-left:3px solid var(--err); }
 input[type=file]{ display:none; }
+
+/* ---- Grande carte des ROE existants ---- */
+main.full{ max-width:none; padding:0; }
+.gc-bar{ display:flex; gap:6px; padding:8px 10px; flex-wrap:wrap; align-items:center; }
+.gc-bar .btn{ flex:1 1 auto; }
+.gc-stat{ font-family:var(--font-mono); font-size:.64rem; color:var(--text-mute); padding:0 12px 8px; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.gc-stat button{ background:none; border:none; color:var(--err); font-family:var(--font-sans); font-size:.7rem; cursor:pointer; padding:2px 0; }
+.gc-stat i{ display:inline-block; width:10px; height:10px; border-radius:50%; vertical-align:-1px; margin:0 3px 0 6px; border:1px solid #fff; }
+#gcMap{ height:60vh; position:relative; z-index:0; background:var(--bg); border-top:1px solid var(--border); }
+#gcMap .empty{ height:100%; display:flex; align-items:center; justify-content:center; border:none; border-radius:0; }
+.sheet{ position:fixed; left:0; right:0; bottom:0; z-index:600; max-height:62vh; overflow-y:auto; background:var(--surface); border-top:2px solid var(--accent);
+  border-radius:14px 14px 0 0; padding:12px 14px calc(14px + env(safe-area-inset-bottom)); box-shadow:0 -8px 24px rgba(0,0,0,.45); }
+.sheet[hidden]{ display:none; }
+.sheet .sh-hd{ display:flex; align-items:flex-start; gap:10px; margin-bottom:8px; }
+.sheet .sh-hd b{ flex:1; color:var(--ttl); font-size:.95rem; line-height:1.3; }
+.sheet .sh-hd button{ background:var(--surface-2); border:1px solid var(--border-strong); color:var(--text); border-radius:8px; width:34px; height:34px; cursor:pointer; flex:0 0 auto; }
+.kv{ display:grid; grid-template-columns:minmax(110px,34%) 1fr; gap:4px 10px; font-size:.8rem; margin-bottom:12px; }
+.kv dt{ color:var(--text-mute); font-size:.68rem; text-transform:uppercase; letter-spacing:.04em; padding-top:2px; }
+.kv dd{ color:var(--text); }
+.sheet .btn-row{ margin-top:4px; }
+.sheet a.btn{ text-decoration:none; }
 </style>
 </head>
 <body>
@@ -165,6 +186,7 @@ input[type=file]{ display:none; }
   <section class="screen active" id="scr-home">
     <div class="home-actions">
       <button class="btn primary block" id="btnNew">＋ Nouvelle fiche ROE</button>
+      <button class="btn block" id="btnCarte">🗺️ Carte des ROE existants</button>
       <div class="btn-row">
         <button class="btn ghost sm" id="btnImport">⤓ Importer (.json)</button>
         <button class="btn ghost sm" id="btnExportAll">⤒ Exporter toutes les fiches</button>
@@ -178,7 +200,16 @@ input[type=file]{ display:none; }
       puis importer le fichier sur l'ordinateur pour la saisie dans l'interface ROE de l'OFB.</p>
   </section>
   <section class="screen" id="scr-fiche"></section>
+  <section class="screen" id="scr-carte">
+    <div class="gc-bar">
+      <button class="btn sm primary" id="btnZone">⤓ Télécharger les ROE de la zone affichée</button>
+      <button class="btn sm" id="btnGcGps">📍 Ma position</button>
+    </div>
+    <div class="gc-stat" id="gcStat"></div>
+    <div id="gcMap"></div>
+  </section>
 </main>
+<div class="sheet" id="sheet" hidden><div class="sh-hd"><b id="shTitle"></b><button type="button" id="shClose">✕</button></div><div id="shBody"></div></div>
 
 <input type="file" id="fileInput" accept=".json,application/json" multiple>
 <input type="file" id="photoCam" accept="image/*" capture="environment">
@@ -202,7 +233,14 @@ input[type=file]{ display:none; }
    conservées en data-URL, donc intégrées telles quelles à l'export.
    Export / import : JSON { format, version, fiches: [...] }.
    ============================================================ */
-const DB_NAME = "roe.saisie", DB_STORE = "fiches", FORMAT = "roe-saisie", VERSION = 1;
+const DB_NAME = "roe.saisie", DB_STORE = "fiches", ZONES_STORE = "zones", FORMAT = "roe-saisie", VERSION = 1;
+// Flux public du ROE (Sandre, WFS) : obstacles validés, coordonnées WGS84
+const WFS_ROE = "https://services.sandre.eaufrance.fr/geo/obs", MAX_ROE_ZONE = 20000;
+const PROPS_ROE = ["CdObstEcoul", "StObstEcoul", "LbEtOuvrage", "NomPrincipalObstEcoul", "NomSecondaireObstEcoul", "CdTypeOuvrage",
+  "LbTypeElMobSeuil1", "LbTypeElMobSeuil2", "LbTypeElMobSeuil3", "LbTypeDispFranchPiscicole1", "LbTypeDispFranchPiscicole2", "LbTypeDispFranchPiscicole3",
+  "LbTypeDispFranchPiscicole4", "LbTypeDispFranchPiscicole5", "LbTypeDispFranchNavig1", "LbTypeDispFranchNavig2", "LbTypeDispFranchNavig3",
+  "LbUsageObstEcoul1", "LbUsageObstEcoul2", "LbUsageObstEcoul3", "LbUsageObstEcoul4", "HautChutEtObstEcoul", "LbHautChutClObstEcoul",
+  "DateMAJObstEcoul", "NomEntiteHydrographique", "LbCommune", "CdDepartement"];
 const MAX_PHOTOS = 2, PHOTO_MAX_PX = 1600, PHOTO_QUALITE = 0.8;
 const $ = id => document.getElementById(id);
 
@@ -233,6 +271,20 @@ const NOM = {
     "Rivière de contournement", "Exutoire de dévalaison", "Type inconnu", "Autre type de passe"],
   positions: ["Rive gauche", "Milieu", "Rive droite"],
   navigation: ["Ecluse", "Ascenseur", "Passe à canoë"]
+};
+
+/* Codes Sandre du type d'ouvrage (nomenclature n°284) -> [type, sous type] de la fiche */
+const TYPE_SANDRE = {
+  "1.1": ["Barrage", ""], "1.1.0": ["Barrage", "Sous type inconnu"], "1.1.1": ["Barrage", "Barrage poids"], "1.1.2": ["Barrage", "Barrage voûte"],
+  "1.1.3": ["Barrage", "Barrage poids-voûte"], "1.1.4": ["Barrage", "Barrage à contreforts"], "1.1.5": ["Barrage", "Barrage à voûtes multiples"],
+  "1.1.6": ["Barrage", "Barrage mobile"], "1.1.7": ["Barrage", "Barrage en remblais"], "1.1.X": ["Barrage", "Autre sous type"],
+  "1.2": ["Seuil en rivière", ""], "1.2.0": ["Seuil en rivière", "Sous type inconnu"], "1.2.1": ["Seuil en rivière", "Déversoir"],
+  "1.2.2": ["Seuil en rivière", "Radier"], "1.2.3": ["Seuil en rivière", "Enrochement"], "1.2.X": ["Seuil en rivière", "Autre sous type"],
+  "1.3": ["Digue", ""], "1.3.1": ["Digue", "Digue (longitudinale) de canaux"],
+  "1.3.2": ["Digue", "Digue (longitudinale) de protection contre les inondations"], "1.3.3": ["Digue", "Digue (longitudinale) mixte"],
+  "1.4": ["Obstacle induit par un pont", ""], "1.4.0": ["Obstacle induit par un pont", "Sous type inconnu"], "1.4.1": ["Obstacle induit par un pont", "Radier de pont"],
+  "1.4.2": ["Obstacle induit par un pont", "Buse(s)"], "1.4.3": ["Obstacle induit par un pont", "Passage à gué"], "1.4.X": ["Obstacle induit par un pont", "Autre sous type"],
+  "1.5": ["Epis en rivière", ""], "1.6": ["Grille de pisciculture", ""]
 };
 
 /* ---------- Modèle ---------- */
@@ -281,21 +333,27 @@ const DB = {
   db: null,
   open() {
     return new Promise((res, rej) => {
-      const r = indexedDB.open(DB_NAME, 1);
-      r.onupgradeneeded = () => r.result.createObjectStore(DB_STORE, { keyPath: "id" });
+      // v1 : fiches ; v2 : + zones de ROE téléchargées (une entrée par emprise)
+      const r = indexedDB.open(DB_NAME, 2);
+      r.onupgradeneeded = () => {
+        const db = r.result;
+        if (!db.objectStoreNames.contains(DB_STORE)) db.createObjectStore(DB_STORE, { keyPath: "id" });
+        if (!db.objectStoreNames.contains(ZONES_STORE)) db.createObjectStore(ZONES_STORE, { keyPath: "id" });
+      };
       r.onsuccess = () => { this.db = r.result; res(); };
       r.onerror = () => rej(r.error);
     });
   },
-  tx(mode, fn) {
+  tx(store, mode, fn) {
     return new Promise((res, rej) => {
-      const t = this.db.transaction(DB_STORE, mode), st = t.objectStore(DB_STORE), r = fn(st);
+      const t = this.db.transaction(store, mode), st = t.objectStore(store), r = fn(st);
       t.oncomplete = () => res(r && r.result); t.onerror = () => rej(t.error); t.onabort = () => rej(t.error);
     });
   },
-  all() { return this.tx("readonly", st => st.getAll()); },
-  put(o) { return this.tx("readwrite", st => st.put(o)); },
-  del(id) { return this.tx("readwrite", st => st.delete(id)); }
+  all(store = DB_STORE) { return this.tx(store, "readonly", st => st.getAll()); },
+  put(o, store = DB_STORE) { return this.tx(store, "readwrite", st => st.put(o)); },
+  del(id, store = DB_STORE) { return this.tx(store, "readwrite", st => st.delete(id)); },
+  clear(store) { return this.tx(store, "readwrite", st => st.clear()); }
 };
 const Store = {
   data: {},
@@ -386,16 +444,27 @@ function mountForm(root, obj, build, after) {
 }
 
 /* ---------- Navigation ---------- */
-function go(where) {
+function go(where, opt) {
   document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.querySelector("main").classList.toggle("full", where === "carte");
+  fermerInfo();
   if (where === "home") {
     if (cur && ficheVierge(cur)) { clearTimeout(touch._t); Store.del(cur.id).catch(() => {}); }   // fiche ouverte puis abandonnée
     else flush();
     cur = null; CARTE.cadree = false;
     $("appTitle").innerHTML = 'ROE <span class="accent">·</span> Obstacles à l\'écoulement';
     $("btnBack").hidden = true; renderHome(); $("scr-home").classList.add("active");
-  } else {
-    $("btnBack").hidden = false; renderFiche(); $("scr-fiche").classList.add("active");
+  } else if (where === "fiche") {
+    $("btnBack").hidden = false; $("btnBack").onclick = () => go("home");
+    renderFiche(); $("scr-fiche").classList.add("active");
+  } else if (where === "carte") {
+    flush(); GC.retour = cur ? "fiche" : "home";
+    $("btnBack").hidden = false; $("btnBack").onclick = () => go(GC.retour);
+    $("appTitle").textContent = "Carte des ROE";
+    $("scr-carte").classList.add("active");
+    window.scrollTo(0, 0);
+    ouvrirGrandeCarte(opt && opt.centre);
+    return;
   }
   window.scrollTo(0, 0);
 }
@@ -438,7 +507,8 @@ function renderFiche() {
       f.h("Coordonnées GPS de l'ouvrage (WGS84, degrés décimaux)"),
       f.row([f.num("lon", "Longitude (X)", { req: true, id: "inLon", ph: "ex. 5.098666" }), f.num("lat", "Latitude (Y)", { req: true, id: "inLat", ph: "ex. 43.869668" })]),
       f.html(() => `<button type="button" class="btn sm block" id="btnGps" style="margin-bottom:8px">📍 Utiliser ma position actuelle</button>
-        <div id="mapSlot"></div><div class="gps-info" id="gpsInfo">${gpsTexte()}</div>`)
+        <div id="mapSlot"></div><div class="gps-info" id="gpsInfo">${gpsTexte()}</div>
+        <button type="button" class="btn sm ghost block" id="btnVersCarte" style="margin-bottom:6px">🗺️ Grande carte et ROE existants autour</button>`)
     ], fi, F);
     h += card("etat", "Etat ROE", [f.opt("etat", "Etat", NOM.etat, { req: true })], fi, F);
     h += card("typo", "Typologie ROE", [
@@ -501,6 +571,7 @@ function renderFiche() {
     if (cam) cam.onclick = () => choisirPhoto("photoCam");
     if (gal) gal.onclick = () => choisirPhoto("photoGal");
     $("btnGps").onclick = useMyPosition;
+    $("btnVersCarte").onclick = () => go("carte", { centre: coordsValides(fi.lat, fi.lon) || (CARTE.map ? [CARTE.map.getCenter().lat, CARTE.map.getCenter().lng] : null) });
     $("btnExpFiche").onclick = () => { flush(); exporter([fi]); };
     $("btnDelFiche").onclick = () => confirmDialog("Supprimer définitivement cette fiche et ses photos ?", () => { clearTimeout(touch._t); Store.del(fi.id); cur = null; go("home"); });
     attacherCarte(root);
@@ -530,6 +601,14 @@ function gpsTexte() {
   const p = CARTE.pos;
   return "Toucher la carte pour placer l'ouvrage ; le repère se déplace au doigt." + (p ? ` · Dernière position GPS ±${Math.round(p.acc)} m` : "");
 }
+// Orthophotographie IGN (Géoplateforme, WMTS, sans clé) par défaut ; plan OSM en alternative
+function fondsCarte(map) {
+  const ortho = L.tileLayer("https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=ORTHOIMAGERY.ORTHOPHOTOS&STYLE=normal&TILEMATRIXSET=PM&FORMAT=image/jpeg&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}",
+    { attribution: "© IGN · Géoplateforme", maxNativeZoom: 19, maxZoom: 20 });
+  const plan = L.tileLayer("https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png", { attribution: "© OpenStreetMap France · © contributeurs OSM", subdomains: "abc", maxZoom: 20 });
+  ortho.addTo(map);
+  L.control.layers({ "Ortho IGN": ortho, "Plan OSM": plan }, null, { position: "topright" }).addTo(map);
+}
 function attacherCarte(root) {
   const slot = root.querySelector("#mapSlot"); if (!slot) return;
   if (!CARTE.el) {
@@ -537,12 +616,7 @@ function attacherCarte(root) {
     if (typeof L === "undefined") CARTE.el.innerHTML = '<div class="empty">🗺️ Carte indisponible (réseau requis au premier usage).</div>';
     else {
       CARTE.map = L.map(CARTE.el, { center: [46.6, 2.5], zoom: 5, maxZoom: 20 });
-      // Orthophotographie IGN (Géoplateforme, WMTS, sans clé) par défaut ; plan OSM en alternative
-      const ortho = L.tileLayer("https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=ORTHOIMAGERY.ORTHOPHOTOS&STYLE=normal&TILEMATRIXSET=PM&FORMAT=image/jpeg&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}",
-        { attribution: "© IGN · Géoplateforme", maxNativeZoom: 19, maxZoom: 20 });
-      const plan = L.tileLayer("https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png", { attribution: "© OpenStreetMap France · © contributeurs OSM", subdomains: "abc", maxZoom: 20 });
-      ortho.addTo(CARTE.map);
-      L.control.layers({ "Ortho IGN": ortho, "Plan OSM": plan }, null, { position: "topright" }).addTo(CARTE.map);
+      fondsCarte(CARTE.map);
       CARTE.map.on("click", e => placerOuvrage(e.latlng.lat, e.latlng.lng, null));
     }
   }
@@ -590,6 +664,171 @@ function useMyPosition() {
     else apply();
   }, e => toast(e.code === 1 ? "GPS : autorisation refusée" : "Position indisponible", "err"), { enableHighAccuracy: true, timeout: 20000, maximumAge: 5000 });
 }
+
+/* ============================================================
+   Grande carte : ROE existants (flux public Sandre) et fiches saisies.
+   Les ROE sont téléchargés par zone (emprise affichée) quand le réseau
+   est disponible, puis conservés dans IndexedDB pour le terrain.
+   ============================================================ */
+const GC = { map: null, rendu: null, roe: null, mes: null, zones: null, me: null, data: null, retour: "home", vue: false };
+const COUL_ROE = { "Existant": "#f2c14e", "Détruit partiellement": "#a3aebb", "Détruit entièrement": "#5e6b78", "En projet": "#9b8cf0", "En construction": "#9b8cf0" };
+
+// Requête WFS sur une emprise [sud, ouest, nord, est] (axe lat/lon de l'EPSG:4326)
+function wfsUrl(bbox, hits) {
+  const q = { SERVICE: "WFS", VERSION: "2.0.0", REQUEST: "GetFeature", TYPENAMES: "sa:ObstEcoul", SRSNAME: "EPSG:4326",
+    BBOX: bbox.join(",") + ",urn:ogc:def:crs:EPSG::4326" };
+  if (hits) q.RESULTTYPE = "hits";
+  else { q.OUTPUTFORMAT = "application/json; subtype=geojson"; q.PROPERTYNAME = PROPS_ROE.concat("msGeometry").join(","); }
+  return WFS_ROE + "?" + Object.entries(q).map(([k, v]) => k + "=" + encodeURIComponent(v)).join("&");
+}
+// Entité GeoJSON -> enregistrement compact (attributs vides retirés)
+function compacter(f) {
+  const g = f && f.geometry, p = (f && f.properties) || {};
+  if (!g || g.type !== "Point" || !p.CdObstEcoul) return null;
+  const q = {}; PROPS_ROE.forEach(k => { if (p[k] != null && p[k] !== "") q[k] = p[k]; });
+  return { c: p.CdObstEcoul, x: +(+g.coordinates[0]).toFixed(6), y: +(+g.coordinates[1]).toFixed(6), p: q };
+}
+function contient(a, b) { return a[0] <= b[0] && a[1] <= b[1] && a[2] >= b[2] && a[3] >= b[3]; }
+// Union des zones téléchargées : pour un même ROE, la zone la plus récente l'emporte
+function roeEnMemoire(zones) {
+  const m = new Map();
+  zones.slice().sort((a, b) => a.date < b.date ? -1 : 1).forEach(z => z.roe.forEach(r => m.set(r.c, r)));
+  return [...m.values()];
+}
+function typeDepuisCode(cd) { return TYPE_SANDRE[cd] || null; }
+function fmtDate(iso) { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || ""); return m ? `${m[3]}/${m[2]}/${m[1]}` : ""; }
+// Informations affichées pour un ROE existant
+function lignesROE(p) {
+  const liste = pref => Object.keys(p).filter(k => k.startsWith(pref)).sort().map(k => p[k]).join(", ");
+  const t = typeDepuisCode(p.CdTypeOuvrage), chute = num(p.HautChutEtObstEcoul);
+  return [
+    ["Code ROE", p.CdObstEcoul], ["Nom secondaire", p.NomSecondaireObstEcoul], ["Statut", p.StObstEcoul], ["Etat", p.LbEtOuvrage],
+    ["Type", t ? t.filter(Boolean).join(" / ") : p.CdTypeOuvrage],
+    ["Hauteur de chute", [chute != null ? String(chute).replace(".", ",") + " m" : "", p.LbHautChutClObstEcoul].filter(Boolean).join(" · ")],
+    ["Eléments mobiles", liste("LbTypeElMobSeuil")], ["Franchissement piscicole", liste("LbTypeDispFranchPiscicole")],
+    ["Franchissement navigation", liste("LbTypeDispFranchNavig")], ["Usages", liste("LbUsageObstEcoul")],
+    ["Cours d'eau", p.NomEntiteHydrographique], ["Commune", [p.LbCommune, p.CdDepartement && "(" + p.CdDepartement + ")"].filter(Boolean).join(" ")],
+    ["Mise à jour ROE", fmtDate(p.DateMAJObstEcoul)]
+  ].filter(([, v]) => !vide(v));
+}
+// Fiche pré-remplie à partir d'un ROE existant (identification, état, typologie)
+function ficheDepuisROE(r) {
+  const fi = newFiche(), p = r.p, t = typeDepuisCode(p.CdTypeOuvrage);
+  Object.assign(fi, { roe_id: r.c, nom: p.NomPrincipalObstEcoul || "", cours_eau: p.NomEntiteHydrographique || "",
+    lat: r.y.toFixed(6), lon: r.x.toFixed(6), etat: NOM.etat.includes(p.LbEtOuvrage) ? p.LbEtOuvrage : "" });
+  if (t) { fi.typo_type = t[0]; fi.typo_sous = t[1]; }
+  return fi;
+}
+
+async function chargerZones() { if (!GC.data) { try { GC.data = await DB.all(ZONES_STORE) || []; } catch (e) { GC.data = []; } } return GC.data; }
+function ajusterHauteurCarte() {
+  const el = $("gcMap"); if (!$("scr-carte").classList.contains("active")) return;
+  el.style.height = Math.max(260, window.innerHeight - el.getBoundingClientRect().top) + "px";
+  if (GC.map) GC.map.invalidateSize();
+}
+window.addEventListener("resize", ajusterHauteurCarte);
+function statCarte() {
+  const z = GC.data || [], n = roeEnMemoire(z).length;
+  const dmin = z.map(x => x.date).sort()[0];
+  $("gcStat").innerHTML = `<span><i style="background:${COUL_ROE.Existant}"></i>ROE<i style="background:var(--accent)"></i>mes fiches</span>
+    <span>${n ? `${n} ROE en mémoire (${z.length} zone${z.length > 1 ? "s" : ""}, depuis le ${fmtDate(dmin)})` : "Aucun ROE en mémoire : afficher le secteur puis télécharger."}</span>
+    ${n ? '<button type="button" id="btnViderZones">Vider</button>' : ""}`;
+  const v = $("btnViderZones");
+  if (v) v.onclick = () => confirmDialog("Effacer tous les ROE téléchargés ? (les fiches saisies sont conservées)", async () => {
+    await DB.clear(ZONES_STORE).catch(() => {}); GC.data = []; dessinerROE(); toast("ROE effacés", "ok"); });
+}
+async function ouvrirGrandeCarte(centre) {
+  await chargerZones(); statCarte(); ajusterHauteurCarte();
+  if (typeof L === "undefined") { $("gcMap").innerHTML = '<div class="empty">🗺️ Carte indisponible (réseau requis au premier usage).</div>'; return; }
+  if (!GC.map) {
+    GC.map = L.map($("gcMap"), { center: [46.6, 2.5], zoom: 6, maxZoom: 20 });
+    fondsCarte(GC.map);
+    GC.rendu = L.canvas({ padding: 0.3, tolerance: 6 });
+    GC.zones = L.layerGroup().addTo(GC.map); GC.roe = L.layerGroup().addTo(GC.map); GC.mes = L.layerGroup().addTo(GC.map);
+    GC.map.on("click", fermerInfo);
+    dessinerROE();
+  }
+  setTimeout(() => { GC.map.invalidateSize(); dessinerMesFiches();
+    if (centre) GC.map.setView(centre, 16);
+    else if (!GC.vue) {   // premier affichage : ROE en mémoire, sinon fiches, sinon France
+      const pts = roeEnMemoire(GC.data).map(r => [r.y, r.x]).concat(Store.list().map(f => coordsValides(f.lat, f.lon)).filter(Boolean));
+      if (pts.length) GC.map.fitBounds(L.latLngBounds(pts), { padding: [20, 20], maxZoom: 15 });
+    }
+    GC.vue = true; }, 0);
+}
+function dessinerROE() {
+  statCarte();
+  if (!GC.map) return;
+  GC.roe.clearLayers(); GC.zones.clearLayers();
+  (GC.data || []).forEach(z => L.rectangle([[z.bbox[0], z.bbox[1]], [z.bbox[2], z.bbox[3]]],
+    { color: "#f2c14e", weight: 1, dashArray: "4 4", fill: false, interactive: false }).addTo(GC.zones));
+  roeEnMemoire(GC.data || []).forEach(r => L.circleMarker([r.y, r.x], { renderer: GC.rendu, radius: 6, color: "#0b1014", weight: 1,
+    fillColor: COUL_ROE[r.p.LbEtOuvrage] || "#f2c14e", fillOpacity: .95 }).on("click", e => { L.DomEvent.stopPropagation(e); infoROE(r); }).addTo(GC.roe));
+}
+function dessinerMesFiches() {
+  if (!GC.map) return;
+  GC.mes.clearLayers();
+  Store.list().forEach(fi => { const ll = coordsValides(fi.lat, fi.lon); if (!ll) return;
+    L.circleMarker(ll, { radius: 8, color: "#fff", weight: 2, fillColor: "#d0735f", fillOpacity: 1 })
+      .on("click", e => { L.DomEvent.stopPropagation(e); infoFiche(fi); }).addTo(GC.mes); });
+}
+function ouvrirInfo(titre, html) { $("shTitle").textContent = titre; $("shBody").innerHTML = html; $("sheet").hidden = false; }
+function fermerInfo() { $("sheet").hidden = true; }
+$("shClose").onclick = fermerInfo;
+function infoROE(r) {
+  const deja = Store.list().find(f => f.roe_id === r.c);
+  ouvrirInfo(r.p.NomPrincipalObstEcoul || r.c, `<dl class="kv">${lignesROE(r.p).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl>
+    <div class="btn-row">${deja ? '<button type="button" class="btn sm primary" id="shOpen">Ouvrir ma fiche de cet ouvrage</button>'
+      : '<button type="button" class="btn sm primary" id="shCreate">＋ Créer une fiche à partir de cet ouvrage</button>'}
+      <a class="btn sm ghost" href="https://www.sandre.eaufrance.fr/geo/ObstEcoul/${encodeURIComponent(r.c)}" target="_blank" rel="noopener">Fiche Sandre (en ligne)</a></div>`);
+  if (deja) $("shOpen").onclick = () => { cur = deja; go("fiche"); };
+  else $("shCreate").onclick = () => { cur = ficheDepuisROE(r); Store.save(cur).catch(() => {}); CARTE.cadree = false; go("fiche"); toast("Fiche pré-remplie : identification, état, typologie", "ok"); };
+}
+function infoFiche(fi) {
+  const m = manquants(fi).length;
+  ouvrirInfo(titreFiche(fi), `<dl class="kv"><dt>Identifiant ROE</dt><dd>${esc(fi.roe_id || "-")}</dd><dt>Type</dt><dd>${esc([fi.typo_type, fi.typo_sous].filter(Boolean).join(" / ") || "-")}</dd>
+    <dt>Date</dt><dd>${esc(fmtDate(fi.date))}</dd><dt>Saisie</dt><dd>${m ? m + " champ(s) à compléter" : "complète"}${fi.saisie_ofb ? " · saisie OFB faite" : ""}</dd></dl>
+    <div class="btn-row"><button type="button" class="btn sm primary" id="shOpen">Ouvrir la fiche</button></div>`);
+  $("shOpen").onclick = () => { cur = fi; CARTE.cadree = false; go("fiche"); };
+}
+// Téléchargement des ROE d'une emprise ; les zones entièrement recouvertes sont remplacées
+async function telechargerZone(bbox) {
+  const erreur = () => toast("Connexion requise pour télécharger les ROE", "err");
+  let n;
+  try { const r = await fetch(wfsUrl(bbox, true)); if (!r.ok) return erreur(); n = +((await r.text()).match(/numberMatched="(\d+)"/) || [])[1]; }
+  catch (e) { return erreur(); }
+  if (!isFinite(n)) return toast("Réponse du service ROE non reconnue", "err");
+  if (n > MAX_ROE_ZONE) return toast(`${n} ROE dans la zone : zoomer davantage (${MAX_ROE_ZONE} au plus)`, "err");
+  toast(`Téléchargement de ${n} ROE…`);
+  let gj;
+  try { const r = await fetch(wfsUrl(bbox, false)); if (!r.ok) return erreur(); gj = await r.json(); }
+  catch (e) { return erreur(); }
+  const roe = (gj.features || []).map(compacter).filter(Boolean);
+  const zone = { id: "z_" + Date.now().toString(36), bbox, date: new Date().toISOString(), n: roe.length, roe };
+  await chargerZones();
+  const remplacees = GC.data.filter(z => contient(bbox, z.bbox));
+  try { for (const z of remplacees) await DB.del(z.id, ZONES_STORE); await DB.put(zone, ZONES_STORE); }
+  catch (e) { return toast("Enregistrement impossible (stockage plein ?)", "err"); }
+  GC.data = GC.data.filter(z => !remplacees.includes(z)).concat(zone);
+  dessinerROE();
+  toast(`${roe.length} ROE enregistrés pour le terrain`, "ok");
+  return zone;
+}
+$("btnZone").onclick = () => {
+  if (!GC.map) return toast("Carte indisponible", "err");
+  const b = GC.map.getBounds();
+  telechargerZone([b.getSouth(), b.getWest(), b.getNorth(), b.getEast()].map(v => +v.toFixed(5)));
+};
+$("btnGcGps").onclick = () => {
+  if (!navigator.geolocation || !GC.map) return toast("GPS non disponible", "err");
+  toast("Recherche de la position…");
+  navigator.geolocation.getCurrentPosition(p => {
+    const ll = [p.coords.latitude, p.coords.longitude];
+    if (!GC.me) GC.me = L.circleMarker(ll, { radius: 7, color: "#fff", weight: 2, fillColor: "#5aa9f0", fillOpacity: 1 }).bindTooltip("Ma position").addTo(GC.map);
+    else GC.me.setLatLng(ll);
+    GC.map.setView(ll, Math.max(GC.map.getZoom(), 15));
+  }, () => toast("Position indisponible", "err"), { enableHighAccuracy: true, timeout: 20000, maximumAge: 10000 });
+};
 
 /* ---------- Photos ---------- */
 function dimensionsReduites(w, h, max) { const k = Math.min(1, max / Math.max(w, h)); return { w: Math.round(w * k), h: Math.round(h * k) }; }
@@ -698,6 +937,7 @@ function importer() {
 /* ---------- Liaisons et démarrage ---------- */
 $("btnNew").onclick = () => { cur = newFiche(); Store.save(cur).catch(() => {}); go("fiche"); };
 $("btnImport").onclick = importer;
+$("btnCarte").onclick = () => go("carte");
 $("btnExportAll").onclick = () => exporter(Store.list());
 $("btnBack").onclick = () => go("home");
 (async () => {

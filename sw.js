@@ -5,7 +5,7 @@
    Trois stratégies de routage :
 
      1. Hôtes de données temps réel (Hub'Eau, Open-Meteo,
-        geo.api.gouv.fr) -> RÉSEAU SEUL. Jamais de cache : on ne sert pas de
+        geo.api.gouv.fr, flux ROE du Sandre) -> RÉSEAU SEUL. Jamais de cache : on ne sert pas de
            débit périmé.
      2. Ressources cross-origin figées (SheetJS, polices,
         Leaflet, Chart.js) -> CACHE-FIRST. Mises en cache au
@@ -30,7 +30,8 @@ const NETWORK_TIMEOUT_MS = 3000;
 const LIVE_API_HOSTS = [
   'hubeau.eaufrance.fr',
   'api.open-meteo.com',
-  'geo.api.gouv.fr'
+  'geo.api.gouv.fr',
+  'services.sandre.eaufrance.fr'   // flux WFS du ROE (app roe : stockage géré par l'app)
 ];
 
 // Réponse synthétique quand le réseau est injoignable : l'en-tête permet aux

@@ -51,7 +51,7 @@ désinstallent les anciens SW encore présents sur les appareils : les garder.
 
 | Type de requête                                   | Stratégie      |
 |---------------------------------------------------|----------------|
-| Hub'Eau, Open-Meteo, geo.api.gouv.fr (temps réel) | réseau seul    |
+| Hub'Eau, Open-Meteo, geo.api.gouv.fr, Sandre (temps réel) | réseau seul |
 | CDN figés (SheetJS, polices, Leaflet, Chart.js)   | cache-first    |
 | Même origine (shell + apps)                       | network-first  |
 

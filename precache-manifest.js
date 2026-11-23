@@ -2,7 +2,7 @@
 // FICHIER GÉNÉRÉ - NE PAS ÉDITER À LA MAIN.
 // Régénérer avec :  python build_sw_assets.py
 // ============================================================
-self.PRECACHE_VERSION = "turbo-20261123-0850";
+self.PRECACHE_VERSION = "turbo-20261123-0903";
 self.PRECACHE = [
   "./",
   "./index.html",
