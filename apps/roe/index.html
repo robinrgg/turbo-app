@@ -536,8 +536,13 @@ function attacherCarte(root) {
     CARTE.el = document.createElement("div"); CARTE.el.className = "mapbox";
     if (typeof L === "undefined") CARTE.el.innerHTML = '<div class="empty">🗺️ Carte indisponible (réseau requis au premier usage).</div>';
     else {
-      CARTE.map = L.map(CARTE.el, { center: [46.6, 2.5], zoom: 5 });
-      L.tileLayer("https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png", { attribution: "© OpenStreetMap France · © contributeurs OSM", subdomains: "abc", maxZoom: 20 }).addTo(CARTE.map);
+      CARTE.map = L.map(CARTE.el, { center: [46.6, 2.5], zoom: 5, maxZoom: 20 });
+      // Orthophotographie IGN (Géoplateforme, WMTS, sans clé) par défaut ; plan OSM en alternative
+      const ortho = L.tileLayer("https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=ORTHOIMAGERY.ORTHOPHOTOS&STYLE=normal&TILEMATRIXSET=PM&FORMAT=image/jpeg&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}",
+        { attribution: "© IGN · Géoplateforme", maxNativeZoom: 19, maxZoom: 20 });
+      const plan = L.tileLayer("https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png", { attribution: "© OpenStreetMap France · © contributeurs OSM", subdomains: "abc", maxZoom: 20 });
+      ortho.addTo(CARTE.map);
+      L.control.layers({ "Ortho IGN": ortho, "Plan OSM": plan }, null, { position: "topright" }).addTo(CARTE.map);
       CARTE.map.on("click", e => placerOuvrage(e.latlng.lat, e.latlng.lng, null));
     }
   }
